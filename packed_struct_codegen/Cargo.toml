@@ -1,0 +1,23 @@
+[package]
+name = "packed_struct_codegen"
+version = "0.1.0"
+authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
+
+[dependencies]
+quote = "^0.3.12"
+
+[dependencies.syn]
+version = "^0.11.4"
+features = ["full", "parsing", "printing"]
+
+[dependencies.packed_struct]
+path = "../packed_struct/"
+default-features = false 
+
+[lib]
+proc-macro = true
+
+[features]
+default = ["std"]
+std = []
+core_collections = []

@@ -1,0 +1,9 @@
+[package]
+name = "packed_struct"
+version = "0.1.0"
+authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
+
+[features]
+default = ["std"]
+std = []
+core_collections = []

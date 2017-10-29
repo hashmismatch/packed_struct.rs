@@ -1,0 +1,8 @@
+[package]
+name = "packed_struct_tests"
+version = "0.1.0"
+authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
+
+[dependencies]
+packed_struct = { path = "../packed_struct/" }
+packed_struct_codegen = { path = "../packed_struct_codegen/" }
