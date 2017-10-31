@@ -166,7 +166,11 @@ pub fn parse_position_val(v: &str, multiplier: usize) -> BitsPositionParsed {
         }
     } else {
         let start = parse_num(v);
-        return BitsPositionParsed::Range(start * multiplier, start * multiplier);
+        if multiplier > 1 {
+            return BitsPositionParsed::Range(start * multiplier, ((start+1) * multiplier)-1);
+        } else {
+            return BitsPositionParsed::Range(start * multiplier, start * multiplier);
+        }
     }
 
     panic!("invalid bits position")

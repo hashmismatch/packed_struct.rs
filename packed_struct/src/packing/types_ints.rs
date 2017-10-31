@@ -390,6 +390,63 @@ impl Display for MsbU64 {
     }
 }
 
+/// The Least Significant Byte is the first one, unsigned.
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub struct LsbU64(pub u64);
+
+impl Deref for LsbU64 {
+    type Target = u64;
+    #[inline]
+    fn deref(&self) -> &u64 {
+        &self.0
+    }
+}
+
+impl PackedStruct<[u8; 8]> for LsbU64 {
+    #[inline]
+    fn pack(&self) -> [u8; 8] {
+        [
+            (self.0  & 0x00000000000000FF) as u8,
+            ((self.0 & 0x000000000000FF00) >> 8) as u8,
+            ((self.0 & 0x0000000000FF0000) >> 16) as u8,
+            ((self.0 & 0x00000000FF000000) >> 24) as u8,
+            ((self.0 & 0x000000FF00000000) >> 32) as u8,
+            ((self.0 & 0x0000FF0000000000) >> 40) as u8,
+            ((self.0 & 0x00FF000000000000) >> 48) as u8,
+            ((self.0 & 0xFF00000000000000) >> 56) as u8
+        ]
+    }
+
+    #[inline]
+    fn unpack(src: &[u8; 8]) -> Result<LsbU64, PackingError> {
+        Ok(LsbU64(
+            src[0] as u64 |
+            ((src[1] as u64) << 8) |
+            ((src[2] as u64) << 16) |
+            ((src[3] as u64) << 24) |
+            ((src[4] as u64) << 32) |
+            ((src[5] as u64) << 40) |
+            ((src[6] as u64) << 48) |
+            ((src[7] as u64) << 56)
+        ))
+    }
+}
+
+impl PackedStructInfo for LsbU64 {
+    #[inline]
+    fn packed_bits() -> usize {
+        64
+    }
+}
+
+packing_slice!(LsbU64; 8);
+
+#[cfg(any(feature="core_collections", feature="std"))]
+impl Display for LsbU64 {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
+        write!(f, "{}", self.0)
+    }
+}
 
 
 
