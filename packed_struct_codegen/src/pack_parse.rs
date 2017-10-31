@@ -386,7 +386,7 @@ pub fn parse_struct(ast: &syn::MacroInput) -> PackStruct {
         if let Some(struct_size_bytes) = struct_size_bytes {
             struct_size_bytes
         } else {
-            let last_bit = fields_expanded.last().unwrap().bit_range_rust.end;
+            let last_bit = fields_expanded.iter().map(|f| f.bit_range_rust.end).max().unwrap();
             (last_bit as f32 / 8.0).ceil() as usize
         }
     };
