@@ -162,11 +162,15 @@ pub fn parse_position_val(v: &str, multiplier: usize) -> BitsPositionParsed {
         if s.len() == 2 {
             let start = parse_num(s[0]);
             let end = parse_num(s[1]);
-            return BitsPositionParsed::Range(start * multiplier, end * multiplier);
+            if multiplier > 1 {
+                return BitsPositionParsed::Range(start * multiplier, ((end+1) * multiplier)-1);
+            } else {
+                return BitsPositionParsed::Range(start * multiplier, end * multiplier);
+            }
         }
     } else {
         let start = parse_num(v);
-        if multiplier > 1 {
+        if multiplier > 1 {            
             return BitsPositionParsed::Range(start * multiplier, ((start+1) * multiplier)-1);
         } else {
             return BitsPositionParsed::Range(start * multiplier, start * multiplier);

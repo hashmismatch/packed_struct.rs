@@ -61,3 +61,32 @@ fn test_packing_bit_positions_lsb() {
     let unpacked = SmallIntsLsb::unpack(&packed).unwrap();
     assert_eq!(a, unpacked);
 }
+
+
+
+#[test]
+fn test_packing_byte_position() {
+    #[derive(Copy, Clone, Debug, PartialEq, PackedStruct)]
+    #[packed_struct(bit_numbering="msb0", endian="msb")]
+    pub struct BufferChecksum {
+        #[packed_field(bytes="0")]
+        pub version: u8,
+        #[packed_field(bytes="1..4")]
+        pub size: u32,
+        #[packed_field(bytes="5..")]
+        pub checksum: u64
+    }
+
+    let b = BufferChecksum {
+        version: 101,
+        size: 52748273,
+        checksum: 869034217895
+    };
+    
+    let packed = b.pack();
+    assert_eq!(packed.len(), 13);
+
+    let unpacked = BufferChecksum::unpack(&packed).unwrap();
+
+    assert_eq!(b, unpacked);
+}
