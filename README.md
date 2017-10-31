@@ -1,6 +1,8 @@
 Bit-level packing and unpacking for Rust
 ===========================================
 
+[![Build Status](https://travis-ci.org/hashmismatch/packed_struct.rs.svg?branch=master)](https://travis-ci.org/hashmismatch/packed_struct.rs)
+
 # Sample usage
 
 ## Cargo.toml
