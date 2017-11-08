@@ -6,6 +6,9 @@ use packed_struct::*;
 use pack::*;
 use pack_parse_attributes::*;
 
+use utils::*;
+
+use std::ops::Range;
 
 pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str) -> Vec<(String, String)> {
     let mut r = vec![];
@@ -61,17 +64,6 @@ pub fn get_attribute_value_by_name(attributes: &Vec<syn::Attribute>, name: &str)
     None
 }
 
-/*
-pub fn get_attribute_value_by_first_name(attributes: &Vec<syn::Attribute>, names: &[&str]) -> Option<String> {
-    for name in names.iter().map(|name| get_attribute_value_by_name(attributes, name)) {
-        if let Some(name) = name {
-            return Some(name);
-        }
-    }
-
-    None
-}
-*/
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 /// https://en.wikipedia.org/wiki/Bit_numbering
@@ -111,129 +103,199 @@ impl IntegerEndianness {
 }
 
 
-fn get_builtin_type_bit_width(ident: &syn::Ident) -> Option<usize> {
+fn get_builtin_type_bit_width(p: &syn::PathSegment) -> Option<usize> {
 
-    match ident.as_ref() {
+    match p.ident.as_ref() {
         "bool" => Some(1),
-        
-        "UIntBits1" => Some(1),
-        "UIntBits2" => Some(2),
-        "UIntBits3" => Some(3),
-        "UIntBits4" => Some(4),
-        "UIntBits5" => Some(5),
-        "UIntBits6" => Some(6),
-        "UIntBits7" => Some(7),
-
         "u8" | "i8" => Some(8),
+        "u16" | "i16" => Some(16),
+        "u32" | "i32" => Some(32),
+        "u64" | "i64" => Some(64),
+        "Integer" => {
+            match p.parameters {
+                ::syn::PathParameters::AngleBracketed(ref params) => {
+                    let t = &params.types;
+                    for t in &params.types {
+                        let b = syn_to_string(t);
 
-        "u16" | "i16" | "MsbU16" | "MsbI16" | "LsbU16" | "LsbI16" => Some(16),
-        "u32" | "i32" | "MsbU32" | "MsbI32" | "LsbU32" | "LsbI32" => Some(32),
-        "u64" => Some(64),
+                        if let Some(bits_pos) = b.find("Bits") {
+                            let possible_int = &b[(bits_pos + 4)..];
+                            if let Ok(bits) = possible_int.parse::<usize>() {
+                                return Some(bits);
+                            }
+                        }
+                    }
 
-        _ => None
+                    None
+                },
+                _ => None
+            }
+        },
+        _ => {
+            None
+        }
     }
 }
 
 
-fn get_field_info(field: &syn::Field, default_endianness: Option<IntegerEndianness>) -> Result<FieldInfo, ()> {
-
-    let mut bit_width: Option<usize> = None;
-    let mut simple_type = None;
-
-    let mut field_kind = FieldKind::Normal;
-
+fn get_field_mid_positioning(field: &syn::Field) -> FieldMidPositioning {
+    
+    let mut array_size = 1;
     let mut bit_width_builtin: Option<usize> = None;
 
-    match field.ty {
+    let ty = match field.ty {
         syn::Ty::Path (None, syn::Path { ref segments, .. }) => {
-            if segments.len() == 1 {
+            if segments.len() == 1 {                
                 let ref segment = segments[0];
-                simple_type = Some(segment.clone());
 
-                bit_width_builtin = get_builtin_type_bit_width(&segment.ident);
+                bit_width_builtin = get_builtin_type_bit_width(segment);
+                segment.clone()
+            } else {
+                panic!("Unsupported path type: {:#?}", field.ty);
             }
         },
         syn::Ty::Array(ref ty, ref size) => {
+        
             if let syn::Ty::Path (None, syn::Path { ref segments, .. }) = **ty {
                 if segments.len() == 1 {
                     if let &syn::ConstExpr::Lit(syn::Lit::Int(size, _)) = size {
                         let ref segment = segments[0];
-                        if let Some(w) = get_builtin_type_bit_width(&segment.ident) {
-                            bit_width_builtin = Some(w * size as usize);
-                        }
+                        bit_width_builtin = get_builtin_type_bit_width(segment);
+                        array_size = size as usize;
+
+                        if size == 0 { panic!("Arrays sized 0 are not supported."); }
                         
-                        field_kind = FieldKind::Array { size: size as usize, ident: segment.ident.clone() };
+                        segment.clone()
+                    } else {
+                        panic!("unsupported array size: {:?}", size);
                     }
+                } else {
+                    panic!("Unsupported path type: {:#?}", ty);
                 }
+            } else {
+                panic!("Unsupported path type: {:#?}", ty);
             }
+
         },
-        _ => ()
+        _ => { panic!("Unsupported type: {:?}", field.ty); }
     };
 
     let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field"));
-
 
     let bits_position = field_attributes.iter().filter_map(|a| match a {
         &PackFieldAttribute::BitPosition(b) | &PackFieldAttribute::BytePosition(b) => Some(b),
         _ => None
     }).next().unwrap_or(BitsPositionParsed::Next);
-
-    if bit_width.is_none() {
-        let mult: usize = if let &FieldKind::Array { size, .. } = &field_kind {
-            size
-        } else {
-            1
-        };
-
-        // try to get the bit number from an attribute
-        if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::SizeBits(bits) = a { Some(bits) } else { None }).next() {
-            bit_width = Some(bits * mult);
-        } else if let BitsPositionParsed::Range(a, b) = bits_position {
-            bit_width = Some((b as isize - a as isize).abs() as usize + 1);
-        } else {
-            bit_width = bit_width_builtin;
-        }
-    }
-
     
+    let bit_width = if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::SizeBits(bits) = a { Some(bits) } else { None }).next() {
+        if array_size > 1 { panic!("Please use the 'element_size_bits' or 'element_size_bytes' for arrays."); }
+        bits
+    } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::ElementSizeBits(bits) = a { Some(bits) } else { None }).next() {
+        bits * array_size
+    } else if let BitsPositionParsed::Range(a, b) = bits_position {
+        (b as isize - a as isize).abs() as usize + 1
+    } else if let Some(bit_width_builtin) = bit_width_builtin {
+        bit_width_builtin * array_size
+    } else {
+        panic!("Couldn't determine the width of this field: {:?}", field);
+    };
+
+    FieldMidPositioning {
+        bit_width: bit_width,
+        bits_position: bits_position
+    }
+}
+
+
+fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>) -> FieldKind {
+    match field.ty {
+        syn::Ty::Path (None, syn::Path { ref segments, .. }) => {
+            if segments.len() == 1 {                
+                
+                let ty = syn::parse_type(&syn_to_string(&segments[0])).expect("error parsing path segment to ty");
+                                    
+                return FieldKind::Regular {
+                    ident: field.ident.clone().expect("mah ident?"),
+                    field: parse_reg_field(field, &ty, bit_range, default_endianness)
+                };
+
+            } else {
+                panic!("huh 1x");
+            }
+        },
+        syn::Ty::Array(ref ty, ref size) => {
+        
+            if let syn::Ty::Path (None, syn::Path { ref segments, .. }) = **ty {
+                if segments.len() == 1 {
+                    if let &syn::ConstExpr::Lit(syn::Lit::Int(size, _)) = size {
+                        let ty = syn::parse_type(&syn_to_string(&segments[0])).expect("error parsing path segment to ty");
+                                                
+                        let element_size_bits: usize = mp.bit_width as usize / size as usize;
+                        if (mp.bit_width % element_size_bits) != 0 {
+                            panic!("element and array size mismatch!");
+                        }
+
+                        let mut elements = vec![];
+                        for i in 0..size as usize {
+                            let s = bit_range.start + (i * element_size_bits);
+                            let element_bit_range = s..(s + element_size_bits - 1);
+                            elements.push(parse_reg_field(field, &ty, &element_bit_range, default_endianness));
+                            //panic!("field: {:#?}, mp: {:#?}, bit_range: {:#?}", field, mp, bit_range);
+                        }
+                        
+                        return FieldKind::Array {
+                            ident: field.ident.clone().expect("mah ident?"),
+                            size: size as usize,
+                            elements: elements
+                        };
+                    }
+                }
+            }
+        },
+        _ => {  }
+    };
+
+    panic!("Field not supported: {:?}", field);
+}
+
+fn parse_reg_field(field: &syn::Field, ty: &syn::Ty, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>) -> FieldRegular {
+    let mut wrappers = vec![];
+
+    let bit_width = (bit_range.end - bit_range.start) + 1;
+    let ty_str = syn_to_string(ty);
+    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field"));
+
     let is_enum_ty = field_attributes.iter().filter_map(|a| match a {
         &PackFieldAttribute::Ty(TyKind::Enum) => Some(()),
         _ => None
-    }).next().is_some();
-    
-    if is_enum_ty {
-        if let Some(bit_width) = bit_width {
-            if bit_width == 0 || bit_width > 8 {
-                panic!("Unsupported enum bit width: {}", bit_width);
-            }
+    }).next().is_some();    
 
-            let ty = match bit_width {
-                8 => "u8".into(),
-                _ => format!("UIntBits{}", bit_width)
-            };
-
-            field_kind = FieldKind::Enum { pack_ty: syn::Ident::new(ty) };
-        } else {
-            panic!("Missing bit width for the enum type field!");
-        }        
-    }
-    
-    let mut serialization_wrapper_ty = None;
-    let needs_wrap = {
-        if let Some(ref simple_type) = simple_type {
-            simple_type.ident == syn::Ident::new("u16") ||
-            simple_type.ident == syn::Ident::new("i16") ||
-            simple_type.ident == syn::Ident::new("u32") ||
-            simple_type.ident == syn::Ident::new("i32") ||
-            simple_type.ident == syn::Ident::new("u64")
-        } else {
-            false
-        }
+    let needs_int_wrap = {
+        let int_types = ["u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64"];
+        is_enum_ty || int_types.iter().any(|t| t == &ty_str)
     };
 
-    if needs_wrap {
+    let needs_endiannes_wrap = {
+        let our_int_ty = ty_str.starts_with("Integer < ") && ty_str.contains("Bits");
+        our_int_ty || needs_int_wrap
+    };
+    
+    if is_enum_ty {
+        wrappers.push(SerializationWrapper::PrimitiveEnumWrapper);
+    }
 
-        let endiannes = if let Some(endiannes) = field_attributes
+    if needs_int_wrap {
+        let ty = if is_enum_ty {
+            "u8".into()
+        } else {
+            ty_str.clone()
+        };
+        let integer_wrap_ty = syn::parse_type(&format!("Integer<{}, Bits{}>", ty, bit_width)).unwrap();
+        wrappers.push(SerializationWrapper::IntegerWrapper { integer: integer_wrap_ty });
+    }
+
+    if needs_endiannes_wrap {
+        let mut endiannes = if let Some(endiannes) = field_attributes
             .iter()
             .filter_map(|a| if let &PackFieldAttribute::IntEndiannes(endiannes) = a {
                                 Some(endiannes)
@@ -244,49 +306,37 @@ fn get_field_info(field: &syn::Field, default_endianness: Option<IntegerEndianne
             Some(endiannes)
         } else {
             default_endianness
-        };        
+        };
 
-        if endiannes.is_none() {
-            panic!("Missing serialization wrapper for simple type {:?} - did you specify the integer endiannes on the field or a default for the struct?", simple_type);
+        if bit_width <= 8 {
+            endiannes = Some(IntegerEndianness::Msb);
         }
 
-        let simple_type = simple_type.unwrap();
+        if endiannes.is_none() {
+            panic!("Missing serialization wrapper for simple type {:?} - did you specify the integer endiannes on the field or a default for the struct?", ty_str);
+        }
 
-        let t = match endiannes.unwrap() {
-            IntegerEndianness::Msb => format!("Msb{}", simple_type.ident.as_ref().to_uppercase()),
-            IntegerEndianness::Lsb => format!("Lsb{}", simple_type.ident.as_ref().to_uppercase()),
+        let ty_prefix = match endiannes.unwrap() {
+            IntegerEndianness::Msb => "Msb",
+            IntegerEndianness::Lsb => "Lsb"
         };
-        let t = format!("::packed_struct::{}", t);
 
-        serialization_wrapper_ty = Some(syn::Ident::new(t))
+        let endiannes_wrap_ty = syn::parse_type(&format!("{}Integer", ty_prefix)).unwrap();
+        wrappers.push(SerializationWrapper::EndiannesWrapper { endian: endiannes_wrap_ty });
     }
 
-
-    if bit_width.is_none() {
-        panic!("unknown bit width for type: {:?}", field.ty);
+    FieldRegular {
+        ty: ty.clone(),
+        serialization_wrappers: wrappers,
+        bit_width: bit_width,
+        bit_range: bit_range.clone(),
+        bit_range_rust: bit_range.start..(bit_range.end + 1)
     }
+}
 
-    match (bit_width_builtin, bit_width) {
-        (Some(b1), Some(b2)) => {
-            if b1 != b2 {
-                panic!("Builtin bit width for the type {:?} is {}, but is specified by attribute as {}. Field: {:?}", field.ty, b1, b2, field);
-            }
-        },
-        (_, _) => ()
-    }
-    
 
-    Ok(FieldInfo {
-        ident: field.ident.as_ref().unwrap().clone(),
-        ty: field.ty.clone(),
-        serialization_wrapper_ty: serialization_wrapper_ty,
-        bit_width: bit_width.unwrap(),
-        bits_position: bits_position,
-        field_kind: field_kind
-    })
-} 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BitsPositionParsed {
     Next,
     Start(usize),
@@ -346,12 +396,24 @@ pub fn parse_struct(ast: &syn::MacroInput) -> PackStruct {
             None
         }}).next();
 
-    let mut fields_expanded = Vec::new();
+
+
+    let first_field_is_auto_positioned = {
+        if let Some(ref field) = fields.first() {
+            let mp = get_field_mid_positioning(field);
+            mp.bits_position == BitsPositionParsed::Next
+        } else {
+            false
+        }
+    };
+
+
+    let mut fields_parsed: Vec<FieldKind> = vec![];
     {
         let mut prev_bit_range = None;
         for field in &fields {
-            let info = get_field_info(field, default_int_endianness).unwrap();
-            let bits_position = match (bit_positioning, info.bits_position) {
+            let mp = get_field_mid_positioning(field);
+            let bits_position = match (bit_positioning, mp.bits_position) {
                 (Some(BitNumbering::Lsb0), BitsPositionParsed::Next) | (Some(BitNumbering::Lsb0), BitsPositionParsed::Start(_)) => {
                     panic!("LSB0 field positioning currently requires explicit, full field positions.");
                 },
@@ -370,33 +432,78 @@ pub fn parse_struct(ast: &syn::MacroInput) -> PackStruct {
                     panic!("Please explicitly specify the bit numbering mode on the struct with an attribute: #[packed_struct(bit_numbering=\"msb0\")] or \"lsb0\".");
                 }
             };
-            let bit_range = bits_position.to_bits_position().get_bits_range(info.bit_width, &prev_bit_range);
+            let bit_range = bits_position.to_bits_position().get_bits_range(mp.bit_width, &prev_bit_range);
 
-            fields_expanded.push(FieldExpanded {
-                info: info,
-                bit_range: bit_range.clone(),
-                bit_range_rust: bit_range.start..(bit_range.end + 1)
-            });
+            fields_parsed.push(parse_field(field, &mp, &bit_range, default_int_endianness));
 
             prev_bit_range = Some(bit_range);
         }        
     }
 
-    let num_bytes: usize = {
+    let num_bits: usize = {
         if let Some(struct_size_bytes) = struct_size_bytes {
-            struct_size_bytes
+            struct_size_bytes * 8
         } else {
-            let last_bit = fields_expanded.iter().map(|f| f.bit_range_rust.end).max().unwrap();
-            (last_bit as f32 / 8.0).ceil() as usize
+            let last_bit = fields_parsed.iter().map(|f| match f {
+                &FieldKind::Regular { ref field, .. } => field.bit_range_rust.end,
+                &FieldKind::Array { ref elements, .. } => elements.last().unwrap().bit_range_rust.end
+            }).max().unwrap();
+            last_bit
         }
     };
 
-    let num_bits: usize = num_bytes * 8;    
+    let num_bytes = (num_bits as f32 / 8.0).ceil() as usize;
 
+    if first_field_is_auto_positioned && (num_bits % 8) != 0 && struct_size_bytes == None {
+        panic!("Please explicitly position the bits of the first field of this structure ({}), as alignment isn't obvious to the end user.", ast.ident);
+    }
+
+    // check for overlaps
+    {
+        let mut bits = vec![None; num_bytes * 8];
+        for field in &fields_parsed {
+            let mut find_overlaps = |name: String, range: &Range<usize>| {
+                for i in range.start .. (range.end+1) {
+                    if let Some(&Some(ref n)) = bits.get(i) {
+                        panic!("Overlap in bits between fields {} and {}", n, name);
+                    }
+
+                    bits[i] = Some(name.clone());
+                }
+            };
+
+            match field {
+                &FieldKind::Regular { ref field, ref ident } => {
+                    find_overlaps(syn_to_string(ident), &field.bit_range);
+                },
+                &FieldKind::Array { ref ident, ref elements, .. } => {
+                    for (i, field) in elements.iter().enumerate() {
+                        find_overlaps(format!("{}[{}]", syn_to_string(ident), i), &field.bit_range);
+                    }
+                }
+            }
+        }
+    }
+        
     PackStruct {
         ast: ast.clone(),
-        fields: fields_expanded,
+        fields: fields_parsed,
         num_bytes: num_bytes,
         num_bits: num_bits
     }
+}
+
+
+pub fn syn_to_string<T: ::quote::ToTokens>(thing: &T) -> String {
+    syn_to_tokens(thing).as_str().into()
+}
+
+pub fn append_to_tokens<T: ::quote::ToTokens>(thing: &T, tokens: &mut ::quote::Tokens) {
+    thing.to_tokens(tokens)
+}
+
+pub fn syn_to_tokens<T: ::quote::ToTokens>(thing: &T) -> quote::Tokens {
+    let mut t = ::quote::Tokens::new();
+    append_to_tokens(thing, &mut t);
+    t
 }

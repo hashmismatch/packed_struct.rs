@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
+use packed_struct::prelude::*;
 
 mod common;
 use common::*;
@@ -11,7 +11,9 @@ use common::*;
 fn test_roundtrip_1() {
 
     #[derive(PackedStruct, Debug, PartialEq)]
+    #[packed_struct(bit_numbering="msb0")]
     pub struct RoundtripAligned {
+        #[packed_field(bits="0..")]
         f1: u8,
         f2: i8,
         

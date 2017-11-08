@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
+use packed_struct::prelude::*;
 
 #[test]
 fn test_serialization_autosize_msb0() {

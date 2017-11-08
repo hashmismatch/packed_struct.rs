@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
+use packed_struct::prelude::*;
 
 #[derive(PackedStruct, Debug, PartialEq)]
 #[packed_struct(bit_numbering="msb0")]
@@ -36,12 +36,12 @@ fn test_packed_struct_u8() {
 #[derive(PackedStruct)]
 #[packed_struct(size_bytes="6", bit_numbering="msb0")]
 pub struct Ints {
-    #[packed_field(bits="2..17")]
-    num1: MsbU16,
+    #[packed_field(bits="2..17", endian="msb")]
+    num1: u16,
     #[packed_field(bits="18")]
     bool1: bool,
-    #[packed_field(bits="19..34")]
-    num2: LsbU16
+    #[packed_field(bits="19..34", endian="lsb")]
+    num2: u16
 }
 
 
@@ -50,9 +50,9 @@ pub struct Ints {
 fn test_packed_struct_range() {
     {
         let i = Ints {
-            num1: MsbU16(0b1110101010101010),
+            num1: 0b1110101010101010,
             bool1: true,
-            num2: LsbU16(0b1101010111010101)
+            num2: 0b1101010111010101
         };
 
         let packed = i.pack();

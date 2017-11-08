@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-
+use packed_struct::prelude::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PrimitiveEnum_u8)]	
 #[repr(u8)]
@@ -32,8 +32,6 @@ pub struct ControlRegister4 {
     #[packed_field(bits="6")]
     pub z_axis_enabled: bool
 }
-
-use packed_struct::*;
 
 #[test]
 fn test_reg() {

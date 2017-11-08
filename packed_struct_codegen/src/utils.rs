@@ -1,3 +1,48 @@
+use std::ops::*;
+
+pub struct NextBits;
+pub trait BitsRange {
+    fn get_bits_range(&self, packed_bit_width: usize, prev_range: &Option<Range<usize>>) -> Range<usize>; 
+}
+
+impl BitsRange for usize {
+    fn get_bits_range(&self, packed_bit_width: usize, _prev_range: &Option<Range<usize>>) -> Range<usize> {
+        *self..(*self + packed_bit_width as usize - 1)
+    }
+}
+
+impl BitsRange for Range<usize> {
+    fn get_bits_range(&self, _packed_bit_width: usize, _prev_range: &Option<Range<usize>>) -> Range<usize> {
+        self.start..self.end
+    }
+}
+
+impl BitsRange for NextBits {    
+    fn get_bits_range(&self, packed_bit_width: usize, prev_range: &Option<Range<usize>>) -> Range<usize> {
+        if let &Some(ref prev_range) = prev_range {
+            (prev_range.end + 1)..((prev_range.end + 1) + (packed_bit_width as usize) - 1)
+        } else {
+            0..((packed_bit_width as usize) - 1)
+        }
+    }
+}
+
+
+pub fn ones_u8(n: u8) -> u8 {    
+    match n {
+        0 => 0b00000000,
+        1 => 0b00000001,
+        2 => 0b00000011,
+        3 => 0b00000111,
+        4 => 0b00001111,
+        5 => 0b00011111,
+        6 => 0b00111111,
+        7 => 0b01111111,
+        _ => 0b11111111
+    }
+}
+
+
 // From rustc
 pub fn to_snake_case(mut str: &str) -> String {
     let mut words = vec![];

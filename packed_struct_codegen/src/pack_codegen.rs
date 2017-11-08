@@ -4,288 +4,90 @@ extern crate syn;
 use packed_struct::*;
 
 use pack::*;
+use pack_codegen_docs::*;
+use pack_parse::syn_to_string;
 use common::*;
 use utils::*;
 
+
+
+
+
 pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
-    let stdlib_prefix = collections_prefix();
-
+    let (impl_generics, ty_generics, where_clause) = parsed.ast.generics.split_for_impl();
     let name = &parsed.ast.ident;
     let snake_name = to_snake_case(name.as_ref());
-    let (impl_generics, ty_generics, where_clause) = parsed.ast.generics.split_for_impl();
-    let debug_fields_fn = syn::Ident::from(format!("debug_fields_{}", snake_name));
 
+    let type_documentation = type_docs(parsed);
+    let debug_fmt = if include_debug_codegen() {
+        struct_runtime_formatter(parsed)
+    } else {
+        quote! {}
+    };
     let num_bytes = parsed.num_bytes;
     let num_bits = parsed.num_bits;
     let num_fields = parsed.fields.len();
 
-    
-    let mut field_actions = quote! { };
-    let mut unpack_fields = Vec::new();
-    
-    //panic!("fields: {:?}", fields_expanded);
-    
-    for field in &parsed.fields {
 
-        let ref name = field.info.ident;
-        let name_unpack_bytes = name.clone();
+    let mut pack_fields = vec![];
+    let mut unpack_fields = vec![];
+    let mut unpack_struct_set = vec![];
 
-        {
-            let f = field_pack(field);
-            field_actions.append(quote! {
-                let packed_field = {
-                    #f
+    {
+        let mut reg = |src: &syn::Ident, target: &syn::Ident, field: &FieldRegular| {
+            let bits = pack_bits(field);
+
+            let pack = pack_field(src, field);
+            let unpack = unpack_field(field);
+
+            let pack_bits = bits.pack;
+            let unpack_bits = bits.unpack;
+
+            pack_fields.push(quote! {
+                {
+                    let packed = { #pack };
+                    #pack_bits
+                }
+            });
+
+            unpack_fields.push(quote! {
+                let #target = {
+                    let bytes = { #unpack_bits };
+                    #unpack
                 };
-            }.as_str());
-        }               
-
-        // can we do a memcpy?
-        if (field.bit_range_rust.start % 8) == 0 && (field.bit_range_rust.end % 8) == 0 &&
-           (field.bit_range_rust.len() % 8) == 0 && field.bit_range_rust.len() >= 8 {
-
-            let start = field.bit_range_rust.start / 8;
-            let end = field.bit_range_rust.end / 8;
-            
-            field_actions = quote! {
-                #field_actions
-
-                &mut p[#start..#end].copy_from_slice(&packed_field);
-            };
-
-            match field.info.field_kind {
-                FieldKind::Array { ref size, ref ident } if ident != &syn::Ident::new("u8") => {
-                    let mut p = Vec::new();
-                    let mut arr = Vec::new();
-
-                    let w = (field.info.bit_width / 8) / size;
-                                    
-
-                    for i in 0..*size {
-                        let start = start + (i*w);
-                        let end = start + w;
-
-                        let mut field_id = syn::Ident::new(format!("f_{}", i));
-
-                        p.push(quote! {
-                            let mut #field_id = [0; #w];
-                            &mut #field_id[..].copy_from_slice(&src[#start..#end]);
-                        });
-                        arr.push(quote! {
-                            #field_id
-                        });
-                    }
-
-                    unpack_fields.push(quote! {
-                        let #name_unpack_bytes = {
-                            #(#p)*
-
-                            [ #(#arr),* ]
-                        };
-                    });
-                },
-                _ => {
-                    unpack_fields.push(quote! {
-                        let mut #name_unpack_bytes = [0; (#end - #start)];
-                        &mut #name_unpack_bytes[..].copy_from_slice(&src[#start..#end]);
-                    });
-                }
-            }
-            
-        } else {
-            // do a byte by byte copy, with shifting
-
-            let start_byte = field.bit_range_rust.start / 8;
-
-            let shift = field.bit_range_rust.start - (start_byte * 8);
-            let mut l = field.bit_range_rust.len() as isize;
-            
-
-            let mut dst_byte = start_byte;
-            let packed_field_len = (field.info.bit_width as f32 / 8.0).ceil() as usize; 
-            //let mut end_byte = start_byte + packed_field_len;
-
-            let mut field_unpack = quote! {
-                let mut #name_unpack_bytes = [0; #packed_field_len];
-            };
-
-            for i in 0..packed_field_len {
-                let src_mask = ones_u8(l as u8);
-                
-                field_actions = quote! {
-                    #field_actions
-                    p[#dst_byte] |= (packed_field[#i] & #src_mask) >> #shift;  
-                };
-
-                field_unpack.append(quote! {
-                    #name_unpack_bytes[#i] |= (src[#dst_byte] << #shift) & #src_mask;
-                }.as_str());
-
-                let spillover = {
-                    let t = (dst_byte + 1) * 8;
-                    let s = (dst_byte * 8) + (l as usize) + shift;
-                    s > t
-                };
-
-                //if (l > shift as isize) && shift > 0 {
-                if spillover {
-                    field_actions = quote! {
-                        #field_actions
-                        p[#dst_byte + 1] |= (((packed_field[#i] & #src_mask) as u16) << (8 - #shift)) as u8;  
-                    };
-
-                    field_unpack.append(quote! {
-                        #name_unpack_bytes[#i] |= (((src[#dst_byte + 1] as u16) >> (8 - #shift)) & #src_mask as u16) as u8;
-                    }.as_str());
-                }
-                
-                dst_byte += 1;
-                l -= 8;                
-            }
-
-            unpack_fields.push(field_unpack);
-        }     
-        
-    }
-
-    let unpack_struct_set: Vec<_> = parsed.fields.iter().map(|x| { field_unpack(x) }).collect();
-
-    let debug_fields: Vec<_> = parsed.fields.iter().map(|x| {
-        let ref ident = x.info.ident;
-        let ref name_str = x.info.ident.as_ref().to_string();
-        let bits = syn::parse_expr(&format!("{}..{}", x.bit_range.start, x.bit_range.end)).unwrap();
-        
-
-        quote! {
-            ::packed_struct::DebugBitField {
-                name: #name_str.into(),
-                bits: #bits,
-                display_value: format!("{:?}", src.#ident).into()
-            }
-        }
-    }).collect();
-
-    let mut debug_fmt = quote! {};
-
-    if include_debug_codegen() {
-
-        let display_header = format!("{} ({} {})",
-            name,
-            num_bytes,
-            if num_bytes == 1 { "byte" } else { "bytes" }
-        );
-
-        debug_fmt = quote! {
-            pub fn #debug_fields_fn(src: &#name) -> [::packed_struct::DebugBitField<'static>; #num_fields] {
-                [#(#debug_fields),*]
-            }
-
-            #[allow(unused_imports)]
-            impl #impl_generics ::packed_struct::PackedStructDebug for #name #ty_generics #where_clause {
-                /*
-                fn fmt_bits(&self, fmt: &mut #stdlib_prefix::fmt::Formatter) -> Result<(), #stdlib_prefix::fmt::Error> {
-                    let fields = #debug_fields_fn(self);
-                    ::packed_struct::packable_fmt_bits(fmt, &fields)
-                }
-                */
-                fn fmt_fields(&self, fmt: &mut #stdlib_prefix::fmt::Formatter) -> Result<(), #stdlib_prefix::fmt::Error> {
-                    use ::packed_struct::PackedStruct;
-                    
-                    let fields = #debug_fields_fn(self);
-                    let packed: Vec<_> = self.pack()[..].into();
-                    ::packed_struct::packable_fmt_fields(fmt, &packed, &fields)
-                }
-            }
-
-            #[allow(unused_imports)]
-            impl #impl_generics #stdlib_prefix::fmt::Display for #name #ty_generics #where_clause {
-                #[allow(unused_imports)]
-                fn fmt(&self, f: &mut #stdlib_prefix::fmt::Formatter) -> #stdlib_prefix::fmt::Result {                
-                    use ::packed_struct::*;
-
-                    let packed = self.pack();
-                    let l = packed.len();
-                    
-                    try!(f.write_str(#display_header));
-                    try!(f.write_str("\r\n"));
-                    try!(f.write_str("\r\n"));
-
-                    // decimal
-                    try!(f.write_str("Decimal\r\n"));
-                    try!(f.write_str("["));
-                    for i in 0..l {
-                        try!(write!(f, "{}", packed[i]));
-                        if (i + 1) != l {
-                            try!(f.write_str(", "));
-                        }
-                    }
-                    try!(f.write_str("]"));
-
-                    try!(f.write_str("\r\n"));
-                    try!(f.write_str("\r\n"));
-                                    
-                    // hex
-                    try!(f.write_str("Hex\r\n"));
-                    try!(f.write_str("["));
-                    for i in 0..l {
-                        try!(write!(f, "0x{:X}", packed[i]));
-                        if (i + 1) != l {
-                            try!(f.write_str(", "));
-                        }
-                    }
-                    try!(f.write_str("]"));
-                    try!(f.write_str("\r\n"));
-                    try!(f.write_str("\r\n"));
-
-                    try!(f.write_str("Binary\r\n"));
-                    try!(f.write_str("["));
-                    for i in 0..l {
-                        try!(write!(f, "0b{:08b}", packed[i]));
-                        if (i + 1) != l {
-                            try!(f.write_str(", "));
-                        }
-                    }
-                    try!(f.write_str("]"));
-                    try!(f.write_str("\r\n"));
-                    try!(f.write_str("\r\n"));
-
-
-                    try!(self.fmt_fields(f));
-                    Ok(())
-                }
-            }
+            });
         };
-    }
 
-
-    let type_documentation = {
-        let mut doc = quote! {};
-
-        let mut doc_html = format!("/// Structure that can be packed an unpacked into {size_bytes} bytes.\r\n",
-            size_bytes = num_bytes
-        );
-
-        doc_html.push_str("/// <table>\r\n");
-        doc_html.push_str("/// <thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
-        doc_html.push_str("/// <tbody>\r\n");
 
         for field in &parsed.fields {
-            let ty = &field.info.ty;
-            let ref name_str = field.info.ident.as_ref().to_string();
-            let bits = format!("{}..{}", field.bit_range.start, field.bit_range.end);
+            match field {
+                &FieldKind::Regular { ref ident, ref field } => {
+                    reg(ident, ident, field);
 
-            doc_html.push_str(&format!("/// <tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits, name_str, ty_to_string(ty)));
+                    unpack_struct_set.push(quote! {
+                        #ident: #ident
+                    });
+                },
+                &FieldKind::Array { ref ident, size, ref elements } => {
+                    let mut array_unpacked_elements = vec![];
+                    for (i, field) in elements.iter().enumerate() {
+                        let src = syn::Ident::new(format!("{}[{}]", syn_to_string(ident), i));
+                        let target = syn::Ident::new(format!("{}_{}", syn_to_string(ident), i));
+                        reg(&src, &target, field);
+                        array_unpacked_elements.push(target);
+                    }
+
+                    unpack_struct_set.push(quote! {
+                        #ident: [
+                            #(#array_unpacked_elements),*
+                        ]
+                    });
+                }
+            }        
         }
 
-
-        doc_html.push_str("/// </tbody>\r\n");
-        doc_html.push_str("/// </table>\r\n");
-
-        doc.append(&doc_html);
-
-        doc
-    };
-
+    }
 
     quote! {
         #type_documentation
@@ -295,11 +97,11 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
             fn pack(&self) -> [u8; #num_bytes] {
                 use ::packed_struct::*;
 
-                let mut p = [0 as u8; #num_bytes];
+                let mut target = [0 as u8; #num_bytes];
 
-                #field_actions
+                #(#pack_fields)*
 
-                p
+                target
             }
 
             #[inline]
@@ -359,131 +161,205 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
     }
 }
 
-fn field_pack(field: &FieldExpanded) -> quote::Tokens {
-    let ref name = field.info.ident;
 
-    match field.info.field_kind {
-        FieldKind::Normal => {
-            if let Some(ref wrapper_ty) = field.info.serialization_wrapper_ty {
-                quote! {
-                    #wrapper_ty ( self.#name ) .pack()
-                }
-            } else {            
-                quote! {
-                    self.#name.pack()
-                }
-            }
-        },
-        FieldKind::Enum { ref pack_ty } => {
-            quote! {
-                {
-                    use ::packed_struct::*;
 
-                    let n = (self.#name).to_primitive();
-                    let p: #pack_ty = n.into();
-                    p.pack()
-                }
+struct PackBitsCopy {
+    pack: quote::Tokens,
+    unpack: quote::Tokens
+}
+
+fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
+    // memcpy
+    if (field.bit_range_rust.start % 8) == 0 && (field.bit_range_rust.end % 8) == 0 &&
+       (field.bit_range_rust.len() % 8) == 0 && field.bit_range_rust.len() >= 8 
+    {
+        let start = field.bit_range_rust.start / 8;
+        let end = field.bit_range_rust.end / 8;
+        
+        PackBitsCopy {
+            pack: quote! {
+                &mut target[#start..#end].copy_from_slice(&packed);
+            },
+            unpack: quote! {
+                let mut b = [0; (#end - #start)];
+                &mut b[..].copy_from_slice(&src[#start..#end]);
+                b
             }
-        },
-        FieldKind::Array { ref size, ref ident } => {
-            if ident == &syn::Ident::new("u8") {
-                quote! {
-                    self.#name.pack()
-                }
+        }
+    } else {
+        let packed_field_len = (field.bit_width as f32 / 8.0).ceil() as usize; 
+
+        let start_byte = field.bit_range_rust.start / 8;
+        let shift = (8 - (field.bit_width as isize)) % 8 - (field.bit_range_rust.start as isize - (start_byte as isize * 8));
+        
+        let emit_shift = |s: isize| {
+            if s == 0 {
+                quote! {}
+            } else if s > 0 {
+                quote! { << #s }
             } else {
+                let s = -s;
+                quote! { >> #s }
+            }
+        };
 
-                if (field.bit_range_rust.start % 8) != 0 || (field.bit_range_rust.end % 8) != 0 {
-                    panic!("Bit level packing on arrays isn't supported yet.");
-                }
-                
-                let mut n = 0;
-                let w = field.info.bit_width / 8;
-                let w_f = w / size;
+        let mut l = field.bit_range_rust.len() as isize;
+        let mut dst_byte = start_byte;
 
-                let mut q = quote! {
-                    let mut o = [0; #w];
+        let mut pack = vec![];
+        let mut unpack = vec![];
+
+        for i in 0..packed_field_len {
+            let src_mask = ones_u8(l as u8);
+            
+            let bit_shift = emit_shift(shift);
+            pack.push(quote! {
+                target[#dst_byte] |= (packed[#i] & #src_mask) #bit_shift;  
+            });
+            
+            let bit_shift = emit_shift(-shift);
+            unpack.push(quote! {
+                b[#i] |= (src[#dst_byte] #bit_shift) & #src_mask;
+            });
+
+            if shift < 0 {
+                let shift = shift + 8;
+
+                let bit_shift = emit_shift(shift);                
+                pack.push(quote! {
+                    target[#dst_byte + 1] |= (((packed[#i] & #src_mask) as u16) #bit_shift) as u8;  
+                });
+
+                let bit_shift = emit_shift(-shift);
+                unpack.push(quote! {
+                    b[#i] |= (((src[#dst_byte + 1] as u16) #bit_shift) & #src_mask as u16) as u8;
+                });
+            }
+
+            dst_byte += 1;
+            l -= 8;                
+        }
+
+        PackBitsCopy {
+            pack: quote! {
+                #(#pack)*
+            },
+            unpack: quote! {
+                let mut b = [0; #packed_field_len];
+                #(#unpack)*
+                b
+            }
+        }  
+    }
+}
+
+
+fn pack_field(name: &syn::Ident, field: &FieldRegular) -> quote::Tokens {
+    let mut output = quote! { (self.#name) };
+
+    for wrapper in &field.serialization_wrappers {
+        match wrapper {
+            &SerializationWrapper::PrimitiveEnumWrapper => {
+                output = quote! {
+                    {
+                        use ::packed_struct::PrimitiveEnum;
+
+                        let primitive_integer = { #output }.to_primitive();
+                        primitive_integer
+                    }
                 };
+            },
+            &SerializationWrapper::IntegerWrapper { ref integer } => {
+                output = quote! {
+                    {
+                        use ::packed_struct::types::*;
+                        use ::packed_struct::types::bits::*;                        
+
+                        let sized_integer: #integer = { #output }.into();
+                        sized_integer
+                    }
+                };
+            },
+            &SerializationWrapper::EndiannesWrapper { ref endian } => {
+                output = quote! {
+                    {
+                        use ::packed_struct::types::*;
+                        use ::packed_struct::types::bits::*;
+
+                        let wrapper: #endian <_, _, _> = { #output }.into();
+                        wrapper
+                    }
+                };
+            }
+        }
+    }
+
+    quote! {
+        {
+            { & #output }.pack()
+        }
+    }
+}
+
+fn unpack_field(field: &FieldRegular) -> quote::Tokens {
+    let wrappers: Vec<_> = field.serialization_wrappers.iter().rev().cloned().collect();
+
+    let mut unpack = quote! { bytes };
+
+    let mut i = 0;
+    loop {
+        match (wrappers.get(i), wrappers.get(i+1)) {
+            (Some(&SerializationWrapper::EndiannesWrapper { ref endian }), Some(&SerializationWrapper::IntegerWrapper { ref integer })) => {
                 
-                for i in 0..*size {
-                    q.append(quote! {
-                        let p = self.#name[#i].pack();
-                        &mut o[#n .. (#n + #w_f)].copy_from_slice(&p[..]);
-                    }.as_str());
+                unpack = quote! {
+                    use ::packed_struct::types::*;
+                    use ::packed_struct::types::bits::*;
 
-                    n += w_f;
-                }
+                    let res: Result<#endian <_, _, #integer >, PackingError> = <#endian <_, _, _>>::unpack(& #unpack );
+                    let unpacked = try!(res);
+                    **unpacked
+                };
 
-                q.append(quote! {
-                    o
-                }.as_str());
-
-                q
+                i += 1;
             }
+            (Some(&SerializationWrapper::PrimitiveEnumWrapper), _) => {
+                let ty = &field.ty;
+                
+                unpack = quote! {
+                    use ::packed_struct::PrimitiveEnum;
+
+                    let primitive_integer: u8 = { #unpack };
+                    let r = <#ty>::from_primitive(primitive_integer).ok_or(PackingError::InvalidValue);
+                    r?
+                };
+            },
+            (Some(&SerializationWrapper::EndiannesWrapper { ref endian }), _) => {
+                let integer_ty = &field.ty;
+
+                unpack = quote! {
+                    use ::packed_struct::types::*;
+                    use ::packed_struct::types::bits::*;
+
+                    let res: Result<#endian <_, _, #integer_ty >, PackingError> = <#endian <_, _, #integer_ty >>::unpack(& #unpack );
+                    let unpacked = try!(res);
+                    *unpacked
+                };
+            },
+            (None, None) => {
+                let ty = &field.ty;
+                unpack = quote! {
+                    <#ty>::unpack(& #unpack)?
+                };
+            },
+            (_, _) => {
+                panic!("unsupported wrappers: {:#?}", wrappers);
+            }            
         }
+
+        i += 1;
+
+        if wrappers.len() == 0 || i > wrappers.len() - 1 { break; }
     }
-}
 
-fn field_unpack(field: &FieldExpanded) -> quote::Tokens {
-    let ref name = field.info.ident;    
-
-    match field.info.field_kind {
-        FieldKind::Normal => {
-            if let Some(ref wrapper_ty) = field.info.serialization_wrapper_ty {
-                quote! {
-                    #name: try!(<#wrapper_ty>::unpack(&#name)).0
-                }
-            } else {
-                let ref ty = field.info.ty;            
-                quote! {
-                    #name: try!(<#ty>::unpack(&#name))
-                }
-            }
-        },
-        FieldKind::Enum { ref pack_ty } => {
-            let ref ty = field.info.ty;            
-            quote! {
-                #name: {
-                    use ::packed_struct::*;
-                    let p = <#pack_ty>::unpack(&#name)?;
-                    let p: u8 = p.into();
-                    <#ty>::from_primitive(p).ok_or(PackingError::InvalidValue)?
-                }
-            }
-        },
-        FieldKind::Array { ref size, ref ident } => {
-
-            let ty = ident;
-            let mut f = Vec::new();
-
-            for i in 0..*size {
-                if ident == &syn::Ident::new("u8") {
-                    f.push(quote! {
-                        #name[#i]
-                    });
-                } else {
-                    f.push(quote! {
-                        try!(<#ty>::unpack(&#name[#i]))
-                    });
-                }
-            }
-
-            quote! {
-                #name: [
-                    #(#f),*
-                ]
-            }
-
-        }
-    }
-    
-    
-}
-
-
-pub fn ty_to_string(ty: &syn::Ty) -> String {
-    use quote::ToTokens;
-    
-    let mut t = quote::Tokens::new();
-    ty.to_tokens(&mut t);
-    t.as_str().into()
+    unpack
 }

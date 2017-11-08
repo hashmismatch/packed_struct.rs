@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
+use packed_struct::prelude::*;
 
 #[test]
 fn test_serialization_codegen() {
@@ -32,9 +32,6 @@ fn test_serialization_codegen() {
 
     let packed = b.pack();
     assert_eq!(&packed, &[0b10010100, 0b10101010, 0b10100000, 0b00000101]);
-
-    //let packed: u32 = b.pack_to_u32();
-    //assert_eq!(packed, 0b10010100101010101010000011111111);
 
     let unpacked = Bools::unpack(&packed).unwrap();
     assert_eq!(&unpacked, &b);

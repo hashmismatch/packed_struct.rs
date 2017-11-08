@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
+use packed_struct::prelude::*;
 
 #[test]
 #[cfg(test)]
@@ -12,11 +12,11 @@ fn test_packed_compact_byte() {
     #[packed_struct(size_bytes="1", bit_numbering="msb0")]
     pub struct RegA {
         #[packed_field(bits="0..2")]
-        field_a: UIntBits3,
+        field_a: Integer<u8, packed_bits::Bits3>,
         #[packed_field(bits="3..4")]
-        field_b: UIntBits2,
+        field_b: Integer<u8, packed_bits::Bits2>,
         #[packed_field(bits="5..7")]
-        field_c: UIntBits3
+        field_c: Integer<u8, packed_bits::Bits3>
     }
     
     let reg = RegA {
@@ -30,8 +30,5 @@ fn test_packed_compact_byte() {
 
     let unpacked = RegA::unpack(&packed).unwrap();
     assert_eq!(&unpacked, &reg);
-
-    println!("{:?}", reg);
-    println!("{}", reg);
 }
 
