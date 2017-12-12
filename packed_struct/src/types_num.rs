@@ -651,6 +651,18 @@ fn test_packed_int_msb() {
 }
 
 #[test]
+fn test_packed_int_partial() {
+    let val = 0b10_10101010;
+    let typed: Integer<u16, Bits10> = val.into();
+    let endian = typed.as_packed_msb();
+    let packed = endian.pack();
+    assert_eq!([0b00000010, 0b10101010], packed);
+    
+    let unpacked: MsbInteger<_, _, Integer<u16, Bits10>> = MsbInteger::unpack(&packed).unwrap();
+    assert_eq!(val, **unpacked);
+}
+
+#[test]
 fn test_packed_int_lsb() {
     let val = 0xAABBCCDD;
     let typed: Integer<u32, Bits32> = val.into();
