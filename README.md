@@ -3,16 +3,33 @@ Bit-level packing and unpacking for Rust
 
 [![Build Status](https://travis-ci.org/hashmismatch/packed_struct.rs.svg?branch=master)](https://travis-ci.org/hashmismatch/packed_struct.rs)
 
-# Sample usage
+## Introduction
 
-## Cargo.toml
+Packing and unpacking bit-level structures is usually a programming tasks that needlessly reinvents the wheel. This library provides
+a meta-programming aproach, using attributes to document fields and how they should be packed. The resulting trait implementations
+provide safe packing, unpacking and runtime debugging formatters with per-field documentation generated for each structure.
+
+## Features
+
+ * Plain Rust structures, decorated with attributes
+ * MSB or LSB integers of user-defined bit widths
+ * Primitive enum code generation helper
+ * MSB or LSB bit positioning
+ * Documents the field's packing table
+ * Runtime packing visualization
+ * Nested packed types
+ * Arrays
+
+## Sample usage
+
+### Cargo.toml
 
 ```toml
 [dependencies]
 packed_struct = { git = "https://github.com/hashmismatch/packed_struct.rs" }
 packed_struct_codegen = { git = "https://github.com/hashmismatch/packed_struct.rs" }
 ```
-## lib.rs
+### Including the library and the code generator
 
 ```rust
 extern crate packed_struct;
@@ -20,19 +37,26 @@ extern crate packed_struct;
 extern crate packed_struct_codegen;
 ```
 
-## example.rs
+### Example of a single-byte structure, with a 3 bit integer, primitive enum and a bool field.
 
 ```rust
-#[derive(PackedStruct, PartialEq, Debug, Copy, Clone)]
+extern crate packed_struct;
+#[macro_use] extern crate packed_struct_codegen;
+
+use packed_struct::prelude::*;
+
+#[derive(PackedStruct)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct TestPack {
-    #[packed_field(bits = "2..3", ty="enum")]
+    #[packed_field(bits="0..2")]
+    tiny_int: Integer<u8, ::packed_bits::Bits3>,
+    #[packed_field(bits="3..4", ty="enum")]
     mode: SelfTestMode,
-    #[packed_field(bits = "6")]
+    #[packed_field(bits="7")]
     enabled: bool
 }
 
-#[derive(PrimitiveEnum_u8, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
 pub enum SelfTestMode {
     NormalMode = 0,
     PositiveSignSelfTest = 1,
@@ -40,29 +64,26 @@ pub enum SelfTestMode {
     DebugMode = 3,
 }
 
-#[test]
-fn sample_usage() {
-    use packed_struct::*;
-
-    let a = SelfTestMode::DebugMode;
-    assert_eq!(3, a.to_primitive());
-    
+fn main() {
     let test = TestPack {
+        tiny_int: 5.into(),
         mode: SelfTestMode::DebugMode,
         enabled: true
     };
 
     let packed = test.pack();
-    assert_eq!([0b00110010], packed);
+    assert_eq!([0b10111001], packed);
 
     let unpacked = TestPack::unpack(&packed).unwrap();
-    assert_eq!(unpacked, test);    
+    assert_eq!(*unpacked.tiny_int, 5);
+    assert_eq!(unpacked.mode, SelfTestMode::DebugMode);
+    assert_eq!(unpacked.enabled, true);
 }
 ```
 
-# Packing attributes
+## Packing attributes
 
-Syntax: 
+### Syntax
 
 ```rust
 #[packed_struct(attr1="val", attr2="val")]
@@ -72,7 +93,7 @@ struct Structure {
 }
 ```
 
-## Per-structure
+### Per-structure attributes
 
 Attribute | Values | Comment
 :--|:--|:--
@@ -80,7 +101,7 @@ Attribute | Values | Comment
 ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if the bits attribute field is used.
 ```endian``` | ```msb``` or ```lsb``` | Default integer endianness
 
-## Per-field
+### Per-field attributes
 
 Attribute | Values | Comment
 :--|:--|:--
@@ -88,6 +109,104 @@ Attribute | Values | Comment
 ```bytes``` | ```0```, ```0..``` or ```0..2``` | Same as above, multiplied by 8.
 ```size_bits``` | ```1```, ... | Specifies the size of the packed structure. Mandatory for certain types. Specifying a range of bits like ```bits="0..2"``` can substite the required usage of ```size_bits```.
 ```size_bytes``` | ```1```, ... | Same as above, multiplied by 8.
+```element_size_bits``` | ```1```, ... | For packed arrays, specifies the size of a single element of the array. Explicitly stating the size of the entire array can substite the usage of this attribute.
+```element_size_bytes``` | ```1```, ... | Same as above, multiplied by 8.
 ```ty``` | ```enum``` | Packing helper for primitive enums.
 ```endian``` | ```msb``` or ```lsb``` | Integer endianness. Applies to u16/i16 and larger types.
 
+## More examples
+
+### Mixed endian integers
+
+```rust
+extern crate packed_struct;
+#[macro_use] extern crate packed_struct_codegen;
+
+use packed_struct::prelude::*;
+
+#[derive(PackedStruct)]
+#[packed_struct]
+pub struct EndianExample {
+    #[packed_field(endian="lsb")]
+    int1: u16,
+    #[packed_field(endian="msb")]
+    int2: i32
+}
+
+fn main() {
+    let example = EndianExample {
+        int1: 0xBBAA,
+        int2: 0x11223344
+    };
+
+    let packed = example.pack();
+    assert_eq!([0xAA, 0xBB, 0x11, 0x22, 0x33, 0x44], packed);
+}
+```
+
+### 24 bit LSB integers
+
+```rust
+extern crate packed_struct;
+#[macro_use] extern crate packed_struct_codegen;
+
+use packed_struct::prelude::*;
+
+#[derive(PackedStruct)]
+#[packed_struct(endian="lsb")]
+pub struct LsbIntExample {
+    int1: Integer<u32, ::packed_bits::Bits24>,
+}
+
+fn main() {
+    let example = LsbIntExample {
+        int1: 0xCCBBAA.into()
+    };
+
+    let packed = example.pack();
+    assert_eq!([0xAA, 0xBB, 0xCC], packed);
+}
+```
+
+### Nested packed types within arrays
+
+```rust
+extern crate packed_struct;
+#[macro_use] extern crate packed_struct_codegen;
+
+use packed_struct::prelude::*;
+
+#[derive(PackedStruct, Debug, PartialEq)]
+#[packed_struct(bit_numbering="msb0")]
+pub struct TinyFlags {
+    #[packed_field(bits="4..")]
+    flag1: bool,
+    val1: Integer<u8, ::packed_bits::Bits2>,
+    flag2: bool
+}
+
+#[derive(PackedStruct, Debug, PartialEq)]
+#[packed_struct]
+pub struct Settings {
+    #[packed_field(element_size_bits="4")]
+    values: [TinyFlags; 4]
+}
+
+fn main() {
+    let example = Settings {
+        values: [
+            TinyFlags { flag1: true,  val1: 1.into(), flag2: false },
+            TinyFlags { flag1: true,  val1: 2.into(), flag2: true },
+            TinyFlags { flag1: false, val1: 3.into(), flag2: false },
+            TinyFlags { flag1: true,  val1: 0.into(), flag2: false },
+        ]
+    };
+
+    let packed = example.pack();
+    let unpacked = Settings::unpack(&packed).unwrap();
+
+    assert_eq!(example, unpacked);
+}
+```
+
+License: MIT OR Apache-2.0

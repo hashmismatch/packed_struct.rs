@@ -2,6 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
+use packed_struct::prelude::*;
 
 #[derive(PackedStruct, PartialEq, Debug, Copy, Clone)]
 #[packed_struct(bit_numbering="msb0")]
@@ -19,8 +20,6 @@ pub enum SelfTestMode {
     NegativeSignSelfTest = 2,
     DebugMode = 3,
 }
-
-use packed_struct::*;
 
 #[test]
 fn prim() {

@@ -1,4 +1,11 @@
-use prelude::v1::*;
+//! Helper structures for runtime packing visualization.
+
+use internal_prelude::v1::*;
+
+#[cfg(any(feature="core_collections", feature="std"))]
+pub trait PackedStructDebug {
+    fn fmt_fields(&self, fmt: &mut Formatter) -> Result<(), FmtError>;
+}
 
 pub struct DebugBinaryByteSlice<'a> {
     pub bits: &'a Range<usize>,
@@ -7,7 +14,7 @@ pub struct DebugBinaryByteSlice<'a> {
 
 impl<'a> fmt::Binary for DebugBinaryByteSlice<'a> {
     fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
-        for i in self.bits.start..self.bits.end {
+        for i in self.bits.start..(self.bits.end + 1) {
             let byte = i / 8;
             let bit = i % 8;
             let bit = 7 - bit;

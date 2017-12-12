@@ -2,16 +2,15 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
-
+use packed_struct::prelude::*;
 
 #[derive(PackedStruct, PartialEq, Debug)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct SmallInts {    
     #[packed_field(bits="0..2")]
-    pub val1: UIntBits3,
+    pub val1: Integer<u8, packed_bits::Bits3>,
     #[packed_field(bits="3..4")]
-    pub val2: UIntBits2,
+    pub val2: Integer<u8, packed_bits::Bits2>,
     pub val3: bool,
     #[packed_field(bits="6")]
     pub val4: bool,
@@ -22,8 +21,8 @@ pub struct SmallInts {
 #[test]
 fn test_packing_bit_positions() {
     let a = SmallInts {
-        val1: 1.into(),
-        val2: 1.into(),
+        val1: 7.into(),
+        val2: 3.into(),
         val3: true,
         val4: true,
         val5: true
@@ -37,7 +36,7 @@ fn test_packing_bit_positions() {
 }
 
 
-
+/*
 #[derive(PackedStruct, PartialEq, Debug)]
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct SmallIntsLsb {    
@@ -90,3 +89,4 @@ fn test_packing_byte_position() {
 
     assert_eq!(b, unpacked);
 }
+*/

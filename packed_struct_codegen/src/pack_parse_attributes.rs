@@ -70,6 +70,8 @@ pub enum PackFieldAttributeKind {
     IntEndiannes,
     BitPosition,
     BytePosition,
+    ElementSizeBytes,
+    ElementSizeBits,
     SizeBytes,
     SizeBits,
     Ty
@@ -85,6 +87,8 @@ impl PackFieldAttributeKind {
             BytePosition => "bytes",
             SizeBytes => "size_bytes",
             SizeBits => "size_bits",
+            ElementSizeBytes => "element_size_bytes",
+            ElementSizeBits => "element_size_bits",
             Ty => "ty"
         }
     }
@@ -95,6 +99,7 @@ pub enum PackFieldAttribute {
     BitPosition(BitsPositionParsed),
     BytePosition(BitsPositionParsed),
     SizeBits(usize),
+    ElementSizeBits(usize),
     Ty(TyKind)
 }
 
@@ -126,6 +131,16 @@ impl PackFieldAttribute {
         if name == PackFieldAttributeKind::SizeBits.get_attr_name() {
             let b = parse_num(val);
             return Ok(PackFieldAttribute::SizeBits(b));
+        }
+
+        if name == PackFieldAttributeKind::ElementSizeBytes.get_attr_name() {
+            let b = parse_num(val);
+            return Ok(PackFieldAttribute::ElementSizeBits(b * 8));
+        }
+
+        if name == PackFieldAttributeKind::ElementSizeBits.get_attr_name() {
+            let b = parse_num(val);
+            return Ok(PackFieldAttribute::ElementSizeBits(b));
         }
 
         if name == PackFieldAttributeKind::Ty.get_attr_name() {

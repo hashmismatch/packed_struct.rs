@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
+use packed_struct::prelude::*;
 
 #[test]
 #[cfg(test)]
@@ -37,7 +37,7 @@ fn test_packed_array_of_structs() {
 
     #[derive(PackedStruct, Debug, PartialEq)]
     pub struct Packaged {
-        #[packed_field(size_bytes="6")]
+        #[packed_field(element_size_bytes="6")]
         p: [Simple; 4]
     }
 

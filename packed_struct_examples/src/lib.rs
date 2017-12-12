@@ -2,7 +2,8 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::*;
+use packed_struct::prelude::*;
+
 
 /// MultiWii status structure
 #[derive(PackedStruct, PartialEq, Debug)]
@@ -18,14 +19,16 @@ pub struct MspStatus {
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct SmallIntsLsb {    
     #[packed_field(bits="2..0")]
-    pub val1: UIntBits3,
+    pub val1: Integer<u8, packed_bits::Bits3>,
     #[packed_field(bits="6")]
     pub val2: bool
 }
 
 
 #[derive(PackedStruct, Debug, PartialEq)]
+#[packed_struct(bit_numbering="msb0")]
 pub struct RoundtripAligned {
+    #[packed_field(bits="0..")]
     f1: u8,
     f2: i8,
     

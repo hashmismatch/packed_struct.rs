@@ -3,13 +3,13 @@ use super::packing::*;
 impl PackedStruct<[u8; 1]> for bool {
     #[inline]
     fn pack(&self) -> [u8; 1] {
-        if *self { [0b10000000] } else { [0] }
+        if *self { [1] } else { [0] }
     }
 
     #[inline]
     fn unpack(src: &[u8; 1]) -> Result<bool, PackingError> {
         match src[0] {
-            0b10000000 => Ok(true),
+            1 => Ok(true),
             0 => Ok(false),
             _ => Err(PackingError::InvalidValue)
         }
@@ -92,6 +92,4 @@ impl PackedStructInfo for () {
         0
     }
 }
-
-// packing_slice!( () ; 0);
 

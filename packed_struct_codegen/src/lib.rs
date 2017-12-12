@@ -13,6 +13,7 @@ use proc_macro::TokenStream;
 
 mod pack;
 mod pack_codegen;
+mod pack_codegen_docs;
 mod pack_parse;
 mod pack_parse_attributes;
 

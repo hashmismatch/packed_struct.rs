@@ -1,9 +1,22 @@
 [package]
 name = "packed_struct"
+description = "Binary-level structure packing and unpacking generator"
 version = "0.1.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
+build = "build.rs"
+license = "MIT OR Apache-2.0"
+keywords = ["enum", "packing", "serialization"]
+categories = ["encoding"]
+readme = "../README.md"
+
+[dependencies]
+serde = "1.0"
+serde_derive = "1.0"
 
 [features]
 default = ["std"]
 std = []
 core_collections = []
+
+[dev-dependencies]
+packed_struct_codegen = {path="../packed_struct_codegen"}
