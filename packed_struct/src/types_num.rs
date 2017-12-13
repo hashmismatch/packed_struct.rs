@@ -6,12 +6,31 @@ use internal_prelude::v1::*;
 
 use super::types_bits::*;
 
+
 /// A bit-limited integer, stored in a native type that is at least
 /// as many bits wide as the desired size.
 #[derive(Default, Debug, Copy, Clone)]
 pub struct Integer<T, B> {
     num: T,
     bits: PhantomData<B>
+}
+
+use serde::ser::{Serialize, Serializer};
+impl<T, B> Serialize for Integer<T, B> where T: Serialize {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        self.num.serialize(serializer)
+    }
+}
+
+use serde::de::{Deserialize, Deserializer};
+impl<'de, T, B> Deserialize<'de> for Integer<T, B> where T: Deserialize<'de>, T: Into<Integer<T, B>> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        <T>::deserialize(deserializer).map(|n| n.into())
+    }
 }
 
 impl<T, B> PartialEq for Integer<T, B> where T: PartialEq {
