@@ -188,10 +188,9 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
         }
     } else {
         let packed_field_len = (field.bit_width as f32 / 8.0).ceil() as usize; 
+        let start_byte = (field.bit_range_rust.start as f32 / 8.0).floor() as usize;
+        let shift = ((packed_field_len as isize*8) - (field.bit_width as isize)) - (field.bit_range_rust.start as isize - (start_byte as isize * 8));
 
-        let start_byte = field.bit_range_rust.start / 8;
-        let shift = (8 - (field.bit_width as isize)) % 8 - (field.bit_range_rust.start as isize - (start_byte as isize * 8));
-        
         let emit_shift = |s: isize| {
             if s == 0 {
                 quote! {}
@@ -203,43 +202,65 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
             }
         };
 
-        let mut l = field.bit_range_rust.len() as isize;
+        let mut l = 8 - ((packed_field_len as isize*8) - field.bit_width as isize);
         let mut dst_byte = start_byte;
 
         let mut pack = vec![];
         let mut unpack = vec![];
 
+        let mut bits_to_pack = field.bit_width;
+        let mut target_bit = field.bit_range.start as usize;
+
         for i in 0..packed_field_len {
-            let src_mask = ones_u8(l as u8);
-            
+            let src_mask = ones_u8(l as u8);                        
             let bit_shift = emit_shift(shift);
             pack.push(quote! {
+                let _a = #i;
                 target[#dst_byte] |= (packed[#i] & #src_mask) #bit_shift;  
             });
             
             let bit_shift = emit_shift(-shift);
             unpack.push(quote! {
+                let _a = #i;
                 b[#i] |= (src[#dst_byte] #bit_shift) & #src_mask;
             });
 
-            if shift < 0 {
-                let shift = shift + 8;
+            if shift < 0 && (dst_byte - start_byte) <= packed_field_len {
+                let shift = (8+shift);
+                let src_mask = ones_u8(8-shift as u8);
 
                 let bit_shift = emit_shift(shift);                
                 pack.push(quote! {
+                    let _b = #i;
                     target[#dst_byte + 1] |= (((packed[#i] & #src_mask) as u16) #bit_shift) as u8;  
                 });
 
                 let bit_shift = emit_shift(-shift);
                 unpack.push(quote! {
+                    let _b = #i;
                     b[#i] |= (((src[#dst_byte + 1] as u16) #bit_shift) & #src_mask as u16) as u8;
+                });
+            } else if shift > 0 && (dst_byte - start_byte) <= packed_field_len && i < packed_field_len - 1 {
+                let shift = -(8-shift);
+                let bit_shift = emit_shift(shift);
+                let src_mask = !ones_u8(-shift as u8);
+
+                pack.push(quote! {
+                    let _c = #i;
+                    target[#dst_byte] |= (((packed[#i + 1] & #src_mask) as u16) #bit_shift) as u8;  
+                });
+
+                let bit_shift = emit_shift(-shift);
+                unpack.push(quote! {
+                    let _c = #i;
+                    b[#i + 1] |= (((src[#dst_byte] as u16) #bit_shift) & #src_mask as u16) as u8;
                 });
             }
 
             dst_byte += 1;
-            l -= 8;                
+            l += 8;                
         }
-
+        
         PackBitsCopy {
             pack: quote! {
                 #(#pack)*

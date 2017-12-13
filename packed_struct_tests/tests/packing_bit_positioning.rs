@@ -29,19 +29,18 @@ fn test_packing_bit_positions() {
     };
 
     let packed = a.pack();
-    println!("packed: {:?}", packed);
+    assert_eq!([255], packed);
 
     let unpacked = SmallInts::unpack(&packed).unwrap();
     assert_eq!(a, unpacked);
 }
 
 
-/*
 #[derive(PackedStruct, PartialEq, Debug)]
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct SmallIntsLsb {    
     #[packed_field(bits="2..0")]
-    pub val1: UIntBits3,
+    pub val1: Integer<u8, packed_bits::Bits3>,
     #[packed_field(bits="6")]
     pub val2: bool
 }
@@ -54,7 +53,6 @@ fn test_packing_bit_positions_lsb() {
     };
 
     let packed = a.pack();
-    println!("packed: {:?}", packed);
     assert_eq!(&[0b01000111], &packed);
 
     let unpacked = SmallIntsLsb::unpack(&packed).unwrap();
@@ -89,4 +87,3 @@ fn test_packing_byte_position() {
 
     assert_eq!(b, unpacked);
 }
-*/
