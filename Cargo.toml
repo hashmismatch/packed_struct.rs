@@ -5,3 +5,7 @@ members = [
     "packed_struct_tests/",
     "packed_struct_examples/"
 ]
+
+[patch.crates-io]
+packed_struct = { path="./packed_struct" }
+packed_struct_codegen = { path="./packed_struct_codegen" }

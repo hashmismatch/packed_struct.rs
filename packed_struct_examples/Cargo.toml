@@ -2,7 +2,8 @@
 name = "packed_struct_examples"
 version = "0.1.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
+publish = false
 
 [dependencies]
-packed_struct = { path = "../packed_struct/" }
-packed_struct_codegen = { path = "../packed_struct_codegen/" }
+packed_struct = "^0.1.0"
+packed_struct_codegen = "^0.1.0"
