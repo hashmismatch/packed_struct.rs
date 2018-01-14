@@ -3,6 +3,8 @@ Bit-level packing and unpacking for Rust
 
 [![Build Status](https://travis-ci.org/hashmismatch/packed_struct.rs.svg?branch=master)](https://travis-ci.org/hashmismatch/packed_struct.rs)
 
+[![Documentation](https://docs.rs/packed_struct/badge.svg)](https://docs.rs/packed_struct)
+
 ## Introduction
 
 Packing and unpacking bit-level structures is usually a programming tasks that needlessly reinvents the wheel. This library provides
@@ -26,8 +28,8 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
 
 ```toml
 [dependencies]
-packed_struct = { git = "https://github.com/hashmismatch/packed_struct.rs" }
-packed_struct_codegen = { git = "https://github.com/hashmismatch/packed_struct.rs" }
+packed_struct = "^0.1.0"
+packed_struct_codegen = "^0.1.0"
 ```
 ### Including the library and the code generator
 
