@@ -51,7 +51,7 @@ use packed_struct::prelude::*;
 #[packed_struct(bit_numbering="msb0")]
 pub struct TestPack {
     #[packed_field(bits="0..2")]
-    tiny_int: Integer<u8, ::packed_bits::Bits3>,
+    tiny_int: Integer<u8, packed_bits::Bits3>,
     #[packed_field(bits="3..4", ty="enum")]
     mode: SelfTestMode,
     #[packed_field(bits="7")]
@@ -88,8 +88,12 @@ fn main() {
 ### Syntax
 
 ```rust
+extern crate packed_struct;
+#[macro_use] extern crate packed_struct_codegen;
+
+#[derive(PackedStruct)]
 #[packed_struct(attr1="val", attr2="val")]
-struct Structure {
+pub struct Structure {
     #[packed_field(attr1="val", attr2="val")]
     field: u8
 }
@@ -157,7 +161,7 @@ use packed_struct::prelude::*;
 #[derive(PackedStruct)]
 #[packed_struct(endian="lsb")]
 pub struct LsbIntExample {
-    int1: Integer<u32, ::packed_bits::Bits24>,
+    int1: Integer<u32, packed_bits::Bits24>,
 }
 
 fn main() {
@@ -183,7 +187,7 @@ use packed_struct::prelude::*;
 pub struct TinyFlags {
     #[packed_field(bits="4..")]
     flag1: bool,
-    val1: Integer<u8, ::packed_bits::Bits2>,
+    val1: Integer<u8, packed_bits::Bits2>,
     flag2: bool
 }
 

@@ -60,6 +60,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
     let num_fields = debug_fields.len();
 
     quote! {
+        #[doc(hidden)]
         pub fn #debug_fields_fn(src: &#name) -> [::packed_struct::debug_fmt::DebugBitField<'static>; #num_fields] {
             [#(#debug_fields),*]
         }
