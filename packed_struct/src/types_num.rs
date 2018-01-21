@@ -9,10 +9,22 @@ use super::types_bits::*;
 
 /// A bit-limited integer, stored in a native type that is at least
 /// as many bits wide as the desired size.
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Default, Copy, Clone)]
 pub struct Integer<T, B> {
     num: T,
     bits: PhantomData<B>
+}
+
+impl<T, B> Debug for Integer<T, B> where T: Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.num)
+    }
+}
+
+impl<T, B> Display for Integer<T, B> where T: Display {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.num)
+    }
 }
 
 use serde::ser::{Serialize, Serializer};
@@ -518,6 +530,18 @@ impl<T, B, I> From<I> for MsbInteger<T, B, I> {
     }
 }
 
+impl<T, B, I> Debug for MsbInteger<T, B, I> where I: Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
+impl<T, B, I> Display for MsbInteger<T, B, I> where I: Display {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl<T, B, I> PackedStruct<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> for MsbInteger<T, B, I>
     where B: NumberOfBits, I: SizedInteger<T, B>
 {
@@ -583,6 +607,18 @@ impl<T, B, I> Deref for LsbInteger<T, B, I> where B: BitsFullBytes {
 impl<T, B, I> From<I> for LsbInteger<T, B, I> where B: BitsFullBytes {
     fn from(i: I) -> Self {
         LsbInteger(i, Default::default(), Default::default())
+    }
+}
+
+impl<T, B, I> Debug for LsbInteger<T, B, I> where I: Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
+impl<T, B, I> Display for LsbInteger<T, B, I> where I: Display {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
