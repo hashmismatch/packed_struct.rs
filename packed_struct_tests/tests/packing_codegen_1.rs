@@ -12,9 +12,9 @@ fn test_serialization_codegen() {
     pub struct Bools {
         #[packed_field(bits="0")]
         bool1: bool,
-        #[packed_field(bits="3..10")]
+        #[packed_field(bits="3:10")]
         num1: u8,
-        #[packed_field(bits="11..18")]
+        #[packed_field(bits="11:18")]
         num2: u8,
         #[packed_field(bits="29")]
         bool2: bool,

@@ -7,9 +7,9 @@ use packed_struct::prelude::*;
 #[derive(PackedStruct, PartialEq, Debug)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct SmallInts {    
-    #[packed_field(bits="0..2")]
+    #[packed_field(bits="0:2")]
     pub val1: Integer<u8, packed_bits::Bits3>,
-    #[packed_field(bits="3..4")]
+    #[packed_field(bits="3:4")]
     pub val2: Integer<u8, packed_bits::Bits2>,
     pub val3: bool,
     #[packed_field(bits="6")]
@@ -39,7 +39,7 @@ fn test_packing_bit_positions() {
 #[derive(PackedStruct, PartialEq, Debug)]
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct SmallIntsLsb {    
-    #[packed_field(bits="2..0")]
+    #[packed_field(bits="2:0")]
     pub val1: Integer<u8, packed_bits::Bits3>,
     #[packed_field(bits="6")]
     pub val2: bool
@@ -68,7 +68,7 @@ fn test_packing_byte_position() {
     pub struct BufferChecksum {
         #[packed_field(bytes="0")]
         pub version: u8,
-        #[packed_field(bytes="1..4")]
+        #[packed_field(bytes="1:4")]
         pub size: u32,
         #[packed_field(bytes="5..")]
         pub checksum: u64

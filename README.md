@@ -28,8 +28,8 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
 
 ```toml
 [dependencies]
-packed_struct = "^0.1.0"
-packed_struct_codegen = "^0.1.0"
+packed_struct = "^0.2.0"
+packed_struct_codegen = "^0.2.0"
 ```
 ### Including the library and the code generator
 
@@ -50,9 +50,9 @@ use packed_struct::prelude::*;
 #[derive(PackedStruct)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct TestPack {
-    #[packed_field(bits="0..2")]
+    #[packed_field(bits="0..=2")]
     tiny_int: Integer<u8, packed_bits::Bits3>,
-    #[packed_field(bits="3..4", ty="enum")]
+    #[packed_field(bits="3..=4", ty="enum")]
     mode: SelfTestMode,
     #[packed_field(bits="7")]
     enabled: bool
@@ -111,14 +111,25 @@ Attribute | Values | Comment
 
 Attribute | Values | Comment
 :--|:--|:--
-```bits``` | ```0```, ```0..``` or ```0..2``` | Position of the field in the packed structure. Three modes are supported: a single bit, the starting bit, or the range of bits, inclusive. ```0..2``` occupies 3 bits.
-```bytes``` | ```0```, ```0..``` or ```0..2``` | Same as above, multiplied by 8.
+```bits``` | ```0```, ```0..1```, ... | Position of the field in the packed structure. Three modes are supported: a single bit, the starting bit, or a range of bits. See details below.
+```bytes``` | ```0```, ```0..1```, ... | Same as above, multiplied by 8.
 ```size_bits``` | ```1```, ... | Specifies the size of the packed structure. Mandatory for certain types. Specifying a range of bits like ```bits="0..2"``` can substite the required usage of ```size_bits```.
 ```size_bytes``` | ```1```, ... | Same as above, multiplied by 8.
 ```element_size_bits``` | ```1```, ... | For packed arrays, specifies the size of a single element of the array. Explicitly stating the size of the entire array can substite the usage of this attribute.
 ```element_size_bytes``` | ```1```, ... | Same as above, multiplied by 8.
 ```ty``` | ```enum``` | Packing helper for primitive enums.
 ```endian``` | ```msb``` or ```lsb``` | Integer endianness. Applies to u16/i16 and larger types.
+
+### Bit and byte positioning
+
+Used for either ```bits``` or ```bytes``` on fields. The examples are for MSB0 positioning.
+
+Value | Comment
+:--|:--
+```0``` | A single bit or byte
+```0..```, ```0:``` | The fields starts at bit zero
+```0..2``` | Exclusive range, bits zero and one
+```0:1```, ```0..=1``` | Inclusive range, bits zero and one
 
 ## More examples
 

@@ -26,7 +26,7 @@ pub enum DataRate {
 /// Control register 4
 pub struct ControlRegister4 {
     /// Data rate selection
-    #[packed_field(bits="0..3", ty="enum")]
+    #[packed_field(bits="0:3", ty="enum")]
     pub output_data_rate: DataRate, 		
     // Is the X axis enabled?
     #[packed_field(bits="5")]

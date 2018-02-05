@@ -165,32 +165,114 @@ impl PackFieldAttribute {
 }
 
 
-
+/// Supported formats:
+/// 
+/// Single bit
+/// 0
+///
+/// Open ended, start bit:
+/// 0..
+/// 0:
+/// 
+/// Inclusive range
+/// 0:1
+/// 0..=1
+/// 
+/// Exclusive range
+/// 0..2
+/// 
+/// Returns: INCLUSIVE range
 pub fn parse_position_val(v: &str, multiplier: usize) -> BitsPositionParsed {
     let v = v.trim();
     if v.ends_with("..") {
         let v = v.replace("..", "");
         let n = parse_num(&v);
         return BitsPositionParsed::Start(n * multiplier);
-    } else if v.contains("..") {
-        let s: Vec<_> = v.split("..").collect();
+    } else if v.ends_with(":") {
+        let v = v.replace(":", "");
+        let n = parse_num(&v);
+        return BitsPositionParsed::Start(n * multiplier);
+    } else if v.contains(":") || v.contains("..=") {
+        // inclusive
+
+        let s: Vec<_> = {
+            if v.contains(":") {
+                v.split(":").collect()
+            } else {
+                v.split("..=").collect()
+            }
+        };
+
         if s.len() == 2 {
             let start = parse_num(s[0]);
             let end = parse_num(s[1]);
             if multiplier > 1 {
                 return BitsPositionParsed::Range(start * multiplier, ((end+1) * multiplier)-1);
             } else {
-                return BitsPositionParsed::Range(start * multiplier, end * multiplier);
+                return BitsPositionParsed::Range(start, end);
+            }
+        }
+
+    } else if v.contains("..") {
+        // exclusive
+
+        let s: Vec<_> = v.split("..").collect();
+        if s.len() == 2 {
+            let start = parse_num(s[0]);
+            let end = parse_num(s[1]);
+            if end == 0 {
+                panic!("Ending cannot be 0 for exclusive ranges.");
+            }
+            
+            if multiplier > 1 {
+                return BitsPositionParsed::Range(start * multiplier, ((end-1) * multiplier)-1);
+            } else {
+                return BitsPositionParsed::Range(start, end - 1);
             }
         }
     } else {
+        // single bit
+
         let start = parse_num(v);
         if multiplier > 1 {            
             return BitsPositionParsed::Range(start * multiplier, ((start+1) * multiplier)-1);
         } else {
-            return BitsPositionParsed::Range(start * multiplier, start * multiplier);
+            return BitsPositionParsed::Range(start, start);
         }
     }
 
-    panic!("invalid bits position")
+    panic!("Invalid bits position. Tried to parse: '{}'", v);
+}
+
+
+#[test]
+fn test_parse_position_val() {
+    {
+        assert_eq!(BitsPositionParsed::Range(1, 1), parse_position_val("1", 1));
+        assert_eq!(BitsPositionParsed::Range(8, 15), parse_position_val("1", 8));
+        assert_eq!(BitsPositionParsed::Range(0, 7), parse_position_val("0", 8));
+    }
+
+    {
+        assert_eq!(BitsPositionParsed::Start(1), parse_position_val("1..", 1));
+        assert_eq!(BitsPositionParsed::Start(1), parse_position_val("1:", 1));
+    }
+
+    {
+        assert_eq!(BitsPositionParsed::Range(1, 2), parse_position_val("1:2", 1));
+        assert_eq!(BitsPositionParsed::Range(8, 23), parse_position_val("1:2", 8));        
+        assert_eq!(BitsPositionParsed::Range(0, 15), parse_position_val("0:1", 8));
+        assert_eq!(BitsPositionParsed::Range(1, 2), parse_position_val("1..=2", 1));
+    }
+
+    {
+        assert_eq!(BitsPositionParsed::Range(1, 2), parse_position_val("1..3", 1));
+        assert_eq!(BitsPositionParsed::Range(8, 15), parse_position_val("1..3", 8));
+    }
+
+    {
+        assert_eq!(BitsPositionParsed::Range(0, 7), parse_position_val("0", 8));
+        assert_eq!(BitsPositionParsed::Range(8, 39), parse_position_val("1:4", 8));
+        assert_eq!(BitsPositionParsed::Start(40), parse_position_val("5..", 8));
+    }
 }
