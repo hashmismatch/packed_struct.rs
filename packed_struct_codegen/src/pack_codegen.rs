@@ -93,7 +93,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
         #type_documentation
         impl #impl_generics ::packed_struct::PackedStruct<[u8; #num_bytes]> for #name #ty_generics #where_clause {
             #[inline]
-            #[allow(unused_imports)]
+            #[allow(unused_imports, unused_parens)]
             fn pack(&self) -> [u8; #num_bytes] {
                 use ::packed_struct::*;
 
@@ -105,7 +105,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
             }
 
             #[inline]
-            #[allow(unused_imports)]
+            #[allow(unused_imports, unused_parens)]
             fn unpack(src: &[u8; #num_bytes]) -> Result<#name, ::packed_struct::PackingError> {
                 use ::packed_struct::*;
 
