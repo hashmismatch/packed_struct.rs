@@ -12,7 +12,7 @@ fn test_serialization_codegen() {
     #[derive(PackedStruct, Debug, Default, Copy, Clone)]
     #[packed_struct(size_bytes="4", bit_numbering="lsb0", endian="msb")]
     pub struct PowerDataObjectFixed {
-        #[packed_field(bits="31..30")]
+        #[packed_field(bits="31:30")]
         pub supply: Integer<u8, packed_bits::Bits2>,
         #[packed_field(bits="29")]
         pub dual_role_power: bool,
@@ -24,11 +24,11 @@ fn test_serialization_codegen() {
         pub usb_communications_capable: bool,
         #[packed_field(bits="25")]
         pub dual_role_data: bool,
-        #[packed_field(bits="21..20")]
+        #[packed_field(bits="21:20")]
         pub peak_current: Integer<u8, packed_bits::Bits2>,
-        #[packed_field(bits="19..10")]
+        #[packed_field(bits="19:10")]
         pub voltage: Integer<u16, packed_bits::Bits10>,
-        #[packed_field(bits="9..0")]
+        #[packed_field(bits="9:0")]
         pub maximum_current: Integer<u16, packed_bits::Bits10>
     }
 

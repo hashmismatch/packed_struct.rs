@@ -36,11 +36,11 @@ fn test_packed_struct_u8() {
 #[derive(PackedStruct)]
 #[packed_struct(size_bytes="6", bit_numbering="msb0")]
 pub struct Ints {
-    #[packed_field(bits="2..17", endian="msb")]
+    #[packed_field(bits="2:17", endian="msb")]
     num1: u16,
     #[packed_field(bits="18")]
     bool1: bool,
-    #[packed_field(bits="19..34", endian="lsb")]
+    #[packed_field(bits="19:34", endian="lsb")]
     num2: u16
 }
 

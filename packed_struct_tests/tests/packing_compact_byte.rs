@@ -11,11 +11,11 @@ fn test_packed_compact_byte() {
     #[derive(PackedStruct, PartialEq, Debug)]
     #[packed_struct(size_bytes="1", bit_numbering="msb0")]
     pub struct RegA {
-        #[packed_field(bits="0..2")]
+        #[packed_field(bits="0:2")]
         field_a: Integer<u8, packed_bits::Bits3>,
-        #[packed_field(bits="3..4")]
+        #[packed_field(bits="3:4")]
         field_b: Integer<u8, packed_bits::Bits2>,
-        #[packed_field(bits="5..7")]
+        #[packed_field(bits="5:7")]
         field_c: Integer<u8, packed_bits::Bits3>
     }
     
