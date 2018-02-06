@@ -127,7 +127,7 @@ Used for either ```bits``` or ```bytes``` on fields. The examples are for MSB0 p
 Value | Comment
 :--|:--
 ```0``` | A single bit or byte
-```0..```, ```0:``` | The fields starts at bit zero
+```0..```, ```0:``` | The field starts at bit zero
 ```0..2``` | Exclusive range, bits zero and one
 ```0:1```, ```0..=1``` | Inclusive range, bits zero and one
 
@@ -142,7 +142,6 @@ extern crate packed_struct;
 use packed_struct::prelude::*;
 
 #[derive(PackedStruct)]
-#[packed_struct]
 pub struct EndianExample {
     #[packed_field(endian="lsb")]
     int1: u16,
@@ -203,7 +202,6 @@ pub struct TinyFlags {
 }
 
 #[derive(PackedStruct, Debug, PartialEq)]
-#[packed_struct]
 pub struct Settings {
     #[packed_field(element_size_bits="4")]
     values: [TinyFlags; 4]
