@@ -89,6 +89,8 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
     }
 
+    let result_ty = result_type();
+
     quote! {
         #type_documentation
         impl #impl_generics ::packed_struct::PackedStruct<[u8; #num_bytes]> for #name #ty_generics #where_clause {
@@ -106,7 +108,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
             #[inline]
             #[allow(unused_imports, unused_parens)]
-            fn unpack(src: &[u8; #num_bytes]) -> Result<#name, ::packed_struct::PackingError> {
+            fn unpack(src: &[u8; #num_bytes]) -> #result_ty <#name, ::packed_struct::PackingError> {
                 use ::packed_struct::*;
 
                 #(#unpack_fields)*
@@ -127,7 +129,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
         impl #impl_generics ::packed_struct::PackedStructSlice for #name #ty_generics #where_clause {
             #[inline]
             #[allow(unused_imports)]
-            fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), ::packed_struct::PackingError> {
+            fn pack_to_slice(&self, output: &mut [u8]) -> #result_ty <(), ::packed_struct::PackingError> {
                 use ::packed_struct::*;
 
                 if output.len() != #num_bytes {
@@ -140,7 +142,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
             #[inline]
             #[allow(unused_imports)]
-            fn unpack_from_slice(src: &[u8]) -> Result<Self, ::packed_struct::PackingError> {
+            fn unpack_from_slice(src: &[u8]) -> #result_ty <Self, ::packed_struct::PackingError> {
                 use ::packed_struct::*;
 
                 if src.len() != #num_bytes {
@@ -325,6 +327,7 @@ fn pack_field(name: &syn::Ident, field: &FieldRegular) -> quote::Tokens {
 fn unpack_field(field: &FieldRegular) -> quote::Tokens {
     let wrappers: Vec<_> = field.serialization_wrappers.iter().rev().cloned().collect();
 
+    let result_ty = result_type();
     let mut unpack = quote! { bytes };
 
     let mut i = 0;
@@ -336,7 +339,7 @@ fn unpack_field(field: &FieldRegular) -> quote::Tokens {
                     use ::packed_struct::types::*;
                     use ::packed_struct::types::bits::*;
 
-                    let res: Result<#endian <_, _, #integer >, PackingError> = <#endian <_, _, _>>::unpack(& #unpack );
+                    let res: #result_ty <#endian <_, _, #integer >, PackingError> = <#endian <_, _, _>>::unpack(& #unpack );
                     let unpacked = try!(res);
                     **unpacked
                 };
@@ -361,7 +364,7 @@ fn unpack_field(field: &FieldRegular) -> quote::Tokens {
                     use ::packed_struct::types::*;
                     use ::packed_struct::types::bits::*;
 
-                    let res: Result<#endian <_, _, #integer_ty >, PackingError> = <#endian <_, _, #integer_ty >>::unpack(& #unpack );
+                    let res: #result_ty <#endian <_, _, #integer_ty >, PackingError> = <#endian <_, _, #integer_ty >>::unpack(& #unpack );
                     let unpacked = try!(res);
                     *unpacked
                 };

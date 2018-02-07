@@ -58,6 +58,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
     }
 
     let num_fields = debug_fields.len();
+    let result_ty = result_type();
 
     quote! {
         #[doc(hidden)]
@@ -67,7 +68,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
 
         #[allow(unused_imports)]
         impl #impl_generics ::packed_struct::debug_fmt::PackedStructDebug for #name #ty_generics #where_clause {
-            fn fmt_fields(&self, fmt: &mut #stdlib_prefix::fmt::Formatter) -> Result<(), #stdlib_prefix::fmt::Error> {
+            fn fmt_fields(&self, fmt: &mut #stdlib_prefix::fmt::Formatter) -> #result_ty <(), #stdlib_prefix::fmt::Error> {
                 use ::packed_struct::PackedStruct;
                 
                 let fields = #debug_fields_fn(self);
