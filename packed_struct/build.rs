@@ -20,7 +20,7 @@ fn main() {
     }
 
     // bits
-    for i in 1..((up_to_bytes * 8) + 1) {
+    for i in 1..(up_to_bytes * 8) {
         let b = format!("bits_type!(Bits{}, {}, Bytes{}, {});\r\n", i, i, (i as f32 / 8.0).ceil() as usize, if (i % 8) == 0 {
             "BitsFullBytes"
         } else {
