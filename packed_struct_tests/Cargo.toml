@@ -7,3 +7,4 @@ publish = false
 [dependencies]
 packed_struct = "^0.2.0"
 packed_struct_codegen = "^0.2.0"
+error-chain = "0.11.0"

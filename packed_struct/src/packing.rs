@@ -42,6 +42,25 @@ pub enum PackingError {
     BufferSizeMismatch { expected: usize, actual: usize }
 }
 
+impl Display for PackingError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }    
+}
+
+#[cfg(feature="std")]
+impl ::std::error::Error for PackingError {
+    fn description(&self) -> &str {
+        match *self {
+            PackingError::InvalidValue => "Invalid value",
+            PackingError::BitsError => "Bits error",
+            PackingError::BufferTooSmall => "Buffer too small",            
+            PackingError::BufferSizeMismatch { .. } => "Buffer size mismatched",
+            PackingError::NotImplemented => "Not implemented"
+        }
+    }
+}
+
 
 macro_rules! packing_slice {
     ($T: path; $num_bytes: expr) => (

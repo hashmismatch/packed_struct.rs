@@ -10,6 +10,15 @@ pub fn collections_prefix() -> syn::Ty {
     syn::parse_type("::collections").unwrap()
 }
 
+#[cfg(feature="std")]
+pub fn result_type() -> syn::Ty {
+    syn::parse_type("::std::result::Result").expect("result type parse error")
+}
+
+#[cfg(not(feature="std"))]
+pub fn result_type() -> syn::Ty {
+    syn::parse_type("::core::result::Result").expect("result type parse error")
+}
 
 
 
