@@ -133,7 +133,7 @@ macro_rules! as_bytes {
 
 macro_rules! from_bytes {
     (1, $v: expr, $T: ident) => {
-        (($v[0] as $T) << 0)
+        $v[0] as $T
     };
     (2, $v: expr, $T: ident) => {
         (($v[0] as $T) << 8) |
@@ -583,7 +583,7 @@ impl<T, B, I> PackedStructSlice for MsbInteger<T, B, I> where B: NumberOfBits, I
         let mut s = Default::default();
         // hack to infer the type
         {
-            Self::unpack(&s);
+            Self::unpack(&s)?;
         }
         s.as_mut_bytes_slice().copy_from_slice(src);
         Self::unpack(&s)
@@ -663,7 +663,7 @@ impl<T, B, I> PackedStructSlice for LsbInteger<T, B, I> where B: NumberOfBits + 
         let mut s = Default::default();
         // hack to infer the type
         {
-            Self::unpack(&s);
+            Self::unpack(&s)?;
         }
         s.as_mut_bytes_slice().copy_from_slice(src);
         Self::unpack(&s)
