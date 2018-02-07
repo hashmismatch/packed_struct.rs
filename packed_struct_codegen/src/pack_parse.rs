@@ -377,6 +377,10 @@ pub fn parse_struct(ast: &syn::MacroInput) -> PackStruct {
         _ => panic!("#[derive(PackedStruct)] can only be used with braced structs"),
     };
 
+    if ast.generics.ty_params.len() > 0 {
+        panic!("Structures with generic fields currently aren't supported.");
+    }
+
     let bit_positioning = {
         attributes.iter().filter_map(|a| match a {
             &PackStructAttribute::BitNumbering(b) => Some(b),
