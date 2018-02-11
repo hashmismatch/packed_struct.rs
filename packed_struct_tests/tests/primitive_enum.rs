@@ -43,6 +43,9 @@ fn prim() {
     let a = SelfTestMode::from_str("NegativeSignSelfTest").unwrap();
     assert_eq!(SelfTestMode::NegativeSignSelfTest, a);    
 
+    let a = SelfTestMode::from_str_lower("negativesignselftest").unwrap();
+    assert_eq!(SelfTestMode::NegativeSignSelfTest, a);
+
     let all = SelfTestMode::all_variants();
     assert_eq!(&[SelfTestMode::NormalMode, SelfTestMode::PositiveSignSelfTest, SelfTestMode::NegativeSignSelfTest, SelfTestMode::NotAllowed], all);
 }

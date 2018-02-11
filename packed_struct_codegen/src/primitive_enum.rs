@@ -37,6 +37,13 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
             #d => Some(#name::#n)
     }}).collect();
 
+    let from_str_lower: Vec<_> = v.iter().map(|x| {
+        let n = &x.variant.ident;
+        let d = n.as_ref().to_string().to_lowercase();
+        quote! {
+            #d => Some(#name::#n)
+    }}).collect();
+
     let all_variants: Vec<_> = v.iter().map(|x| {
         let n = &x.variant.ident;
         quote! { #name::#n }
@@ -144,6 +151,14 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
             fn from_str(s: &str) -> Option<Self> {
                 match s {
                     #(#from_str),* ,
+                    _ => None
+                }
+            }
+            
+            #[inline]
+            fn from_str_lower(s: &str) -> Option<Self> {
+                match s {
+                    #(#from_str_lower),* ,
                     _ => None
                 }
             }
