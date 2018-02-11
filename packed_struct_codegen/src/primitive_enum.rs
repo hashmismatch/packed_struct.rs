@@ -3,7 +3,7 @@ extern crate syn;
 
 use utils::*;
 
-pub fn derive(ast: &syn::DeriveInput, prim_type: syn::Ty) -> quote::Tokens {
+pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::Tokens {
 
     let ref name = ast.ident;
     let v = get_unitary_enum(ast);
@@ -12,10 +12,15 @@ pub fn derive(ast: &syn::DeriveInput, prim_type: syn::Ty) -> quote::Tokens {
     let from_primitive_match: Vec<_> = v.iter().map(|x| {
         let d = x.discriminant;
         let d = syn::Lit::Int(d, syn::IntTy::Unsuffixed);
+        let negative = if x.negative {
+            quote! { - }
+        } else {
+            quote! {}
+        };
 
         let n = &x.variant.ident;
         quote! {
-            #d => Some(#name::#n)
+            #negative #d => Some(#name::#n)
     }}).collect();
 
     let to_display_str: Vec<_> = v.iter().map(|x| {
@@ -38,14 +43,75 @@ pub fn derive(ast: &syn::DeriveInput, prim_type: syn::Ty) -> quote::Tokens {
     }).collect();
     let all_variants_len = all_variants.len();
 
-    /*
-    let max_value = v.iter().map(|x| x.discriminant).max().expect("Missing discriminants?");    
-    let max_bits = 8;
-    
-    if max_bits > 8 {
-        panic!("More than u8 as the base type for an enum isn't supported at the moment!");
-    }
-    */
+    if prim_type.is_none() {
+        let min_ty: Vec<_> = v.iter().map(|d| {
+            if d.int_ty != syn::IntTy::Isize && d.int_ty != syn::IntTy::Usize && d.int_ty != syn::IntTy::Unsuffixed {
+                d.int_ty
+            } else {
+                if d.negative {
+                    let n = d.discriminant as i64;
+                    if n < <i32>::min_value() as i64 {
+                        syn::IntTy::I64
+                    } else {
+                        let n = -n;
+                        if n < <i16>::min_value() as i64 {
+                            syn::IntTy::I32
+                        } else if n < <i8>::min_value() as i64 {
+                            syn::IntTy::I16
+                        } else {
+                            syn::IntTy::I8
+                        }
+                    }
+                } else {
+                    let n = d.discriminant as u64;
+                    if n > <u32>::max_value() as u64 {
+                        syn::IntTy::U64
+                    } else if n > <u16>::max_value() as u64 {
+                        syn::IntTy::U32
+                    } else if n > <u8>::max_value() as u64 {
+                        syn::IntTy::U16
+                    } else {
+                        syn::IntTy::U8
+                    }
+                }
+            }
+        }).collect();
+
+        // first mention, higher priority
+        let priority = [
+            syn::IntTy::I64,
+            syn::IntTy::I32,
+            syn::IntTy::I16,
+            syn::IntTy::I8,
+            syn::IntTy::U64,
+            syn::IntTy::U32,
+            syn::IntTy::U16,
+            syn::IntTy::U8
+        ];
+        
+        let mut ty = syn::IntTy::U8;
+        for t in min_ty {
+            if priority.iter().position(|&x| x == t).unwrap() < priority.iter().position(|&x| x == ty).unwrap() {
+                ty = t;
+            }
+        }
+        
+        let ty_str = match ty {
+            syn::IntTy::I64 => "i64",
+            syn::IntTy::I32 => "i32",
+            syn::IntTy::I16 => "i16",
+            syn::IntTy::I8 => "i8",
+            syn::IntTy::U64 => "u64",
+            syn::IntTy::U32 => "u32",
+            syn::IntTy::U16 => "u16",
+            syn::IntTy::U8 => "u8",
+            _ => panic!("out of bounds ty!")
+        };
+
+        prim_type = Some(syn::parse_type(&ty_str).unwrap());
+    }    
+
+    let prim_type = prim_type.expect("Unable to detect the primitive type for this enum.");
 
     let all_variants_const_ident = syn::Ident::from(format!("{}_ALL", to_snake_case(name.as_ref()).to_uppercase() ));
 
@@ -93,7 +159,9 @@ pub fn derive(ast: &syn::DeriveInput, prim_type: syn::Ty) -> quote::Tokens {
 #[derive(Debug)]
 struct Variant {
     variant: syn::Variant,
-    discriminant: u64
+    discriminant: u64,
+    negative: bool,
+    int_ty: syn::IntTy
 }
 
 
@@ -109,19 +177,31 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> Vec<Variant> {
                     break;
                 }
 
-                let discriminant = match variant.discriminant {
-                    Some(syn::ConstExpr::Lit(syn::Lit::Int(discrimimant,_))) => { discrimimant },
+                let (discriminant, negative, int_ty) = match variant.discriminant {
+                    Some(syn::ConstExpr::Lit(syn::Lit::Int(v, int_ty))) => { (v, false, int_ty) },
+                    Some(syn::ConstExpr::Unary(syn::UnOp::Neg, ref v)) => {
+                        match **v {
+                            syn::ConstExpr::Lit(syn::Lit::Int(v, int_ty)) => {
+                                (v, true, int_ty)
+                            },
+                            ref p @ _ => {
+                                panic!("Unsupported negated enum const expr: {:?}", p);
+                            }
+                        }
+                    }
                     Some(ref p @ _) => {
-                        panic!("Unsupported const expr: {:?}", p);
+                        panic!("Unsupported enum const expr: {:?}", p);
                     },
                     None => {
-                        d + 1
+                        (d + 1, false, syn::IntTy::Unsuffixed)
                     }
                 };
 
                 r.push(Variant {
                     variant: variant.clone(),
-                    discriminant: discriminant
+                    discriminant: discriminant,
+                    negative: negative,
+                    int_ty: int_ty
                 });
 
                 d = discriminant;
