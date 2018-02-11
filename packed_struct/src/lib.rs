@@ -28,8 +28,8 @@
 //!
 //! ```toml
 //! [dependencies]
-//! packed_struct = "^0.2.0"
-//! packed_struct_codegen = "^0.2.0"
+//! packed_struct = "0.2"
+//! packed_struct_codegen = "0.2"
 //! ```
 //! ## Including the library and the code generator
 //!
@@ -225,6 +225,29 @@
 //!     let unpacked = Settings::unpack(&packed).unwrap();
 //!
 //!     assert_eq!(example, unpacked);
+//! }
+//! ```
+//! 
+//! # Primitive enums with simple discriminants
+//! 
+//! Supported backing integer types: ```u8```, ```u16```, ```u32```, ```u64```, ```i8```, ```i16```, ```i32```, ```i64```.
+//! 
+//! Explicit or implicit backing type:
+//! 
+//! ```rust
+//! extern crate packed_struct;
+//! #[macro_use] extern crate packed_struct_codegen;
+//!
+//! #[derive(PrimitiveEnum)]
+//! pub enum ImplicitType {
+//!     VariantMin = 0,
+//!     VariantMax = 255
+//! }
+//! 
+//! #[derive(PrimitiveEnum_i16)]
+//! pub enum ExplicitType {
+//!     VariantMin = -32768,
+//!     VariantMax = 32767
 //! }
 //! ```
 
