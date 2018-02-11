@@ -171,6 +171,7 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> Vec<Variant> {
             let mut r = Vec::new();
 
             let mut d = 0;
+            let mut neg = false;
 
             for variant in variants {
                 if variant.data != syn::VariantData::Unit {
@@ -193,7 +194,11 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> Vec<Variant> {
                         panic!("Unsupported enum const expr: {:?}", p);
                     },
                     None => {
-                        (d + 1, false, syn::IntTy::Unsuffixed)
+                        if neg {
+                            (d-1, if d-1 == 0 { false } else { true }, syn::IntTy::Unsuffixed)
+                        } else {
+                            (d+1, false, syn::IntTy::Unsuffixed)
+                        }
                     }
                 };
 
@@ -204,7 +209,8 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> Vec<Variant> {
                     int_ty: int_ty
                 });
 
-                d = discriminant;
+                d = discriminant;                
+                neg = negative;                
             }
             return r;
         },

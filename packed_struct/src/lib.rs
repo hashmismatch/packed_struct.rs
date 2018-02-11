@@ -238,17 +238,19 @@
 //! extern crate packed_struct;
 //! #[macro_use] extern crate packed_struct_codegen;
 //!
-//! #[derive(PrimitiveEnum)]
+//! #[derive(PrimitiveEnum, Clone, Copy)]
 //! pub enum ImplicitType {
 //!     VariantMin = 0,
 //!     VariantMax = 255
 //! }
 //! 
-//! #[derive(PrimitiveEnum_i16)]
+//! #[derive(PrimitiveEnum_i16, Clone, Copy)]
 //! pub enum ExplicitType {
 //!     VariantMin = -32768,
 //!     VariantMax = 32767
 //! }
+//! 
+//! # fn main() {}
 //! ```
 
 
