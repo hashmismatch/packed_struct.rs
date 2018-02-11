@@ -1,8 +1,6 @@
 extern crate quote;
 extern crate syn;
 
-use packed_struct::*;
-
 use pack::*;
 use pack_codegen_docs::*;
 use pack_parse::syn_to_string;
@@ -17,7 +15,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
     let (impl_generics, ty_generics, where_clause) = parsed.ast.generics.split_for_impl();
     let name = &parsed.ast.ident;
-    let snake_name = to_snake_case(name.as_ref());
+    //let snake_name = to_snake_case(name.as_ref());
 
     let type_documentation = type_docs(parsed);
     let debug_fmt = if include_debug_codegen() {
@@ -27,7 +25,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
     };
     let num_bytes = parsed.num_bytes;
     let num_bits = parsed.num_bits;
-    let num_fields = parsed.fields.len();
+    //let num_fields = parsed.fields.len();
 
 
     let mut pack_fields = vec![];
@@ -69,7 +67,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
                         #ident: #ident
                     });
                 },
-                &FieldKind::Array { ref ident, size, ref elements } => {
+                &FieldKind::Array { ref ident, ref elements, .. } => {
                     let mut array_unpacked_elements = vec![];
                     for (i, field) in elements.iter().enumerate() {
                         let src = syn::Ident::new(format!("{}[{}]", syn_to_string(ident), i));
@@ -210,9 +208,6 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
         let mut pack = vec![];
         let mut unpack = vec![];
 
-        let mut bits_to_pack = field.bit_width;
-        let mut target_bit = field.bit_range.start as usize;
-
         for i in 0..packed_field_len {
             let src_mask = ones_u8(l as u8);                        
             let bit_shift = emit_shift(shift);
@@ -228,7 +223,7 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
             });
 
             if shift < 0 && (dst_byte - start_byte) <= packed_field_len {
-                let shift = (8+shift);
+                let shift = 8+shift;
                 let src_mask = ones_u8(8-shift as u8);
 
                 let bit_shift = emit_shift(shift);                
