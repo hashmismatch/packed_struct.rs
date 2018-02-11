@@ -3,8 +3,6 @@ extern crate syn;
 
 use utils::*;
 
-use std::cmp::*;
-
 pub fn derive(ast: &syn::DeriveInput, prim_type: syn::Ty) -> quote::Tokens {
 
     let ref name = ast.ident;
@@ -40,12 +38,14 @@ pub fn derive(ast: &syn::DeriveInput, prim_type: syn::Ty) -> quote::Tokens {
     }).collect();
     let all_variants_len = all_variants.len();
 
+    /*
     let max_value = v.iter().map(|x| x.discriminant).max().expect("Missing discriminants?");    
-    let mut max_bits = 8;
+    let max_bits = 8;
     
     if max_bits > 8 {
         panic!("More than u8 as the base type for an enum isn't supported at the moment!");
     }
+    */
 
     let all_variants_const_ident = syn::Ident::from(format!("{}_ALL", to_snake_case(name.as_ref()).to_uppercase() ));
 

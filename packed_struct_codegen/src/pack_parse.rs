@@ -1,8 +1,6 @@
 extern crate quote;
 extern crate syn;
 
-use packed_struct::*;
-
 use pack::*;
 use pack_parse_attributes::*;
 
@@ -30,38 +28,6 @@ pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &s
     }
 
     r
-}
-
-
-/// Also finds #[pack(name="val")]
-pub fn get_attribute_value_by_name(attributes: &Vec<syn::Attribute>, name: &str) -> Option<String> {
-    for attr in attributes {
-        if let &syn::Attribute { value: syn::MetaItem::NameValue(ref ident, ref lit), .. } = attr {
-            let n = ident.as_ref();
-            if n != name { continue; }
-
-            if let &syn::Lit::Str(ref v, _) = lit {
-                return Some(v.to_string());
-            }
-        }
-
-        if let &syn::Attribute { value: syn::MetaItem::List(ref ident, ref list), .. } = attr {
-            if ident.as_ref() != "pack" { continue; }
-
-            for item in list {
-                if let &syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref ident, ref lit)) = item {
-                    let n = ident.as_ref();
-                    if n != name { continue; }
-
-                    if let &syn::Lit::Str(ref v, _) = lit {
-                        return Some(v.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    None
 }
 
 
@@ -114,7 +80,6 @@ fn get_builtin_type_bit_width(p: &syn::PathSegment) -> Option<usize> {
         "Integer" => {
             match p.parameters {
                 ::syn::PathParameters::AngleBracketed(ref params) => {
-                    let t = &params.types;
                     for t in &params.types {
                         let b = syn_to_string(t);
 
@@ -141,9 +106,9 @@ fn get_builtin_type_bit_width(p: &syn::PathSegment) -> Option<usize> {
 fn get_field_mid_positioning(field: &syn::Field) -> FieldMidPositioning {
     
     let mut array_size = 1;
-    let mut bit_width_builtin: Option<usize> = None;
+    let bit_width_builtin: Option<usize>;
 
-    let ty = match field.ty {
+    let _ty = match field.ty {
         syn::Ty::Path (None, syn::Path { ref segments, .. }) => {
             if segments.len() == 1 {                
                 let ref segment = segments[0];
@@ -195,6 +160,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> FieldMidPositioning {
     } else if let BitsPositionParsed::Range(a, b) = bits_position {
         (b as isize - a as isize).abs() as usize + 1
     } else if let Some(bit_width_builtin) = bit_width_builtin {
+        // todo: is it even possible to hit this branch?
         bit_width_builtin * array_size
     } else {
         panic!("Couldn't determine the width of this field: {:?}", field);

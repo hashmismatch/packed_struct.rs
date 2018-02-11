@@ -1,8 +1,6 @@
 extern crate quote;
 extern crate syn;
 
-use packed_struct::*;
-
 use pack::*;
 use pack_parse::syn_to_string;
 use common::*;
@@ -39,7 +37,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
                     }
                 });
             },
-            &FieldKind::Array { ref ident, size, ref elements } => {
+            &FieldKind::Array { ref ident, ref elements, .. } => {
                 for (i, field) in elements.iter().enumerate() {
                     let name_str = format!("{}[{}]", syn_to_string(ident), i);
                     let bits = syn::parse_expr(&format!("{}..{}", field.bit_range.start, field.bit_range.end)).unwrap();
@@ -160,7 +158,7 @@ pub fn type_docs(parsed: &PackStruct) -> quote::Tokens {
 
                 doc_html.push_str(&format!("/// <tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits, name_str, syn_to_string(ty)));
             },
-            &FieldKind::Array { ref ident, size, ref elements } => {
+            &FieldKind::Array { ref ident, ref elements, .. } => {
                 for (i, field) in elements.iter().enumerate() {
                     let ty = &field.ty;
                     let name_str = format!("{}[{}]", syn_to_string(ident), i);
