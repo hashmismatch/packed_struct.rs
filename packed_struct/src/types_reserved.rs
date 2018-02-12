@@ -14,7 +14,7 @@ pub trait ReservedBitValue {
     fn get_reserved_bit_value_byte() -> u8;
 }
 
-#[derive(Default, Copy, Clone, Debug, PartialEq)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BitOne;
 impl ReservedBitValue for BitOne {
     fn get_reserved_bit_value_byte() -> u8 {
@@ -22,7 +22,7 @@ impl ReservedBitValue for BitOne {
     }
 }
 
-#[derive(Default, Copy, Clone, Debug, PartialEq)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BitZero;
 impl ReservedBitValue for BitZero {
     fn get_reserved_bit_value_byte() -> u8 {
@@ -31,7 +31,7 @@ impl ReservedBitValue for BitZero {
 }
 
 /// Always packs into the associated bit value. Ignores the input when unpacking.
-#[derive(Default, Copy, Clone, Debug, PartialEq)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservedBits<V, B> {
     value: V,
     bits: PhantomData<B>
@@ -65,7 +65,7 @@ impl<V, B> PackedStructSlice for ReservedBits<V, B> where Self: Default, V: Rese
         Ok(())
     }
 
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
+    fn unpack_from_slice(_src: &[u8]) -> Result<Self, PackingError> {
         Ok(Self::default())
     }
 
