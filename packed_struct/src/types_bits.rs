@@ -35,11 +35,12 @@ pub trait ByteArray: Default + Debug {
     fn as_bytes_slice(&self) -> &[u8];
     fn as_mut_bytes_slice(&mut self) -> &mut [u8];
     fn rotate_right(&mut self, bytes: usize);
+    fn new(value: u8) -> Self;
 }
 
 macro_rules! bytes_type {
     ($T: ident, $N: expr) => {
-        #[derive(Copy, Clone, Debug, Default)]
+        #[derive(Copy, Clone, Debug, Default, PartialEq)]
         pub struct $T;
 
         impl NumberOfBytes for $T {
@@ -71,13 +72,17 @@ macro_rules! bytes_type {
             fn rotate_right(&mut self, bytes: usize) {
                 bytes_rotate_right(self, bytes)
             }
+
+            fn new(value: u8) -> Self {
+                [value; $N]
+            }
         }
     }
 }
 
 macro_rules! bits_type {
     ($T: ident, $N: expr, $TB: ident, $TBK: ident) => {
-        #[derive(Copy, Clone, Debug, Default)]
+        #[derive(Copy, Clone, Debug, Default, PartialEq)]
         pub struct $T;
 
         impl NumberOfBits for $T {
