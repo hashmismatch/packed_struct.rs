@@ -4,6 +4,8 @@ extern crate packed_struct_codegen;
 
 use packed_struct::prelude::*;
 
+pub mod example1;
+
 
 /// MultiWii status structure
 #[derive(PackedStruct, PartialEq, Debug)]
@@ -62,3 +64,6 @@ pub struct RoundtripAligned {
 
     f15: bool
 }
+
+
+

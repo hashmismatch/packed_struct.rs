@@ -73,69 +73,24 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
                 let packed: Vec<_> = self.pack()[..].into();
                 ::packed_struct::debug_fmt::packable_fmt_fields(fmt, &packed, &fields)
             }
+
+            fn packed_struct_display_header() -> &'static str {
+                #display_header
+            }
         }
 
         #[allow(unused_imports)]
         impl #impl_generics #stdlib_prefix::fmt::Display for #name #ty_generics #where_clause {
             #[allow(unused_imports)]
             fn fmt(&self, f: &mut #stdlib_prefix::fmt::Formatter) -> #stdlib_prefix::fmt::Result {                
-                use ::packed_struct::*;
-                use ::packed_struct::debug_fmt::*;
-
-                let packed = self.pack();
-                let l = packed.len();
-                
-                try!(f.write_str(#display_header));
-                try!(f.write_str("\r\n"));
-                try!(f.write_str("\r\n"));
-
-                // decimal
-                try!(f.write_str("Decimal\r\n"));
-                try!(f.write_str("["));
-                for i in 0..l {
-                    try!(write!(f, "{}", packed[i]));
-                    if (i + 1) != l {
-                        try!(f.write_str(", "));
-                    }
-                }
-                try!(f.write_str("]"));
-
-                try!(f.write_str("\r\n"));
-                try!(f.write_str("\r\n"));
-                                
-                // hex
-                try!(f.write_str("Hex\r\n"));
-                try!(f.write_str("["));
-                for i in 0..l {
-                    try!(write!(f, "0x{:X}", packed[i]));
-                    if (i + 1) != l {
-                        try!(f.write_str(", "));
-                    }
-                }
-                try!(f.write_str("]"));
-                try!(f.write_str("\r\n"));
-                try!(f.write_str("\r\n"));
-
-                try!(f.write_str("Binary\r\n"));
-                try!(f.write_str("["));
-                for i in 0..l {
-                    try!(write!(f, "0b{:08b}", packed[i]));
-                    if (i + 1) != l {
-                        try!(f.write_str(", "));
-                    }
-                }
-                try!(f.write_str("]"));
-                try!(f.write_str("\r\n"));
-                try!(f.write_str("\r\n"));
-
-
-                try!(self.fmt_fields(f));
-                Ok(())
+                let display = ::packed_struct::debug_fmt::PackedStructDisplay::new(self);
+                display.fmt(f)
             }
         }
     }
 }
 
+use std::ops::Range;
 
 
 pub fn type_docs(parsed: &PackStruct) -> quote::Tokens {
@@ -149,26 +104,36 @@ pub fn type_docs(parsed: &PackStruct) -> quote::Tokens {
     doc_html.push_str("/// <thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
     doc_html.push_str("/// <tbody>\r\n");
 
-    for field in &parsed.fields {
-        match field {
-            &FieldKind::Regular { ref ident, ref field } => {
-                let ty = &field.ty;
-                let ref name_str = ident.as_ref().to_string();
-                let bits = format!("{}..{}", field.bit_range.start, field.bit_range.end);
+    {
+        let mut emit_field_docs = |bits: &Range<usize>, field_ident, ty| {
 
-                doc_html.push_str(&format!("/// <tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits, name_str, syn_to_string(ty)));
-            },
-            &FieldKind::Array { ref ident, ref elements, .. } => {
-                for (i, field) in elements.iter().enumerate() {
-                    let ty = &field.ty;
-                    let name_str = format!("{}[{}]", syn_to_string(ident), i);
-                    let bits = format!("{}..{}", field.bit_range.start, field.bit_range.end);
+            let bits_str = {
+                if bits.start == bits.end {
+                    format!("{}", bits.start)
+                } else {
+                    format!("{}:{}", bits.start, bits.end)
+                }
+            };
 
-                    doc_html.push_str(&format!("/// <tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits, name_str, syn_to_string(ty)));
-                }                
+            // todo: friendly integer, reserved types. add LSB/MSB integer info.            
+
+
+            doc_html.push_str(&format!("/// <tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits_str, field_ident, syn_to_string(ty)));
+        };
+
+        for field in &parsed.fields {
+            match field {
+                &FieldKind::Regular { ref ident, ref field } => {
+                    emit_field_docs(&field.bit_range, ident.as_ref().to_string(), &field.ty);
+                },
+                &FieldKind::Array { ref ident, ref elements, .. } => {
+                    for (i, field) in elements.iter().enumerate() {
+                        emit_field_docs(&field.bit_range, format!("{}[{}]", syn_to_string(ident), i), &field.ty);
+                    }
+                }
             }
+            
         }
-        
     }
 
 
