@@ -289,6 +289,7 @@ mod types_array;
 mod types_basic;
 mod types_bits;
 mod types_num;
+mod types_reserved;
 
 /// Implementations and wrappers for various packing types.
 pub mod types {
@@ -301,6 +302,7 @@ pub mod types {
 
     pub use super::types_num::*;
     pub use super::types_array::*;
+    pub use super::types_reserved::*;
 }
 
 pub use self::packing::*;
