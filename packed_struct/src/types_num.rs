@@ -734,6 +734,6 @@ fn test_packed_int_lsb_sub() {
     let val = 0xAABBCC;
     let typed: Integer<u32, Bits24> = val.into();
     let endian = typed.as_packed_lsb();
-    let mut packed = endian.pack();
+    let packed = endian.pack();
     assert_eq!([0xCC, 0xBB, 0xAA], packed);
 }
