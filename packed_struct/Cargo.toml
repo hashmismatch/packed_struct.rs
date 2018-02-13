@@ -2,7 +2,8 @@
 name = "packed_struct"
 description = "Binary-level structure packing and unpacking generator"
 repository = "https://github.com/hashmismatch/packed_struct.rs"
-version = "0.2.0"
+homepage = "http://www.hashmismatch.net/libraries/packed-struct/"
+version = "0.2.1"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 build = "build.rs"
 license = "MIT OR Apache-2.0"
@@ -21,4 +22,4 @@ core_collections = []
 
 # comment this section when publishing new releases to crates.io!
 [dev-dependencies]
-packed_struct_codegen = "^0.2.0"
+packed_struct_codegen = "0.2"
