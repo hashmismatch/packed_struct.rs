@@ -19,5 +19,5 @@ proc-macro = true
 
 [features]
 default = ["std"]
-std = []
+std = ["packed_struct/std"]
 core_collections = []
