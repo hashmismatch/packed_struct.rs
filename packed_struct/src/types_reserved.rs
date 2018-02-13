@@ -31,11 +31,37 @@ impl ReservedBitValue for BitZero {
 }
 
 /// Always packs into the associated bit value. Ignores the input when unpacking.
-#[derive(Default, Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ReservedBits<V, B> {
     value: V,
     bits: PhantomData<B>
 }
+
+impl<B> Debug for ReservedBits<BitZero, B> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Reserved - always 0")
+    }
+}
+
+impl<B> Display for ReservedBits<BitZero, B> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Reserved - always 0")
+    }
+}
+
+impl<B> Debug for ReservedBits<BitOne, B> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Reserved - always 1")
+    }
+}
+
+impl<B> Display for ReservedBits<BitOne, B> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Reserved - always 1")
+    }
+}
+
+
 
 use packing::*;
 use types_bits::{NumberOfBits, NumberOfBytes, ByteArray};

@@ -5,6 +5,7 @@ use internal_prelude::v1::*;
 #[cfg(any(feature="core_collections", feature="std"))]
 pub trait PackedStructDebug {
     fn fmt_fields(&self, fmt: &mut Formatter) -> Result<(), FmtError>;
+    fn packed_struct_display_header() -> &'static str;
 }
 
 pub struct DebugBinaryByteSlice<'a> {
@@ -61,7 +62,7 @@ pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[Deb
                 slice: packed_bytes
             };
 
-            try!(write!(f, "{name:>0$} | bits {bits_start:>3}..{bits_end:<3} | 0b{binary_value:>0width_bits$b}{dummy:>0spaces$} | {base_value:?}\r\n",
+            try!(write!(f, "{name:>0$} | bits {bits_start:>3}:{bits_end:<3} | 0b{binary_value:>0width_bits$b}{dummy:>0spaces$} | {base_value:?}\r\n",
                             max_field_length_name + 1,
                             base_value = field.display_value,
                             binary_value = debug_binary,
@@ -78,58 +79,100 @@ pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[Deb
     Ok(())
 }
 
-/*
-pub fn packable_fmt_bits(f: &mut Formatter, fields: &[DebugBitField]) -> fmt::Result {
-	if fields.len() == 0 {
-		return Ok(());
-	}
-
-	let max_field_length_name = fields.iter().map(|x| x.name.len()).max().unwrap();
-	let max_bit_width = fields.iter().map(|x| x.bits.len()).max().unwrap();
-
-    if max_bit_width > 8 {
-        return Ok(());
-    }
-	
-    try!(write!(f, "| "));
-
-    let mut prev: Option<&DebugBitField> = None;
-
-    for field in fields {
-        if let Some(prev) = prev {
-            // middle
-            let empty_bits = field.bits.start - prev.bits.end;
-            if empty_bits > 0 {
-                print_empty_bits(f, empty_bits);
-                try!(write!(f, " | "));
-            }
-        } else {
-            // beginning
-            let empty_bits = field.bits.start;
-            if empty_bits > 0 {
-                print_empty_bits(f, empty_bits);
-                try!(write!(f, " | "));
-            }
-        }
-
-        try!(write!(f, "{value:>0width_bits$b}", value = field.value, width_bits = field.bits.len()));
-
-        try!(write!(f, " | "));
-
-        prev = Some(field);
-    }
-
-    // end
-    if let Some(prev) = prev {
-        if prev.bits.end != max_bit_width {
-            let empty_bits = max_bit_width as isize - prev.bits.end as isize;
-            if empty_bits > 0 {
-                print_empty_bits(f, empty_bits as usize);
-                try!(write!(f, " |"));
-            }
-        }
-    }
-
-    Ok(())
+pub struct PackedStructDisplay<'a, P: 'a, B: 'a> {
+    pub packed_struct: &'a P,
+    pub packed_struct_packed: PhantomData<B>,
+    pub header: bool,
+    pub raw_decimal: bool,
+    pub raw_hex: bool,
+    pub raw_binary: bool,
+    pub fields: bool
 }
-*/
+
+impl<'a, P, B> PackedStructDisplay<'a, P, B> {
+    pub fn new(packed_struct: &'a P) -> Self {
+        PackedStructDisplay {
+            packed_struct: packed_struct,
+            packed_struct_packed: Default::default(),
+            
+            header: true,
+            raw_decimal: true,
+            raw_hex: true,
+            raw_binary: true,
+            fields: true
+        }
+    }
+}
+
+use types_bits::ByteArray;
+use packing::{PackedStruct, PackedStructSlice};
+
+impl<'a, P, B> fmt::Display for PackedStructDisplay<'a, P, B> where P: PackedStruct<B> + PackedStructSlice + PackedStructDebug {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self.packed_struct.pack_to_vec() {
+            Ok(packed) => {
+                let l = packed.len();
+
+                if self.header {
+                    try!(f.write_str(P::packed_struct_display_header()));
+                    try!(f.write_str("\r\n"));
+                    try!(f.write_str("\r\n"));
+                }
+
+                // decimal
+                if self.raw_decimal {
+                    try!(f.write_str("Decimal\r\n"));
+                    try!(f.write_str("["));
+                    for i in 0..l {
+                        try!(write!(f, "{}", packed[i]));
+                        if (i + 1) != l {
+                            try!(f.write_str(", "));
+                        }
+                    }
+                    try!(f.write_str("]"));
+
+                    try!(f.write_str("\r\n"));
+                    try!(f.write_str("\r\n"));
+                }
+                                
+                // hex
+                if self.raw_hex {
+                    try!(f.write_str("Hex\r\n"));
+                    try!(f.write_str("["));
+                    for i in 0..l {
+                        try!(write!(f, "0x{:X}", packed[i]));
+                        if (i + 1) != l {
+                            try!(f.write_str(", "));
+                        }
+                    }
+                    try!(f.write_str("]"));
+                    try!(f.write_str("\r\n"));
+                    try!(f.write_str("\r\n"));
+                }
+
+                if self.raw_binary {
+                    try!(f.write_str("Binary\r\n"));
+                    try!(f.write_str("["));
+                    for i in 0..l {
+                        try!(write!(f, "0b{:08b}", packed[i]));
+                        if (i + 1) != l {
+                            try!(f.write_str(", "));
+                        }
+                    }
+                    try!(f.write_str("]"));
+                    try!(f.write_str("\r\n"));
+                    try!(f.write_str("\r\n"));
+                }
+
+                if self.fields {
+                    try!(self.packed_struct.fmt_fields(f));
+                }                
+            },
+            Err(e) => {
+                write!(f, "Error packing for display: {:?}", e);                
+            }
+        }
+
+        Ok(())
+    }
+}
