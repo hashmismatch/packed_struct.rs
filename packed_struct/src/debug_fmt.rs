@@ -104,7 +104,6 @@ impl<'a, P, B> PackedStructDisplay<'a, P, B> {
     }
 }
 
-use types_bits::ByteArray;
 use packing::{PackedStruct, PackedStructSlice};
 
 impl<'a, P, B> fmt::Display for PackedStructDisplay<'a, P, B> where P: PackedStruct<B> + PackedStructSlice + PackedStructDebug {
@@ -169,7 +168,7 @@ impl<'a, P, B> fmt::Display for PackedStructDisplay<'a, P, B> where P: PackedStr
                 }                
             },
             Err(e) => {
-                write!(f, "Error packing for display: {:?}", e);                
+                write!(f, "Error packing for display: {:?}", e)?;
             }
         }
 
