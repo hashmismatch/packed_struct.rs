@@ -16,11 +16,12 @@
 //!  * Plain Rust structures, decorated with attributes
 //!  * MSB or LSB integers of user-defined bit widths
 //!  * Primitive enum code generation helper
-//!  * MSB or LSB bit positioning
+//!  * MSB0 or LSB0 bit positioning
 //!  * Documents the field's packing table
 //!  * Runtime packing visualization
 //!  * Nested packed types
-//!  * Arrays
+//!  * Arrays of packed structures as fields
+//!  * Reserved fields, their bits are always 0 or 1
 //!
 //! # Sample usage
 //!
@@ -196,10 +197,10 @@
 //!
 //! use packed_struct::prelude::*;
 //!
-//! #[derive(PackedStruct, Debug, PartialEq)]
+//! #[derive(PackedStruct, Default, Debug, PartialEq)]
 //! #[packed_struct(bit_numbering="msb0")]
 //! pub struct TinyFlags {
-//!     #[packed_field(bits="4..")]
+//!     _reserved: ReservedZero<packed_bits::Bits4>,
 //!     flag1: bool,
 //!     val1: Integer<u8, packed_bits::Bits2>,
 //!     flag2: bool
@@ -214,10 +215,10 @@
 //! fn main() {
 //!     let example = Settings {
 //!         values: [
-//!             TinyFlags { flag1: true,  val1: 1.into(), flag2: false },
-//!             TinyFlags { flag1: true,  val1: 2.into(), flag2: true },
-//!             TinyFlags { flag1: false, val1: 3.into(), flag2: false },
-//!             TinyFlags { flag1: true,  val1: 0.into(), flag2: false },
+//!             TinyFlags { flag1: true,  val1: 1.into(), flag2: false, .. TinyFlags::default() },
+//!             TinyFlags { flag1: true,  val1: 2.into(), flag2: true,  .. TinyFlags::default() },
+//!             TinyFlags { flag1: false, val1: 3.into(), flag2: false, .. TinyFlags::default() },
+//!             TinyFlags { flag1: true,  val1: 0.into(), flag2: false, .. TinyFlags::default() },
 //!         ]
 //!     };
 //!

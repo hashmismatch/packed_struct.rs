@@ -77,6 +77,7 @@ fn get_builtin_type_bit_width(p: &syn::PathSegment) -> Option<usize> {
         "u16" | "i16" => Some(16),
         "u32" | "i32" => Some(32),
         "u64" | "i64" => Some(64),
+        "ReservedZero" | "ReservedZeroes" | "ReservedOne" | "ReservedOnes" |
         "Integer" => {
             match p.parameters {
                 ::syn::PathParameters::AngleBracketed(ref params) => {

@@ -118,6 +118,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
         }
 
         impl #impl_generics #name #ty_generics #where_clause {
+            #[allow(dead_code)]
             /// Display formatter for console applications
             pub fn packed_struct_display_formatter<'a>(&'a self) -> ::packed_struct::debug_fmt::PackedStructDisplay<'a, Self, [u8; #num_bytes]> {
                 ::packed_struct::debug_fmt::PackedStructDisplay::new(self)
