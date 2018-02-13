@@ -16,11 +16,12 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
  * Plain Rust structures, decorated with attributes
  * MSB or LSB integers of user-defined bit widths
  * Primitive enum code generation helper
- * MSB or LSB bit positioning
+ * MSB0 or LSB0 bit positioning
  * Documents the field's packing table
  * Runtime packing visualization
  * Nested packed types
- * Arrays
+ * Arrays of packed structures as fields
+ * Reserved fields, their bits are always 0 or 1
 
 ## Sample usage
 
@@ -28,8 +29,8 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
 
 ```toml
 [dependencies]
-packed_struct = "^0.2.0"
-packed_struct_codegen = "^0.2.0"
+packed_struct = "0.2"
+packed_struct_codegen = "0.2"
 ```
 ### Including the library and the code generator
 
@@ -192,10 +193,10 @@ extern crate packed_struct;
 
 use packed_struct::prelude::*;
 
-#[derive(PackedStruct, Debug, PartialEq)]
+#[derive(PackedStruct, Default, Debug, PartialEq)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct TinyFlags {
-    #[packed_field(bits="4..")]
+    _reserved: ReservedZero<packed_bits::Bits4>,
     flag1: bool,
     val1: Integer<u8, packed_bits::Bits2>,
     flag2: bool
@@ -210,10 +211,10 @@ pub struct Settings {
 fn main() {
     let example = Settings {
         values: [
-            TinyFlags { flag1: true,  val1: 1.into(), flag2: false },
-            TinyFlags { flag1: true,  val1: 2.into(), flag2: true },
-            TinyFlags { flag1: false, val1: 3.into(), flag2: false },
-            TinyFlags { flag1: true,  val1: 0.into(), flag2: false },
+            TinyFlags { flag1: true,  val1: 1.into(), flag2: false, .. TinyFlags::default() },
+            TinyFlags { flag1: true,  val1: 2.into(), flag2: true,  .. TinyFlags::default() },
+            TinyFlags { flag1: false, val1: 3.into(), flag2: false, .. TinyFlags::default() },
+            TinyFlags { flag1: true,  val1: 0.into(), flag2: false, .. TinyFlags::default() },
         ]
     };
 
@@ -222,6 +223,30 @@ fn main() {
 
     assert_eq!(example, unpacked);
 }
+```
+
+## Primitive enums with simple discriminants
+
+Supported backing integer types: ```u8```, ```u16```, ```u32```, ```u64```, ```i8```, ```i16```, ```i32```, ```i64```.
+
+Explicit or implicit backing type:
+
+```rust
+extern crate packed_struct;
+#[macro_use] extern crate packed_struct_codegen;
+
+#[derive(PrimitiveEnum, Clone, Copy)]
+pub enum ImplicitType {
+    VariantMin = 0,
+    VariantMax = 255
+}
+
+#[derive(PrimitiveEnum_i16, Clone, Copy)]
+pub enum ExplicitType {
+    VariantMin = -32768,
+    VariantMax = 32767
+}
+
 ```
 
 License: MIT OR Apache-2.0
