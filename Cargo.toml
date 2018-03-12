@@ -2,6 +2,7 @@
 members = [
     "packed_struct/",
     "packed_struct_codegen/",
+    "packed_struct_nostd_tests/",
     "packed_struct_tests/",
     "packed_struct_examples/"
 ]
