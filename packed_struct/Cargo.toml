@@ -12,12 +12,15 @@ categories = ["encoding"]
 readme = "../README.md"
 
 [dependencies]
-serde = "1.0"
 serde_derive = "1.0"
+
+[dependencies.serde]
+default-features = false
+version = "1.0"
 
 [features]
 default = ["std"]
-std = []
+std = ["serde/std"]
 core_collections = []
 
 # comment this section when publishing new releases to crates.io!

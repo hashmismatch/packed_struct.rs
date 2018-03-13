@@ -1,3 +1,8 @@
 language: rust
 rust: 
   - stable
+
+script:
+  - cargo build --verbose
+  - cargo test --verbose
+  - cd packed_struct_nostd_tests && cargo test --verbose

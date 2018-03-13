@@ -10,3 +10,8 @@ default-features = false
 [dependencies.packed_struct_codegen]
 version="0.2"
 default-features = false
+
+
+[patch.crates-io]
+packed_struct = { path="../packed_struct" }
+packed_struct_codegen = { path="../packed_struct_codegen" }
