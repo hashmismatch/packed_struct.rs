@@ -29,6 +29,7 @@ pub trait PackedStructSlice where Self: Sized {
     /// Number of bytes that this structure demands for packing or unpacking.
     fn packed_bytes() -> usize;
 
+    #[cfg(any(feature="alloc", feature="std"))]
     /// Pack the structure into a new byte vector.
     fn pack_to_vec(&self) -> Result<Vec<u8>, PackingError> {
         let mut buf = vec![0; Self::packed_bytes()];

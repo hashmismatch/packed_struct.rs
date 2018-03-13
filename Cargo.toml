@@ -6,6 +6,10 @@ members = [
     "packed_struct_examples/"
 ]
 
+exclude = [
+    "packed_struct_nostd_tests/"
+]
+
 [patch.crates-io]
 packed_struct = { path="./packed_struct" }
 packed_struct_codegen = { path="./packed_struct_codegen" }

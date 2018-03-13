@@ -3,7 +3,7 @@ name = "packed_struct"
 description = "Binary-level structure packing and unpacking generator"
 repository = "https://github.com/hashmismatch/packed_struct.rs"
 homepage = "http://www.hashmismatch.net/libraries/packed-struct/"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 build = "build.rs"
 license = "MIT OR Apache-2.0"
@@ -12,12 +12,15 @@ categories = ["encoding"]
 readme = "../README.md"
 
 [dependencies]
-serde = "1.0"
 serde_derive = "1.0"
+
+[dependencies.serde]
+default-features = false
+version = "1.0"
 
 [features]
 default = ["std"]
-std = []
+std = ["serde/std"]
 core_collections = []
 
 # comment this section when publishing new releases to crates.io!

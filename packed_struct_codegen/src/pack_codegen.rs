@@ -17,12 +17,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
     let name = &parsed.ast.ident;
     //let snake_name = to_snake_case(name.as_ref());
 
-    let type_documentation = type_docs(parsed);
-    let debug_fmt = if include_debug_codegen() {
-        struct_runtime_formatter(parsed)
-    } else {
-        quote! {}
-    };
+    let type_documentation = type_docs(parsed);    
     let num_bytes = parsed.num_bytes;
     let num_bits = parsed.num_bits;
     //let num_fields = parsed.fields.len();
@@ -89,6 +84,25 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
     let result_ty = result_type();
 
+    let debug_fmt = if include_debug_codegen() {
+        let q = struct_runtime_formatter(parsed);
+
+        quote! {
+            #q
+
+            impl #impl_generics #name #ty_generics #where_clause {
+                #[allow(dead_code)]
+                /// Display formatter for console applications
+                pub fn packed_struct_display_formatter<'a>(&'a self) -> ::packed_struct::debug_fmt::PackedStructDisplay<'a, Self, [u8; #num_bytes]> {
+                    ::packed_struct::debug_fmt::PackedStructDisplay::new(self)
+                }
+            }
+
+        }
+    } else {
+        quote! {}
+    };
+
     quote! {
         #type_documentation
         impl #impl_generics ::packed_struct::PackedStruct<[u8; #num_bytes]> for #name #ty_generics #where_clause {
@@ -114,14 +128,6 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
                 Ok(#name {
                     #(#unpack_struct_set),*
                 })
-            }
-        }
-
-        impl #impl_generics #name #ty_generics #where_clause {
-            #[allow(dead_code)]
-            /// Display formatter for console applications
-            pub fn packed_struct_display_formatter<'a>(&'a self) -> ::packed_struct::debug_fmt::PackedStructDisplay<'a, Self, [u8; #num_bytes]> {
-                ::packed_struct::debug_fmt::PackedStructDisplay::new(self)
             }
         }
 
