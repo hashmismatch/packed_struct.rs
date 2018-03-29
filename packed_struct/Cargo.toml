@@ -15,13 +15,14 @@ readme = "../README.md"
 serde_derive = "1.0"
 
 [dependencies.serde]
-default-features = false
 version = "1.0"
+default-features = false
+
 
 [features]
 default = ["std"]
 std = ["serde/std"]
-core_collections = []
+alloc = []
 
 # comment this section when publishing new releases to crates.io!
 [dev-dependencies]

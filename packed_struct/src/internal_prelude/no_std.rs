@@ -14,3 +14,9 @@ pub use core::intrinsics::write_bytes;
 pub use core::ops::Deref;
 pub use core::slice;
 
+#[cfg(feature="alloc")]
+pub use alloc::vec::*;
+#[cfg(feature="alloc")]
+pub use alloc::fmt::Formatter;
+#[cfg(feature="alloc")]
+pub use alloc::borrow::Cow;

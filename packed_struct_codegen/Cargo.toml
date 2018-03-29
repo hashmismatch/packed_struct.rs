@@ -2,7 +2,7 @@
 name = "packed_struct_codegen"
 description = "This crate implements the code generation for the packed_struct library."
 repository = "https://github.com/hashmismatch/packed_struct.rs"
-version = "0.2.2"
+version = "0.2.3"
 license = "MIT OR Apache-2.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 
@@ -20,4 +20,4 @@ proc-macro = true
 [features]
 default = ["std"]
 std = ["packed_struct/std"]
-core_collections = []
+alloc = ["packed_struct/alloc"]
