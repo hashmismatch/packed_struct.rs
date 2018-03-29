@@ -254,25 +254,17 @@
 //! # fn main() {}
 //! ```
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#![cfg_attr(feature="alloc", feature(alloc))]
 
-#![cfg_attr(feature="core_collections", feature(alloc))]
-#![cfg_attr(feature="core_collections", feature(collections))]
-
-
-#[cfg(any(feature="core_collections"))]
+#[cfg(feature="alloc")]
 #[macro_use]
 extern crate alloc;
 
-#[cfg(any(feature="core_collections"))]
-#[macro_use]
-extern crate collections;
 
 extern crate serde;
-#[macro_use]
-extern crate serde_derive;
+#[macro_use] extern crate serde_derive;
 
 mod internal_prelude;
 
@@ -283,7 +275,7 @@ mod primitive_enum;
 pub use primitive_enum::*;
 
 
-#[cfg(any(feature="core_collections", feature="std"))]
+#[cfg(any(feature="alloc", feature="std"))]
 pub mod debug_fmt;
 
 mod types_array;

@@ -2,7 +2,7 @@
 
 use internal_prelude::v1::*;
 
-#[cfg(any(feature="core_collections", feature="std"))]
+#[cfg(any(feature="alloc", feature="std"))]
 pub trait PackedStructDebug {
     fn fmt_fields(&self, fmt: &mut Formatter) -> Result<(), FmtError>;
     fn packed_struct_display_header() -> &'static str;

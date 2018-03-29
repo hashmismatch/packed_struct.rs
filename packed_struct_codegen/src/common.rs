@@ -7,7 +7,7 @@ pub fn collections_prefix() -> syn::Ty {
 
 #[cfg(not(feature="std"))]
 pub fn collections_prefix() -> syn::Ty {
-    syn::parse_type("::collections").unwrap()
+    syn::parse_type("::alloc").unwrap()
 }
 
 #[cfg(feature="std")]
@@ -22,12 +22,14 @@ pub fn result_type() -> syn::Ty {
 
 
 
-#[cfg(any(feature="std", feature="core_collections"))]
 pub fn include_debug_codegen() -> bool {
-    true
-}
-
-#[cfg(not(any(feature="std", feature="core_collections")))]
-pub fn include_debug_codegen() -> bool {
-    false
+    #[cfg(any(feature="std", feature="alloc"))]
+    {
+        true
+    }
+    #[cfg(not(any(feature="std", feature="alloc")))]
+    {
+        false
+    }
+    
 }
