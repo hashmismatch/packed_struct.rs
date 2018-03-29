@@ -26,4 +26,4 @@ alloc = []
 
 # comment this section when publishing new releases to crates.io!
 [dev-dependencies]
-#packed_struct_codegen = "0.2"
+packed_struct_codegen = "0.2"
