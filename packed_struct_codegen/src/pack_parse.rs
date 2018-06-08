@@ -227,6 +227,13 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
 
 fn parse_reg_field(field: &syn::Field, ty: &syn::Ty, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>) -> FieldRegular {
     let mut wrappers = vec![];
+    if bit_range.end < bit_range.start {
+        let name: ::std::borrow::Cow<str> = match field.ident {
+            Some(ref ident) => ident.to_string().into(),
+            None => "Unknown".into()
+        };
+        panic!("Field {} has a negative range. If you're using lsb, make sure to put the highest index first, e.g. 3:0 instead of 0:3", name);
+    }
 
     let bit_width = (bit_range.end - bit_range.start) + 1;
     let ty_str = syn_to_string(ty);
