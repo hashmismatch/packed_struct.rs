@@ -25,7 +25,7 @@ fn prim() {
     };
 
     let packed = st.pack();
-    assert_eq!([0b0100_0000, 0b0000_0000], packed);
+    assert_eq!([0b0000_0100, 0b0000_0000], packed);
 
     let unpacked = StructWithBitsEnum::unpack(&packed).unwrap();
     assert_eq!(st, unpacked);
