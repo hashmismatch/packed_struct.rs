@@ -2,8 +2,11 @@ extern crate quote;
 extern crate syn;
 
 use utils::*;
+use common::collections_prefix;
 
 pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::Tokens {
+
+    let stdlib_prefix = collections_prefix();
 
     let ref name = ast.ident;
     let v = get_unitary_enum(ast);
@@ -27,7 +30,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
         let n = &x.variant.ident;
         let d = n.as_ref().to_string();
         quote! {
-            #name::#n => #d
+            #name::#n => (#d).into()
     }}).collect();
 
     let from_str: Vec<_> = v.iter().map(|x| {
@@ -141,7 +144,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
             }
 
             #[inline]
-            fn to_display_str(&self) -> &'static str {
+            fn to_display_str(&self) -> #stdlib_prefix::borrow::Cow<'static, str> {
                 match *self {
                     #(#to_display_str),*
                 }
@@ -164,8 +167,8 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
             }
 
             #[inline]
-            fn all_variants() -> &'static [Self] {
-                #all_variants_const_ident
+            fn all_variants() -> #stdlib_prefix::borrow::Cow<'static, [Self]> {
+                #stdlib_prefix::borrow::Cow::Borrowed(#all_variants_const_ident)
             }
         }
     }
