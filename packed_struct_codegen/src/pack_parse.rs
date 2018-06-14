@@ -253,7 +253,7 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Ty, bit_range: &Range<usize>, d
 
     if needs_int_wrap {
         let ty = if is_enum_ty {
-            "u8".into()
+            format!("<{} as PrimitiveEnum>::Primitive",syn_to_string(ty))
         } else {
             ty_str.clone()
         };
