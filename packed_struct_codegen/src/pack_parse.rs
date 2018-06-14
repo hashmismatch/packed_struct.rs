@@ -318,6 +318,10 @@ impl BitsPositionParsed {
             BitsPositionParsed::Range(a, b) => Box::new(a..b)
         }
     }
+
+    pub fn range_in_order(a: usize, b: usize) -> Self {
+        BitsPositionParsed::Range(::std::cmp::min(a, b), ::std::cmp::max(a, b))
+    }
 }
 
 
@@ -390,7 +394,7 @@ pub fn parse_struct(ast: &syn::MacroInput) -> PackStruct {
                 },
                 (Some(BitNumbering::Lsb0), BitsPositionParsed::Range(start, end)) => {
                     if let Some(struct_size_bytes) = struct_size_bytes {
-                        BitsPositionParsed::Range( (struct_size_bytes * 8) - 1 - start, (struct_size_bytes * 8) - 1 - end )
+                        BitsPositionParsed::range_in_order( (struct_size_bytes * 8) - 1 - start, (struct_size_bytes * 8) - 1 - end )
                     } else {
                         panic!("LSB0 field positioning currently requires explicit struct byte size.");
                     }
