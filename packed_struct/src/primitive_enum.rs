@@ -60,11 +60,10 @@ impl<E, T> PrimitiveEnum<T> for EnumCatchAll<E, T> where E: PrimitiveEnum<T>, T:
     }
 
     /// Display value, same as the name of a particular variant.
-    fn to_display_str(&self) -> &'static str {
-        // todo: needs a different API - Cow<'a, str>!
+    fn to_display_str(&self) -> Cow<'static, str> {
         match *self {
             EnumCatchAll::Enum(p) => p.to_display_str(),
-            EnumCatchAll::CatchAll(_) => "CatchAll"
+            EnumCatchAll::CatchAll(v) => format!("Unknown value: {:?}", v).into()
         }
     }
 
@@ -76,8 +75,8 @@ impl<E, T> PrimitiveEnum<T> for EnumCatchAll<E, T> where E: PrimitiveEnum<T>, T:
         E::from_str_lower(s).map(|e| EnumCatchAll::Enum(e))
     }
 
-    fn all_variants() -> &'static [Self] {
-        // todo: needs a different API, not a static slice for a return value
-        &[]
+    fn all_variants() -> Cow<'static, [Self]> {
+        let l: Vec<_> = E::all_variants().iter().map(|v| EnumCatchAll::Enum(*v)).collect();
+        Cow::from(l)
     }
 }
