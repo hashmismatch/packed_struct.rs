@@ -126,7 +126,9 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
 
         const #all_variants_const_ident: &'static [#name; #all_variants_len] = &[ #(#all_variants),* ];
 
-        impl ::packed_struct::PrimitiveEnum<#prim_type> for #name {
+        impl ::packed_struct::PrimitiveEnum for #name {
+            type Primitive = #prim_type;
+
             #[inline]
             fn from_primitive(val: #prim_type) -> Option<Self> {
                 match val {
