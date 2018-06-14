@@ -207,9 +207,9 @@ pub fn parse_position_val(v: &str, multiplier: usize) -> BitsPositionParsed {
             let start = parse_num(s[0]);
             let end = parse_num(s[1]);
             if multiplier > 1 {
-                return BitsPositionParsed::Range(start * multiplier, ((end+1) * multiplier)-1);
+                return BitsPositionParsed::range_in_order(start * multiplier, ((end+1) * multiplier)-1);
             } else {
-                return BitsPositionParsed::Range(start, end);
+                return BitsPositionParsed::range_in_order(start, end);
             }
         }
 
@@ -225,9 +225,9 @@ pub fn parse_position_val(v: &str, multiplier: usize) -> BitsPositionParsed {
             }
             
             if multiplier > 1 {
-                return BitsPositionParsed::Range(start * multiplier, ((end-1) * multiplier)-1);
+                return BitsPositionParsed::range_in_order(start * multiplier, ((end-1) * multiplier)-1);
             } else {
-                return BitsPositionParsed::Range(start, end - 1);
+                return BitsPositionParsed::range_in_order(start, end - 1);
             }
         }
     } else {
