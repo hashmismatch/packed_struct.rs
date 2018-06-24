@@ -19,8 +19,6 @@ enum AddressCommand {
     Read = 0x03
 }
 
-use packed_struct::*;
-
 #[derive(PrimitiveEnum_u8, Copy, Clone)]
 enum TestSmall {
     PageProgram = 0,
@@ -47,5 +45,5 @@ fn prim() {
     assert_eq!(SelfTestMode::NegativeSignSelfTest, a);
 
     let all = SelfTestMode::all_variants();
-    assert_eq!(&[SelfTestMode::NormalMode, SelfTestMode::PositiveSignSelfTest, SelfTestMode::NegativeSignSelfTest, SelfTestMode::NotAllowed], all);
+    assert_eq!(&[SelfTestMode::NormalMode, SelfTestMode::PositiveSignSelfTest, SelfTestMode::NegativeSignSelfTest, SelfTestMode::NotAllowed], &*all);
 }
