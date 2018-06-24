@@ -333,6 +333,13 @@ pub mod prelude {
     pub use PackingError;
 
     pub use PrimitiveEnum;
+    #[cfg(any(feature="alloc", feature="std"))]
+    pub use PrimitiveEnumDynamicStr;
+
+    #[cfg(not(any(feature="alloc", feature="std")))]
+    pub use PrimitiveEnumStaticStr;
+
+
     pub use EnumCatchAll;
 
     pub use types::*;

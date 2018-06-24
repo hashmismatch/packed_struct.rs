@@ -15,8 +15,6 @@ pub use core::ops::Deref;
 pub use core::slice;
 
 #[cfg(feature="alloc")]
-pub use alloc::vec::*;
-#[cfg(feature="alloc")]
-pub use alloc::fmt::Formatter;
+pub use alloc::vec::Vec;
 #[cfg(feature="alloc")]
 pub use alloc::borrow::Cow;

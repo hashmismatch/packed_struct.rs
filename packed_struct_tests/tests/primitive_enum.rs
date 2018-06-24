@@ -19,8 +19,6 @@ enum AddressCommand {
     Read = 0x03
 }
 
-use packed_struct::*;
-
 #[derive(PrimitiveEnum_u8, Copy, Clone)]
 enum TestSmall {
     PageProgram = 0,

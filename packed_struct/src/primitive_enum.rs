@@ -6,12 +6,25 @@ pub trait PrimitiveEnum<T> where T: Sized + Copy + Debug, Self: Sized + Copy {
     fn from_primitive(val: T) -> Option<Self>;
     /// Convert to a primitive value.
     fn to_primitive(&self) -> T;
-    /// Display value, same as the name of a particular variant.
-    fn to_display_str(&self) -> Cow<'static, str>;
     /// Convert from a string value representing the variant. Case sensitive.
     fn from_str(s: &str) -> Option<Self>;
     /// Convert from a string value representing the variant. Lowercase.
     fn from_str_lower(s: &str) -> Option<Self>;
+}
+
+/// Static display formatters.
+pub trait PrimitiveEnumStaticStr<T> where T: Sized + Copy + Debug, Self: Sized + Copy {
+    /// Display value, same as the name of a particular variant.
+    fn to_display_str(&self) -> &'static str;
+    /// A list all possible string variants.
+    fn all_variants() -> &'static [Self];
+}
+
+#[cfg(any(feature="alloc", feature="std"))]
+/// Dynamic display formatters.
+pub trait PrimitiveEnumDynamicStr<T> where T: Sized + Copy + Debug, Self: Sized + Copy {
+    /// Display value, same as the name of a particular variant.
+    fn to_display_str(&self) -> Cow<'static, str>;
     /// A list all possible string variants.
     fn all_variants() -> Cow<'static, [Self]>;
 }
@@ -44,7 +57,10 @@ impl<E, T> PartialEq<Self> for EnumCatchAll<E, T> where E: PrimitiveEnum<T>, T: 
     }
 }
 
-impl<E, T> PrimitiveEnum<T> for EnumCatchAll<E, T> where E: PrimitiveEnum<T>, T: Sized + Copy + Debug {
+impl<E, T> PrimitiveEnum<T> for EnumCatchAll<E, T> 
+    where E: PrimitiveEnum<T>,
+          T: Sized + Copy + Debug
+{
     fn from_primitive(val: T) -> Option<Self> {
         match E::from_primitive(val) {
             Some(p) => Some(EnumCatchAll::Enum(p)),
@@ -59,20 +75,26 @@ impl<E, T> PrimitiveEnum<T> for EnumCatchAll<E, T> where E: PrimitiveEnum<T>, T:
         }
     }
 
-    /// Display value, same as the name of a particular variant.
-    fn to_display_str(&self) -> Cow<'static, str> {
-        match *self {
-            EnumCatchAll::Enum(p) => p.to_display_str(),
-            EnumCatchAll::CatchAll(v) => format!("Unknown value: {:?}", v).into()
-        }
-    }
-
     fn from_str(s: &str) -> Option<Self> {
         E::from_str(s).map(|e| EnumCatchAll::Enum(e))
     }
 
     fn from_str_lower(s: &str) -> Option<Self> {
         E::from_str_lower(s).map(|e| EnumCatchAll::Enum(e))
+    }
+}
+
+#[cfg(any(feature="alloc", feature="std"))]
+impl<E, T> PrimitiveEnumDynamicStr<T> for EnumCatchAll<E, T> 
+    where E: PrimitiveEnum<T> + PrimitiveEnumDynamicStr<T>,
+          T: Sized + Copy + Debug
+{
+    /// Display value, same as the name of a particular variant.
+    fn to_display_str(&self) -> Cow<'static, str> {
+        match *self {
+            EnumCatchAll::Enum(p) => p.to_display_str(),
+            EnumCatchAll::CatchAll(v) => format!("Unknown value: {:?}", v).into()
+        }
     }
 
     fn all_variants() -> Cow<'static, [Self]> {

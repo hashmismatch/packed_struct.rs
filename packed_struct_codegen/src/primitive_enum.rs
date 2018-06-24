@@ -30,7 +30,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
         let n = &x.variant.ident;
         let d = n.as_ref().to_string();
         quote! {
-            #name::#n => (#d).into()
+            #name::#n => (#d)
     }}).collect();
 
     let from_str: Vec<_> = v.iter().map(|x| {
@@ -124,6 +124,49 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
     let prim_type = prim_type.expect("Unable to detect the primitive type for this enum.");
 
     let all_variants_const_ident = syn::Ident::from(format!("{}_ALL", to_snake_case(name.as_ref()).to_uppercase() ));
+    
+
+    let mut str_format = {
+        let to_display_str = to_display_str.clone();
+        let all_variants_const_ident = all_variants_const_ident.clone();
+
+        quote! {
+            impl ::packed_struct::PrimitiveEnumStaticStr<#prim_type> for #name {
+                #[inline]
+                fn to_display_str(&self) -> &'static str {
+                    match *self {
+                        #(#to_display_str),*
+                    }
+                }
+
+                #[inline]
+                fn all_variants() -> &'static [Self] {
+                    #all_variants_const_ident
+                }
+            }
+        }
+    };
+
+
+    if ::common::alloc_supported() {
+        str_format.append(quote! {
+            impl ::packed_struct::PrimitiveEnumDynamicStr<#prim_type> for #name {
+                #[inline]
+                fn to_display_str(&self) -> #stdlib_prefix::borrow::Cow<'static, str> {
+                    let s = match *self {
+                        #(#to_display_str),*
+                    };
+                    s.into()
+                }
+
+                #[inline]
+                fn all_variants() -> #stdlib_prefix::borrow::Cow<'static, [Self]> {
+                    #stdlib_prefix::borrow::Cow::Borrowed(#all_variants_const_ident)
+                }
+            }
+        });
+    };
+
 
     quote! {
 
@@ -144,13 +187,6 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
             }
 
             #[inline]
-            fn to_display_str(&self) -> #stdlib_prefix::borrow::Cow<'static, str> {
-                match *self {
-                    #(#to_display_str),*
-                }
-            }
-
-            #[inline]
             fn from_str(s: &str) -> Option<Self> {
                 match s {
                     #(#from_str),* ,
@@ -165,12 +201,9 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
                     _ => None
                 }
             }
-
-            #[inline]
-            fn all_variants() -> #stdlib_prefix::borrow::Cow<'static, [Self]> {
-                #stdlib_prefix::borrow::Cow::Borrowed(#all_variants_const_ident)
-            }
         }
+
+        #str_format
     }
 }
 

@@ -21,8 +21,7 @@ pub fn result_type() -> syn::Ty {
 }
 
 
-
-pub fn include_debug_codegen() -> bool {
+pub fn alloc_supported() -> bool {
     #[cfg(any(feature="std", feature="alloc"))]
     {
         true
@@ -30,6 +29,9 @@ pub fn include_debug_codegen() -> bool {
     #[cfg(not(any(feature="std", feature="alloc")))]
     {
         false
-    }
-    
+    }}
+
+
+pub fn include_debug_codegen() -> bool {
+    alloc_supported()    
 }
