@@ -361,7 +361,7 @@ fn unpack_field(field: &FieldRegular) -> quote::Tokens {
                 unpack = quote! {
                     use ::packed_struct::PrimitiveEnum;
 
-                    let primitive_integer: u8 = { #unpack };
+                    let primitive_integer: <#ty as PrimitiveEnum>::Primitive = { #unpack };
                     let r = <#ty>::from_primitive(primitive_integer).ok_or(PackingError::InvalidValue);
                     r?
                 };

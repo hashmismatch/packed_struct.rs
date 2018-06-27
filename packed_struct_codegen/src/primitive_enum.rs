@@ -131,7 +131,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
         let all_variants_const_ident = all_variants_const_ident.clone();
 
         quote! {
-            impl ::packed_struct::PrimitiveEnumStaticStr<#prim_type> for #name {
+            impl ::packed_struct::PrimitiveEnumStaticStr for #name {
                 #[inline]
                 fn to_display_str(&self) -> &'static str {
                     match *self {
@@ -150,7 +150,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
 
     if ::common::alloc_supported() {
         str_format.append(quote! {
-            impl ::packed_struct::PrimitiveEnumDynamicStr<#prim_type> for #name {
+            impl ::packed_struct::PrimitiveEnumDynamicStr for #name {
                 #[inline]
                 fn to_display_str(&self) -> #stdlib_prefix::borrow::Cow<'static, str> {
                     let s = match *self {
@@ -172,7 +172,9 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Ty>) -> quote::
 
         const #all_variants_const_ident: &'static [#name; #all_variants_len] = &[ #(#all_variants),* ];
 
-        impl ::packed_struct::PrimitiveEnum<#prim_type> for #name {
+        impl ::packed_struct::PrimitiveEnum for #name {
+            type Primitive = #prim_type;
+
             #[inline]
             fn from_primitive(val: #prim_type) -> Option<Self> {
                 match val {

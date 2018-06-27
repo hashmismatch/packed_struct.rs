@@ -15,7 +15,7 @@ pub enum Field {
 #[packed_struct(bit_numbering="msb0")]
 pub struct Register {
     #[packed_field(bits="0..4", ty="enum")]
-    pub field: EnumCatchAll<Field, u8>
+    pub field: EnumCatchAll<Field>
 }
 
 use packed_struct::prelude::*;
