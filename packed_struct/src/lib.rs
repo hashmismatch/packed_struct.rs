@@ -253,6 +253,30 @@
 //! 
 //! # fn main() {}
 //! ```
+//! 
+//! # Primitive enum packing with support for catch-all unknown values
+//! 
+//! ```rust
+//! # use packed_struct::prelude::*;
+//! extern crate packed_struct;
+//! #[macro_use] extern crate packed_struct_codegen;
+//!
+//! #[derive(PrimitiveEnum_u8, Debug, Clone, Copy)]
+//! pub enum Field {
+//!     A = 1,
+//!     B = 2,
+//!     C = 3
+//! }
+//! 
+//! #[derive(PackedStruct, Debug, PartialEq)]
+//! #[packed_struct(bit_numbering="msb0")]
+//! pub struct Register {
+//!     #[packed_field(bits="0..4", ty="enum")]
+//!     field: EnumCatchAll<Field>
+//! }
+//! 
+//! # fn main() {}
+//! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -309,6 +333,15 @@ pub mod prelude {
     pub use PackingError;
 
     pub use PrimitiveEnum;
+    #[cfg(any(feature="alloc", feature="std"))]
+    pub use PrimitiveEnumDynamicStr;
+
+    #[cfg(not(any(feature="alloc", feature="std")))]
+    pub use PrimitiveEnumStaticStr;
+
+
+    pub use EnumCatchAll;
+
     pub use types::*;
     pub use types::bits as packed_bits;
 }
