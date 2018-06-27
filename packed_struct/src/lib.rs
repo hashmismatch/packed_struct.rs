@@ -8,7 +8,7 @@
 //! # Introduction
 //!
 //! Packing and unpacking bit-level structures is usually a programming tasks that needlessly reinvents the wheel. This library provides
-//! a meta-programming aproach, using attributes to document fields and how they should be packed. The resulting trait implementations
+//! a meta-programming approach, using attributes to define fields and how they should be packed. The resulting trait implementations
 //! provide safe packing, unpacking and runtime debugging formatters with per-field documentation generated for each structure.
 //!
 //! # Features
@@ -29,8 +29,8 @@
 //!
 //! ```toml
 //! [dependencies]
-//! packed_struct = "0.2"
-//! packed_struct_codegen = "0.2"
+//! packed_struct = "0.3"
+//! packed_struct_codegen = "0.3"
 //! ```
 //! ## Including the library and the code generator
 //!
