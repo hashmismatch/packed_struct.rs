@@ -60,6 +60,32 @@ fn test_packing_bit_positions_lsb() {
 }
 
 
+#[derive(PackedStruct, PartialEq, Debug)]
+#[packed_struct(size_bytes="4", bit_numbering="lsb0", endian="lsb")]
+pub struct BigIntsLsb {
+    #[packed_field(bits="2:0")]
+    pub val1: Integer<u8, packed_bits::Bits3>,
+    #[packed_field(bits="6")]
+    pub val2: bool,
+    #[packed_field(bits="31:16")]
+    pub val3: Integer<u16, packed_bits::Bits16>,
+}
+
+#[test]
+fn test_packing_bit_positions_bigints_lsb() {
+    let a = BigIntsLsb {
+        val1: 7.into(),
+        val2: true,
+        val3: 0xbeef.into(),
+    };
+
+    let packed = a.pack();
+    assert_eq!(&[0x07u8, 0x04, 0xef, 0xbe], &packed);
+
+    let unpacked = BigIntsLsb::unpack(&packed).unwrap();
+    assert_eq!(a, unpacked);
+}
+
 
 #[test]
 fn test_packing_byte_position() {
