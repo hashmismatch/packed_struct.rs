@@ -63,15 +63,16 @@ fn test_packing_bit_positions_lsb() {
 #[derive(PackedStruct, PartialEq, Debug)]
 #[packed_struct(size_bytes="4", bit_numbering="lsb0", endian="lsb")]
 pub struct BigIntsLsb {
-    #[packed_field(bits="2:0")]
+    #[packed_field(bits="26:24")]
     pub val1: Integer<u8, packed_bits::Bits3>,
-    #[packed_field(bits="6")]
+    #[packed_field(bits="18")]
     pub val2: bool,
-    #[packed_field(bits="31:16")]
+    #[packed_field(bits="15:0")]
     pub val3: Integer<u16, packed_bits::Bits16>,
 }
 
 #[test]
+/// This test should verify the packing/unpacking a hypothetical 32-bit register that contains 0xbeef0407
 fn test_packing_bit_positions_bigints_lsb() {
     let a = BigIntsLsb {
         val1: 7.into(),
@@ -80,7 +81,7 @@ fn test_packing_bit_positions_bigints_lsb() {
     };
 
     let packed = a.pack();
-    assert_eq!(&[0x07u8, 0x04, 0xef, 0xbe], &packed);
+    assert_eq!(&[0x07u8, 0x04, 0xef, 0xbe], &packed, "mismatch received: {}", a);
 
     let unpacked = BigIntsLsb::unpack(&packed).unwrap();
     assert_eq!(a, unpacked);
