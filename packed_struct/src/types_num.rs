@@ -577,7 +577,7 @@ impl<T, B, I> PackedStructSlice for MsbInteger<T, B, I> where B: NumberOfBits, I
 
     fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
         let expected_bytes = <B as NumberOfBits>::Bytes::number_of_bytes() as usize;
-        if src.len() != expected_bytes {
+        if src.len() < expected_bytes {
             return Err(PackingError::BufferSizeMismatch { expected: expected_bytes, actual: src.len() });
         }
         let mut s = Default::default();
@@ -585,7 +585,7 @@ impl<T, B, I> PackedStructSlice for MsbInteger<T, B, I> where B: NumberOfBits, I
         {
             Self::unpack(&s)?;
         }
-        s.as_mut_bytes_slice().copy_from_slice(src);
+        s.as_mut_bytes_slice().copy_from_slice(&src[..expected_bytes]);
         Self::unpack(&s)
     }
 
@@ -657,7 +657,7 @@ impl<T, B, I> PackedStructSlice for LsbInteger<T, B, I> where B: NumberOfBits + 
 
     fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
         let expected_bytes = <B as NumberOfBits>::Bytes::number_of_bytes() as usize;
-        if src.len() != expected_bytes {
+        if src.len() < expected_bytes {
             return Err(PackingError::BufferSizeMismatch { expected: expected_bytes, actual: src.len() });
         }
         let mut s = Default::default();
@@ -665,7 +665,7 @@ impl<T, B, I> PackedStructSlice for LsbInteger<T, B, I> where B: NumberOfBits + 
         {
             Self::unpack(&s)?;
         }
-        s.as_mut_bytes_slice().copy_from_slice(src);
+        s.as_mut_bytes_slice().copy_from_slice(&src[..expected_bytes]);
         Self::unpack(&s)
     }
 
