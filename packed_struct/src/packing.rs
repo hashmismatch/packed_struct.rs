@@ -86,11 +86,11 @@ macro_rules! packing_slice {
 
             #[inline]
             fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
-                if src.len() != $num_bytes {
+                if src.len() < $num_bytes {
                     return Err(PackingError::BufferTooSmall);
                 }
                 let mut s = [0; $num_bytes];
-                &mut s[..].copy_from_slice(src);
+                &mut s[..].copy_from_slice(&src[..$num_bytes]);
                 Self::unpack(&s)
             }
 
