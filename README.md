@@ -141,8 +141,7 @@ extern crate packed_struct;
 #[macro_use] extern crate packed_struct_codegen;
 
 use packed_struct::prelude::*;
-
-#[derive(PackedStruct)]
+#[derive(PackedStruct,Debug,PartialEq)]
 pub struct EndianExample {
     #[packed_field(endian="lsb")]
     int1: u16,
@@ -158,6 +157,10 @@ fn main() {
 
     let packed = example.pack();
     assert_eq!([0xAA, 0xBB, 0x11, 0x22, 0x33, 0x44], packed);
+    //Because of #[derive(PackedStruct)] also impl PackedStructSlice automatically,
+    //so we can unpack struct from &[u8]
+    let unpacked = EndianExample::unpack_from_slice(&packed[..]).unwrap();
+    assert_eq!(unpacked,example);
 }
 ```
 
