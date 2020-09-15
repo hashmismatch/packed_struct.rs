@@ -93,3 +93,17 @@ impl PackedStructInfo for () {
     }
 }
 
+impl PackedStructSlice for () {
+    fn pack_to_slice(&self, _output: &mut [u8]) -> Result<(), PackingError> {
+        Ok(())
+    }
+
+    fn unpack_from_slice(_src: &[u8]) -> Result<Self, PackingError> {
+        Ok(())
+    }
+
+    fn packed_bytes(&self) -> usize {
+        0
+    }
+}
+
