@@ -166,7 +166,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
             }
 
             #[inline]
-            fn packed_bytes() -> usize {
+            fn packed_bytes(&self) -> usize {
                 #num_bytes
             }
         }

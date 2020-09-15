@@ -47,7 +47,7 @@ fn test_packed_array_of_structs() {
             Simple { f1: 1, f2: 2 },
             Simple { f1: 50000, f2: 6000000 },
             Simple { f1: 51000, f2: 6200000 },
-            Simple { f1: 230294, f2: 75827424 },
+            Simple { f1: 23029, f2: 75827424 },
         ]
     };
 

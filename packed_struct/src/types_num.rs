@@ -589,7 +589,7 @@ impl<T, B, I> PackedStructSlice for MsbInteger<T, B, I> where B: NumberOfBits, I
         Self::unpack(&s)
     }
 
-    fn packed_bytes() -> usize {
+    fn packed_bytes(&self) -> usize {
         <B as NumberOfBits>::Bytes::number_of_bytes() as usize
     }
 }
@@ -669,7 +669,7 @@ impl<T, B, I> PackedStructSlice for LsbInteger<T, B, I> where B: NumberOfBits + 
         Self::unpack(&s)
     }
 
-    fn packed_bytes() -> usize {
+    fn packed_bytes(&self) -> usize {
         <B as NumberOfBits>::Bytes::number_of_bytes() as usize
     }
 }
