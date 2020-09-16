@@ -3,7 +3,6 @@
 //! support.
 
 use internal_prelude::v1::*;
-
 use super::types_bits::*;
 
 
@@ -589,8 +588,8 @@ impl<T, B, I> PackedStructSlice for MsbInteger<T, B, I> where B: NumberOfBits, I
         Self::unpack(&s)
     }
 
-    fn packed_bytes(&self) -> usize {
-        <B as NumberOfBits>::Bytes::number_of_bytes() as usize
+    fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
+        Ok(<B as NumberOfBits>::Bytes::number_of_bytes() as usize)
     }
 }
 
@@ -669,8 +668,8 @@ impl<T, B, I> PackedStructSlice for LsbInteger<T, B, I> where B: NumberOfBits + 
         Self::unpack(&s)
     }
 
-    fn packed_bytes(&self) -> usize {
-        <B as NumberOfBits>::Bytes::number_of_bytes() as usize
+    fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
+        Ok(<B as NumberOfBits>::Bytes::number_of_bytes() as usize)
     }
 }
 

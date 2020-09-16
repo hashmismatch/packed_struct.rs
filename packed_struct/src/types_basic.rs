@@ -102,8 +102,7 @@ impl PackedStructSlice for () {
         Ok(())
     }
 
-    fn packed_bytes(&self) -> usize {
-        0
+    fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
+        Ok(0)
     }
 }
-

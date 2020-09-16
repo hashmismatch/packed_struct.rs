@@ -26,19 +26,16 @@ pub trait PackedStructSlice where Self: Sized {
     fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), PackingError>;
     /// Unpack the structure from a buffer.
     fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError>;
-    /// Number of bytes that the instance of this structure demands for packing or unpacking.
-    fn packed_bytes(&self) -> usize;
+    /// Number of bytes that the type or this particular instance of this structure demands for packing or unpacking.
+    fn packed_bytes_size(opt_self: Option<&Self>) -> Result<usize, PackingError>;
 
-    #[cfg(any(feature="alloc", feature="std"))]
-    /// Pack the structure into a new byte vector.
     fn pack_to_vec(&self) -> Result<Vec<u8>, PackingError> {
-        let mut buf = vec![0; self.packed_bytes()];
+        let size = Self::packed_bytes_size(Some(self))?;
+        let mut buf = vec![0; size];
         self.pack_to_slice(&mut buf)?;
         Ok(buf)
     }
 }
-
-
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize)]
 /// Packing errors that might occur during packing or unpacking
@@ -47,6 +44,7 @@ pub enum PackingError {
     BitsError,
     BufferTooSmall,
     NotImplemented,
+    InstanceRequiredForSize,
     BufferSizeMismatch { expected: usize, actual: usize }
 }
 
@@ -64,7 +62,8 @@ impl ::std::error::Error for PackingError {
             PackingError::BitsError => "Bits error",
             PackingError::BufferTooSmall => "Buffer too small",            
             PackingError::BufferSizeMismatch { .. } => "Buffer size mismatched",
-            PackingError::NotImplemented => "Not implemented"
+            PackingError::NotImplemented => "Not implemented",
+            PackingError::InstanceRequiredForSize => "This structure's packing size can't be determined statically, an instance is required."
         }
     }
 }
@@ -95,11 +94,10 @@ macro_rules! packing_slice {
             }
 
             #[inline]
-            fn packed_bytes(&self) -> usize {
-                $num_bytes
+            fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
+                Ok($num_bytes)
             }
         }
-
     )
 }
 

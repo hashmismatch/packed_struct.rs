@@ -95,8 +95,7 @@ impl<V, B> PackedStructSlice for ReservedBits<V, B> where Self: Default, V: Rese
         Ok(Self::default())
     }
 
-    fn packed_bytes(&self) -> usize {
-        <B as NumberOfBits>::Bytes::number_of_bytes() as usize
+    fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
+        Ok(<B as NumberOfBits>::Bytes::number_of_bytes() as usize)
     }
 }
-
