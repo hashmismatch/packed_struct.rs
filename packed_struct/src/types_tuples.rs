@@ -2,7 +2,7 @@
 
 use internal_prelude::v1::*;
 
-use crate::{PackedStructSlice, PackingError};
+use crate::{PackedStructSlice, PackingError, lib_get_slice};
 
 impl<A, B> PackedStructSlice for (A, B) where A: PackedStructSlice, B: PackedStructSlice {
     fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), crate::PackingError> {
@@ -28,10 +28,12 @@ impl<A, B> PackedStructSlice for (A, B) where A: PackedStructSlice, B: PackedStr
         let mut i = 0;
 
         let n = A::packed_bytes_size(None)?;
-        let t1 = A::unpack_from_slice(&src[i..(i+n)])?;
+        let src_a = lib_get_slice(src, i..(i+n))?;
+        let t1 = A::unpack_from_slice(src_a)?;
         i += n;
 
-        let t2 = B::unpack_from_slice(&src[i..])?;
+        let src_b = lib_get_slice(src, i..)?;
+        let t2 = B::unpack_from_slice(src_b)?;
         
         Ok((t1, t2))
     }

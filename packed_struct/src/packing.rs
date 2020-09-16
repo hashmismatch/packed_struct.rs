@@ -47,7 +47,8 @@ pub enum PackingError {
     NotImplemented,
     InstanceRequiredForSize,
     BufferSizeMismatch { expected: usize, actual: usize },
-    BufferModMismatch { actual_size: usize, modulo_required: usize }
+    BufferModMismatch { actual_size: usize, modulo_required: usize },
+    SliceIndexingError { slice_len: usize }
 }
 
 impl Display for PackingError {
@@ -66,7 +67,8 @@ impl ::std::error::Error for PackingError {
             PackingError::BufferSizeMismatch { .. } => "Buffer size mismatched",
             PackingError::NotImplemented => "Not implemented",
             PackingError::InstanceRequiredForSize => "This structure's packing size can't be determined statically, an instance is required.",
-            PackingError::BufferModMismatch { .. } => "The structure's size is not a multiple of the item's size"
+            PackingError::BufferModMismatch { .. } => "The structure's size is not a multiple of the item's size",
+            PackingError::SliceIndexingError { .. } => "Failed to index into a slice"
         }
     }
 }

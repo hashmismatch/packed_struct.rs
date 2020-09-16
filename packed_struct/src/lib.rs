@@ -296,6 +296,7 @@ mod internal_prelude;
 mod packing;
 
 mod primitive_enum;
+
 pub use primitive_enum::*;
 
 
@@ -350,4 +351,16 @@ pub mod prelude {
 
     pub use types::*;
     pub use types::bits as packed_bits;
+}
+
+use internal_prelude::v1::*;
+
+fn lib_get_slice<T, I: slice::SliceIndex<[T]>>(src: &[T], index: I) -> Result<&<I as slice::SliceIndex<[T]>>::Output, PackingError> {
+    let slice_len = src.len();
+    src.get(index).ok_or(PackingError::SliceIndexingError { slice_len })
+}
+
+fn lib_get_mut_slice<T, I: slice::SliceIndex<[T]>>(src: &mut [T], index: I) -> Result<&mut <I as slice::SliceIndex<[T]>>::Output, PackingError> {
+    let slice_len = src.len();
+    src.get_mut(index).ok_or(PackingError::SliceIndexingError { slice_len })
 }
