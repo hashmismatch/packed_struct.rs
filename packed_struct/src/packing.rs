@@ -29,6 +29,7 @@ pub trait PackedStructSlice where Self: Sized {
     /// Number of bytes that the type or this particular instance of this structure demands for packing or unpacking.
     fn packed_bytes_size(opt_self: Option<&Self>) -> Result<usize, PackingError>;
 
+    #[cfg(any(feature="alloc", feature="std"))]
     fn pack_to_vec(&self) -> Result<Vec<u8>, PackingError> {
         let size = Self::packed_bytes_size(Some(self))?;
         let mut buf = vec![0; size];
@@ -45,7 +46,8 @@ pub enum PackingError {
     BufferTooSmall,
     NotImplemented,
     InstanceRequiredForSize,
-    BufferSizeMismatch { expected: usize, actual: usize }
+    BufferSizeMismatch { expected: usize, actual: usize },
+    BufferModMismatch { actual_size: usize, modulo_required: usize }
 }
 
 impl Display for PackingError {
@@ -63,7 +65,8 @@ impl ::std::error::Error for PackingError {
             PackingError::BufferTooSmall => "Buffer too small",            
             PackingError::BufferSizeMismatch { .. } => "Buffer size mismatched",
             PackingError::NotImplemented => "Not implemented",
-            PackingError::InstanceRequiredForSize => "This structure's packing size can't be determined statically, an instance is required."
+            PackingError::InstanceRequiredForSize => "This structure's packing size can't be determined statically, an instance is required.",
+            PackingError::BufferModMismatch { .. } => "The structure's size is not a multiple of the item's size"
         }
     }
 }

@@ -308,6 +308,8 @@ mod types_bits;
 mod types_num;
 mod types_reserved;
 mod types_tuples;
+#[cfg(any(feature="alloc", feature="std"))]
+mod types_vec;
 
 /// Implementations and wrappers for various packing types.
 pub mod types {
@@ -322,6 +324,8 @@ pub mod types {
     pub use super::types_array::*;
     pub use super::types_reserved::*;
     pub use super::types_tuples::*;
+    #[cfg(any(feature="alloc", feature="std"))]
+    pub use super::types_vec::*;
 }
 
 pub use self::packing::*;
