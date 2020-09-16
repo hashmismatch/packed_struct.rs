@@ -22,16 +22,17 @@ impl<T> PackedStructSlice for Vec<T> where T: PackedStructSlice {
     }
 
     fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
-        let size = T::packed_bytes_size(None)?;
-        let modulo = src.len() % size;
+        let item_size = T::packed_bytes_size(None)?;
+        if item_size == 0 || src.len() == 0 { return Ok(vec![]); }
+        let modulo = src.len() % item_size;
         if modulo != 0 {
-            return Err(crate::PackingError::BufferModMismatch { actual_size: src.len(), modulo_required: size });
+            return Err(crate::PackingError::BufferModMismatch { actual_size: src.len(), modulo_required: item_size });
         }
-        let n = size / modulo;
+        let n = src.len() / item_size;
 
         let mut vec = Vec::with_capacity(n);
         for i in 0..n {
-            let item = T::unpack_from_slice(&src[(i*size)..((i+1)*size)])?;
+            let item = T::unpack_from_slice(&src[(i*item_size)..((i+1)*item_size)])?;
             vec.push(item);
         }        
 
