@@ -166,7 +166,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
             }
 
             #[inline]
-            fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, ::packed_struct::PackingError>
+            fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, ::packed_struct::PackingError> {
                 Ok(#num_bytes)
             }
         }
