@@ -23,7 +23,7 @@ pub struct TestStructLE {
 #[test]
 #[cfg(test)]
 fn test_struct_be_unpack() {
-    let buf = &[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88];
+    let buf = &[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77];
     let unpacked: TestStructBE = TestStructBE::unpack_from_slice(buf).unwrap();
     assert_eq!(unpacked.a, 0x11);
     assert_eq!(unpacked.b, 0x22334455);
@@ -33,7 +33,7 @@ fn test_struct_be_unpack() {
 #[test]
 #[cfg(test)]
 fn test_struct_le_unpack() {
-    let buf = &[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88];
+    let buf = &[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77];
     let unpacked: TestStructLE = TestStructLE::unpack_from_slice(buf).unwrap();
     assert_eq!(unpacked.a, 0x11);
     assert_eq!(unpacked.b, 0x55443322);
