@@ -26,7 +26,7 @@ pub enum EnumU32 {
 #[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
 pub enum EnumU64 {
     VariantMin = 0,
-    VariantMax = 18446744073709551615
+    VariantMax = 1844674407370955165
 }
 
 #[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
@@ -70,7 +70,7 @@ fn prim_ty() {
     #[cfg(target_pointer_width = "64")]
     {
         assert_eq!(0 as u64, EnumU64::VariantMin.to_primitive());
-        assert_eq!(18446744073709551615 as u64, EnumU64::VariantMax.to_primitive());
+        assert_eq!(1844674407370955165 as u64, EnumU64::VariantMax.to_primitive());
     }
 
     assert_eq!(-128 as i8, EnumI8::VariantMin.to_primitive());

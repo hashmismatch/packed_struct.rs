@@ -1,9 +1,11 @@
 Bit-level packing and unpacking for Rust
 ===========================================
 
-[![Build Status](https://travis-ci.org/hashmismatch/packed_struct.rs.svg?branch=master)](https://travis-ci.org/hashmismatch/packed_struct.rs)
-
+[![Crates.io][crates-badge]][crates-url]
 [![Documentation](https://docs.rs/packed_struct/badge.svg)](https://docs.rs/packed_struct)
+
+[crates-badge]: https://img.shields.io/crates/v/packed_struct.svg
+[crates-url]: https://crates.io/crates/packed_struct
 
 ## Introduction
 
