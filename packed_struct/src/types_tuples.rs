@@ -6,8 +6,6 @@ use internal_prelude::v1::*;
 
 use crate::{PackedStructSlice, PackingError, lib_get_slice, lib_get_mut_slice};
 
-
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum StructLength {
     Empty,
@@ -102,119 +100,88 @@ impl StructLengths {
     }
 }
 
+macro_rules! tuple_impls {
+    () => {}; // no more
 
-impl<A, B> PackedStructSlice for (A, B) where A: PackedStructSlice, B: PackedStructSlice {
-    fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), crate::PackingError> {
-        let lengths = {
-            let mut builder = StructLengthBuilder::new();
-            builder.add::<A>(Some(&self.0))?;
-            builder.add::<B>(Some(&self.1))?;
-            builder.build(output.len())?
-        };
+    (($idx:tt => $typ:ident), $( ($nidx:tt => $ntyp:ident), )*) => {
+        /*
+         * Invoke recursive reversal of list that ends in the macro expansion implementation
+         * of the reversed list
+        */
+        tuple_impls!([($idx, $typ);] $( ($nidx => $ntyp), )*);
+        tuple_impls!($( ($nidx => $ntyp), )*); // invoke macro on tail
+    };
 
-        let ranges = lengths.get_ranges();
+    /*
+     * ([accumulatedList], listToReverse); recursively calls tuple_impls until the list to reverse
+     + is empty (see next pattern)
+    */
+    ([$(($accIdx: tt, $accTyp: ident);)+]  ($idx:tt => $typ:ident), $( ($nidx:tt => $ntyp:ident), )*) => {
+      tuple_impls!([($idx, $typ); $(($accIdx, $accTyp); )*] $( ($nidx => $ntyp), ) *);
+    };
 
-        self.0.pack_to_slice(lib_get_mut_slice(output, ranges.get(0).ok_or(crate::PackingError::InternalError)?.clone())?)?;
-        self.1.pack_to_slice(lib_get_mut_slice(output, ranges.get(1).ok_or(crate::PackingError::InternalError)?.clone())?)?;
-        
-        Ok(())
-    }
+    ([($idx:tt, $typ:ident); $( ($nidx:tt, $ntyp:ident); )*]) => {
 
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, crate::PackingError> {
-        let lengths = {
-            let mut builder = StructLengthBuilder::new();
-            builder.add::<A>(None)?;
-            builder.add::<B>(None)?;
-            builder.build(src.len())?
-        };
+        impl<$typ, $( $ntyp ),*> PackedStructSlice for ($typ, $( $ntyp ),*) 
+        where 
+            $typ: PackedStructSlice,
+            $( $ntyp: PackedStructSlice ),*
+        {
+            fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), crate::PackingError> {
+                let lengths = {
+                    let mut builder = StructLengthBuilder::new();
+                    builder.add::<$typ>(Some(&self.$idx))?;
+                    $( builder.add::<$ntyp>(Some(&self.$nidx))?; )*
+                    builder.build(output.len())?
+                };
 
-        let ranges = lengths.get_ranges();
+                let ranges = lengths.get_ranges();
 
-        Ok(
-            (
-                A::unpack_from_slice(lib_get_slice(src, ranges.get(0).ok_or(crate::PackingError::InternalError)?.clone())?)?,
-                B::unpack_from_slice(lib_get_slice(src, ranges.get(1).ok_or(crate::PackingError::InternalError)?.clone())?)?
-            )
-        )
-    }
+                self.$idx.pack_to_slice(lib_get_mut_slice(output, ranges.get($idx).ok_or(crate::PackingError::InternalError)?.clone())?)?;
+                $( self.$nidx.pack_to_slice(lib_get_mut_slice(output, ranges.get($nidx).ok_or(crate::PackingError::InternalError)?.clone())?)?; )*
+                
+                Ok(())
+            }
 
-    fn packed_bytes_size(opt_self: Option<&Self>) -> Result<usize, PackingError> {
-        Ok(
+            fn unpack_from_slice(src: &[u8]) -> Result<Self, crate::PackingError> {
+                let lengths = {
+                    let mut builder = StructLengthBuilder::new();                    
+                    builder.add::<$typ>(None)?;
+                    $( builder.add::<$ntyp>(None)?; )*
+                    builder.build(src.len())?
+                };
 
-            A::packed_bytes_size(opt_self.map(|s| &s.0))?
-            +
-            B::packed_bytes_size(opt_self.map(|s| &s.1))?
-        )
-    }
-}
+                let ranges = lengths.get_ranges();
 
-/*
-fn build<A, B>() -> Result<StructLengths, crate::PackingError> {
-    let builder = StructLengthBuilder::new();
-    builder.add::<A>(None);
-    builder.add::<B>(None);
-    builder.build(src.len())
-}
-*/
+                Ok(
+                    (
+                        $typ::unpack_from_slice(lib_get_slice(src, ranges.get($idx).ok_or(crate::PackingError::InternalError)?.clone())?)?,
+                        $( $ntyp::unpack_from_slice(lib_get_slice(src, ranges.get($nidx).ok_or(crate::PackingError::InternalError)?.clone())?)? ),*
+                    )
+                )
+            }
 
+            fn packed_bytes_size(opt_self: Option<&Self>) -> Result<usize, PackingError> {
+                let sizes = [
+                    $typ::packed_bytes_size(opt_self.map(|s| &s.$idx))?,
+                    $( $ntyp::packed_bytes_size(opt_self.map(|s| &s.$nidx))? ),*
+                ];
 
-/*
-impl<A, B> PackedStructSlice for (A, B) where A: PackedStructSlice, B: PackedStructSlice {
-    fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), crate::PackingError> {
-        let expected_size = Self::packed_bytes_size(Some(self))?;
-        if output.len() != expected_size {
-            return Err(crate::PackingError::BufferSizeMismatch { expected: expected_size, actual: output.len() });
+                Ok(sizes.iter().sum())
+            }
         }
-
-        let mut i = 0;
-
-        let n = A::packed_bytes_size(Some(&self.0))?;
-        self.0.pack_to_slice(&mut output[i..(i+n)])?;
-        i += n;
-
-        let n = B::packed_bytes_size(Some(&self.1))?;
-        self.1.pack_to_slice(&mut output[i..(i+n)])?;
-        i += n;
-
-        Ok(())
-    }
-
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, crate::PackingError> {
-        let mut i = 0;
-
-        let n = A::packed_bytes_size(None)?;
-        let src_a = lib_get_slice(src, i..(i+n))?;
-        let t1 = A::unpack_from_slice(src_a)?;
-        i += n;
-
-        let src_b = lib_get_slice(src, i..)?;
-        let t2 = B::unpack_from_slice(src_b)?;
-        
-        Ok((t1, t2))
-    }
-
-    fn packed_bytes_size(opt_self: Option<&Self>) -> Result<usize, PackingError> {
-        Ok(
-            A::packed_bytes_size(opt_self.map(|m| &m.0))?
-            +
-            B::packed_bytes_size(opt_self.map(|m| &m.1))?
-        )
-    }
-}
-*/
-
-
-macro_rules! for_each_tuple_ {
-    ( $m:ident !! ) => (
-        $m! { }
-    );
-    ( $m:ident !! $h:ident, $($t:ident,)* ) => (
-        $m! { $h $($t)* }
-        for_each_tuple_! { $m !! $($t,)* }
-    );
-}
-macro_rules! for_each_tuple {
-    ($m:ident) => {
-        for_each_tuple_! { $m !! A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, }
     };
 }
+
+tuple_impls!(
+    (9 => J),
+    (8 => I),
+    (7 => H),
+    (6 => G),
+    (5 => F),
+    (4 => E),
+    (3 => D),
+    (2 => C),
+    (1 => B),
+    (0 => A),
+);
