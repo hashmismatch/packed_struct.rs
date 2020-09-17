@@ -26,7 +26,7 @@ pub trait NumberOfBytes: Copy + Clone + Debug + Default {
     type AsBytes: ByteArray;
 
     /// The numberical number of bytes.
-    fn number_of_bytes() -> u8;
+    fn number_of_bytes() -> usize;
 }
 
 /// Helper that allows us to cast a fixed size array into a byte slice.
@@ -47,7 +47,7 @@ macro_rules! bytes_type {
             type AsBytes = [u8; $N];
 
             #[inline]
-            fn number_of_bytes() -> u8 {
+            fn number_of_bytes() -> usize {
                 $N
             }
         }
