@@ -46,9 +46,11 @@ pub enum PackingError {
     BufferTooSmall,
     NotImplemented,
     InstanceRequiredForSize,
+    MoreThanOneDynamicType,
     BufferSizeMismatch { expected: usize, actual: usize },
     BufferModMismatch { actual_size: usize, modulo_required: usize },
-    SliceIndexingError { slice_len: usize }
+    SliceIndexingError { slice_len: usize },
+    InternalError
 }
 
 impl Display for PackingError {
@@ -68,7 +70,9 @@ impl ::std::error::Error for PackingError {
             PackingError::NotImplemented => "Not implemented",
             PackingError::InstanceRequiredForSize => "This structure's packing size can't be determined statically, an instance is required.",
             PackingError::BufferModMismatch { .. } => "The structure's size is not a multiple of the item's size",
-            PackingError::SliceIndexingError { .. } => "Failed to index into a slice"
+            PackingError::SliceIndexingError { .. } => "Failed to index into a slice",
+            PackingError::MoreThanOneDynamicType => "Only one dynamically sized type is supported in the tuple",
+            PackingError::InternalError => "Internal error"
         }
     }
 }
