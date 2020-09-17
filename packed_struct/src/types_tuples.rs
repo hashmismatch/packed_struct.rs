@@ -48,7 +48,7 @@ impl StructLengthBuilder {
         let len_static: usize = lengths.iter().filter_map(|l| if let StructLength::Static(s) = l { Some(*s) } else { None }).sum();
         let mut len_dy = 0;
         if dy == 1 {
-            len_dy = len_static - total_length;
+            len_dy = total_length - len_static;
         }
 
         if len_static + len_dy != total_length {

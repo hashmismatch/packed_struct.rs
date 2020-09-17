@@ -19,6 +19,27 @@ macro_rules! packable_u8_array {
             #[inline]
             fn packed_bits() -> usize {
                 $N * 8
+            } 
+        }
+
+        impl PackedStructSlice for [u8; $N] {
+            fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), PackingError> {
+                if output.len() != $N { return Err(PackingError::BufferSizeMismatch { expected: $N, actual: output.len() }); }
+                output.copy_from_slice(&self[..]);
+                Ok(())
+            }
+
+            fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
+                let mut array = [0; $N];
+                let slice = &array[..];
+                if slice.len() != src.len() { return Err(PackingError::BufferSizeMismatch { expected: $N, actual: src.len() }); }
+                array.copy_from_slice(src);
+
+                Ok(array)
+            }
+
+            fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
+                Ok($N)
             }
         }
     )
