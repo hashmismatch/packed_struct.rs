@@ -682,3 +682,10 @@ fn test_packed_int_lsb_sub() {
     let packed = endian.pack();
     assert_eq!([0xCC, 0xBB, 0xAA], packed);
 }
+
+#[test]
+fn test_big_slice_unpacking() {
+    let data = vec![0xAA, 0xBB, 0xCC, 0xDD, 0xEE];
+    let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
+    assert_eq!(0xAABBCCDD, **unpacked);
+}
