@@ -9,7 +9,7 @@ pub trait NumberOfBits: Copy + Clone + Debug + Default {
     type Bytes: NumberOfBytes;
 
     /// The numerical number of bits.
-    fn number_of_bits() -> u8;
+    fn number_of_bits() -> usize;
 }
 
 /// These bits are a multiple of 8
@@ -30,8 +30,8 @@ pub trait NumberOfBytes: Copy + Clone + Debug + Default {
 }
 
 /// Helper that allows us to cast a fixed size array into a byte slice.
-pub trait ByteArray: Default + Debug {
-    fn len(&self) -> usize;
+pub trait ByteArray {
+    fn len() -> usize;
     fn as_bytes_slice(&self) -> &[u8];
     fn as_mut_bytes_slice(&mut self) -> &mut [u8];
     fn rotate_right(&mut self, bytes: usize);
@@ -54,7 +54,7 @@ macro_rules! bytes_type {
 
         impl ByteArray for [u8; $N] {
             #[inline]
-            fn len(&self) -> usize {
+            fn len() -> usize {
                 $N
             }
 
@@ -89,7 +89,7 @@ macro_rules! bits_type {
             type Bytes = $TB;
 
             #[inline]
-            fn number_of_bits() -> u8 {
+            fn number_of_bits() -> usize {
                 $N
             }
         }

@@ -1,6 +1,8 @@
 use super::packing::*;
 
-impl PackedStruct<[u8; 1]> for bool {
+impl PackedStruct for bool {
+    type ByteArray = [u8; 1];
+
     #[inline]
     fn pack(&self) -> [u8; 1] {
         if *self { [1] } else { [0] }
@@ -23,12 +25,10 @@ impl PackedStructInfo for bool {
     }
 }
 
-packing_slice!(bool; 1);
 
+impl PackedStruct for u8 {
+    type ByteArray = [u8; 1];
 
-
-
-impl PackedStruct<[u8; 1]> for u8 {
     #[inline]
     fn pack(&self) -> [u8; 1] {
         [*self]
@@ -46,19 +46,18 @@ impl PackedStructInfo for u8 {
         8
     }
 }
-packing_slice!(u8; 1);
 
 
+impl PackedStruct for i8 {
+    type ByteArray = [u8; 1];
 
-
-impl PackedStruct<[u8; 1]> for i8 {
     #[inline]
-    fn pack(&self) -> [u8; 1] {
+    fn pack(&self) -> Self::ByteArray {
         [*self as u8]
     }
 
     #[inline]
-    fn unpack(src: &[u8; 1]) -> Result<i8, PackingError> {
+    fn unpack(src: &Self::ByteArray) -> Result<i8, PackingError> {
         Ok(src[0] as i8)
     }
 }
@@ -69,12 +68,11 @@ impl PackedStructInfo for i8 {
         8
     }
 }
-packing_slice!(i8; 1);
 
 
+impl PackedStruct for () {
+    type ByteArray = [u8; 0];
 
-
-impl PackedStruct<[u8; 0]> for () {
     #[inline]
     fn pack(&self) -> [u8; 0] {
         []
@@ -90,19 +88,5 @@ impl PackedStructInfo for () {
     #[inline]
     fn packed_bits() -> usize {
         0
-    }
-}
-
-impl PackedStructSlice for () {
-    fn pack_to_slice(&self, _output: &mut [u8]) -> Result<(), PackingError> {
-        Ok(())
-    }
-
-    fn unpack_from_slice(_src: &[u8]) -> Result<Self, PackingError> {
-        Ok(())
-    }
-
-    fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
-        Ok(0)
     }
 }

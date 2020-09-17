@@ -10,10 +10,10 @@ fn main() {
     let dest_path = Path::new(&out_dir).join("generate_bytes_and_bits.rs");
     let mut f = File::create(&dest_path).unwrap();
 
-    let up_to_bytes = 32;
+    let up_to_bytes = 256;
 
     // bytes
-    for i in 1..(up_to_bytes + 1) {
+    for i in 0..(up_to_bytes + 1) {
 
         let b = format!("bytes_type!(Bytes{}, {});\r\n", i, i);
         f.write_all(b.as_bytes()).unwrap();

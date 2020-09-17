@@ -306,6 +306,7 @@ pub mod debug_fmt;
 mod types_array;
 mod types_basic;
 mod types_bits;
+mod types_generic;
 mod types_num;
 mod types_reserved;
 mod types_tuples;
@@ -324,6 +325,7 @@ pub mod types {
     pub use super::types_num::*;
     pub use super::types_array::*;
     pub use super::types_reserved::*;
+    pub use super::types_generic::*;
     pub use super::types_tuples::*;
     #[cfg(any(feature="alloc", feature="std"))]
     pub use super::types_vec::*;

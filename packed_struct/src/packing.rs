@@ -1,5 +1,7 @@
 use internal_prelude::v1::*;
 
+use crate::types_bits::ByteArray;
+
 /// A structure that can be packed and unpacked from a byte array.
 /// 
 /// In case the structure occupies less bits than there are in the byte array,
@@ -7,11 +9,12 @@ use internal_prelude::v1::*;
 /// being ignored.
 /// 
 /// 10 bits packs into: [0b00000011, 0b11111111]
-pub trait PackedStruct<B> where Self: Sized {
+pub trait PackedStruct where Self: Sized {
+    type ByteArray : ByteArray;
     /// Packs the structure into a byte array.
-    fn pack(&self) -> B;
+    fn pack(&self) -> Self::ByteArray;
     /// Unpacks the structure from a byte array.
-    fn unpack(src: &B) -> Result<Self, PackingError>;
+    fn unpack(src: &Self::ByteArray) -> Result<Self, PackingError>;
 }
 
 /// Infos about a particular type that can be packaged.
@@ -76,37 +79,3 @@ impl ::std::error::Error for PackingError {
         }
     }
 }
-
-
-macro_rules! packing_slice {
-    ($T: path; $num_bytes: expr) => (
-
-        impl PackedStructSlice for $T {
-            #[inline]
-            fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), PackingError> {
-                if output.len() != $num_bytes {
-                    return Err(PackingError::BufferTooSmall);
-                }
-                let packed = self.pack();                
-                &mut output[..].copy_from_slice(&packed[..]);
-                Ok(())
-            }
-
-            #[inline]
-            fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
-                if src.len() != $num_bytes {
-                    return Err(PackingError::BufferTooSmall);
-                }
-                let mut s = [0; $num_bytes];
-                &mut s[..].copy_from_slice(src);
-                Self::unpack(&s)
-            }
-
-            #[inline]
-            fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
-                Ok($num_bytes)
-            }
-        }
-    )
-}
-

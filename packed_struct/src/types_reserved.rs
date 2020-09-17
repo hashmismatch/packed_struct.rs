@@ -66,7 +66,8 @@ impl<B> Display for ReservedBits<BitOne, B> {
 use packing::*;
 use types_bits::{NumberOfBits, NumberOfBytes, ByteArray};
 
-impl<V, B> PackedStruct<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> for ReservedBits<V, B> where Self: Default, V: ReservedBitValue, B: NumberOfBits {
+impl<V, B> PackedStruct for ReservedBits<V, B> where Self: Default, V: ReservedBitValue, B: NumberOfBits {
+    type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
     fn pack(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes {
         <<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>::new(V::get_reserved_bit_value_byte())
     }
@@ -80,22 +81,5 @@ impl<V, B> PackedStructInfo for ReservedBits<V, B> where B: NumberOfBits {
     #[inline]
     fn packed_bits() -> usize {
         B::number_of_bits() as usize
-    }
-}
-
-impl<V, B> PackedStructSlice for ReservedBits<V, B> where Self: Default, V: ReservedBitValue, B: NumberOfBits {
-    fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), PackingError> {
-        for v in output.iter_mut() {
-            *v = V::get_reserved_bit_value_byte();
-        }
-        Ok(())
-    }
-
-    fn unpack_from_slice(_src: &[u8]) -> Result<Self, PackingError> {
-        Ok(Self::default())
-    }
-
-    fn packed_bytes_size(_opt_self: Option<&Self>) -> Result<usize, PackingError> {
-        Ok(<B as NumberOfBits>::Bytes::number_of_bytes() as usize)
     }
 }
