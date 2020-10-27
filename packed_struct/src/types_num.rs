@@ -163,13 +163,12 @@ macro_rules! integer_as_bytes {
 
             #[inline]
             fn to_msb_bytes(&self) -> [u8; $N] {
-                let n = self.to_le();
-                as_bytes!($N, n)
+                as_bytes!($N, self)
             }
 
             #[inline]
             fn to_lsb_bytes(&self) -> [u8; $N] {
-                let n = self.to_be();
+                let n = self.swap_bytes();
                 as_bytes!($N, n)
             }
             
@@ -181,7 +180,7 @@ macro_rules! integer_as_bytes {
             #[inline]
             fn from_lsb_bytes(bytes: &[u8; $N]) -> Self {
                 let n = from_bytes!($N, bytes, $T);
-                n.to_be()
+                n.swap_bytes()
             }
         }
     };

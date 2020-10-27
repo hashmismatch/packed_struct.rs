@@ -16,6 +16,7 @@ pub enum EnumU16 {
     VariantMax = 65535
 }
 
+#[repr(u32)]
 #[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
 pub enum EnumU32 {
     VariantMin = 0,
