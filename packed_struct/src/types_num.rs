@@ -665,6 +665,8 @@ fn test_struct_info() {
 
 #[test]
 fn test_slice_packing() {
+    use packing::PackedStructSlice;
+
     let mut data = vec![0xAA, 0xBB, 0xCC, 0xDD];
     let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
     assert_eq!(0xAABBCCDD, **unpacked);
@@ -684,6 +686,8 @@ fn test_packed_int_lsb_sub() {
 
 #[test]
 fn test_big_slice_unpacking() {
+    use packing::PackedStructSlice;
+    
     let data = vec![0xAA, 0xBB, 0xCC, 0xDD];
     let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
     assert_eq!(0xAABBCCDD, **unpacked);
