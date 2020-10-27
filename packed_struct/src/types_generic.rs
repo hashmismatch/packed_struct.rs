@@ -1,5 +1,6 @@
 use crate::{PackedStructSlice, PackedStruct, types_bits::ByteArray, PackingError};
 
+/// Slice unpacking for byte arrays
 impl<T> PackedStructSlice for T where T: PackedStruct, T::ByteArray : ByteArray {
     fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), crate::PackingError> {
         if output.len() != <T::ByteArray as ByteArray>::len() {

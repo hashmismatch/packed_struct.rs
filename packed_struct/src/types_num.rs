@@ -430,7 +430,7 @@ bytes8_impl!(i64);
 /// ones(2) => 0b11
 /// ones(3) => 0b111
 /// ...
-fn ones(n: u64) -> u64 {
+const fn ones(n: u64) -> u64 {
 	if n == 0 { return 0; }
 	if n >= 64 { return !0; }
 
@@ -510,7 +510,7 @@ fn test_roundtrip_u20() {
 }
 
 
-use super::packing::{PackingError, PackedStruct, PackedStructInfo, PackedStructSlice};
+use super::packing::{PackingError, PackedStruct, PackedStructInfo};
 
 /// A wrapper that packages the integer as a MSB packaged byte array. Usually
 /// invoked using code generation.

@@ -42,14 +42,15 @@ impl StructLengthBuilder {
         let lengths = &self.lengths[..self.i];
         let dy = lengths.iter().filter(|l| l == &&StructLength::Dynamic).count();
         if dy > 1 {
-            return Err(PackingError::InstanceRequiredForSize);
+            return Err(PackingError::MoreThanOneDynamicType);
         }
 
         let len_static: usize = lengths.iter().filter_map(|l| if let StructLength::Static(s) = l { Some(*s) } else { None }).sum();
-        let mut len_dy = 0;
-        if dy == 1 {
-            len_dy = total_length - len_static;
-        }
+        let len_dy = if dy == 1 {
+            total_length - len_static
+        } else {
+            0
+        };
 
         if len_static + len_dy != total_length {
             return Err(PackingError::BufferSizeMismatch { expected: len_static + len_dy, actual: total_length });
@@ -58,7 +59,7 @@ impl StructLengthBuilder {
         let mut output_lengths = [0; 16];
         for (i, l) in lengths.iter().enumerate() {
             output_lengths[i] = match l {
-                StructLength::Empty => panic!("shouldn't happen"),
+                StructLength::Empty => return Err(PackingError::InternalError), /* shouldn't happen */
                 StructLength::Dynamic => len_dy,
                 StructLength::Static(s) => *s
             };
@@ -69,7 +70,6 @@ impl StructLengthBuilder {
 }
 
 struct StructLengths {
-    lengths: [usize; 16],
     ranges: [Range<usize>; 16],
     len: usize
 }
@@ -85,14 +85,9 @@ impl StructLengths {
         }
 
         StructLengths {
-            lengths,
             ranges,
             len
         }
-    }
-
-    fn get_lengths(&self) -> &[usize] {
-        &self.lengths[..self.len]
     }
 
     fn get_ranges(&self) -> &[Range<usize>] {

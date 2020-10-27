@@ -311,7 +311,7 @@ pub enum BitsPositionParsed {
 }
 
 impl BitsPositionParsed {
-    fn to_bits_position(&self) -> Box<BitsRange> {
+    fn to_bits_position(&self) -> Box<dyn BitsRange> {
         match *self {
             BitsPositionParsed::Next => Box::new(NextBits),
             BitsPositionParsed::Start(s) => Box::new(s),
