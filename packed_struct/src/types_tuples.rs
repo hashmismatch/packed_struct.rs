@@ -1,6 +1,46 @@
-//! Tuples of types that can be packed together.
+//! Tuples of types that can be packed together. Only byte-sized structures can be chained together.
 //!
 //! Supports having one dynamically sized packed structure type within the tuple.
+//!
+//! # Example with ad-hoc chained structures
+//!
+//! ```rust
+//! extern crate packed_struct;
+//!
+//! use packed_struct::prelude::*;
+//!
+//! type Message = (u8, [u8; 4], u8);
+//!
+//! fn main() {
+//!     let raw = [0x10, 0x20, 0x21, 0x22, 0x23, 0x30];
+//!     let unpacked = Message::unpack_from_slice(&raw).unwrap();
+//!     assert_eq!(0x10, unpacked.0);
+//!     assert_eq!([0x20, 0x21, 0x22, 0x23], unpacked.1);
+//!     assert_eq!(0x30, unpacked.2);
+//!     let packed = unpacked.pack_to_vec().unwrap();
+//!     assert_eq!(&raw[..], &packed[..]);
+//! }
+//! ```
+//!
+//! # Example with a dynamically sized structure
+//!
+//! ```rust
+//! extern crate packed_struct;
+//!
+//! use packed_struct::prelude::*;
+//!
+//! type Message = (u8, Vec<u8>, u8);
+//!
+//! fn main() {
+//!     let raw = [0x10, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x30];
+//!     let unpacked = Message::unpack_from_slice(&raw).unwrap();
+//!     assert_eq!(0x10, unpacked.0);
+//!     assert_eq!(&[0x20, 0x21, 0x22, 0x23, 0x24, 0x25], &unpacked.1[..]);
+//!     assert_eq!(0x30, unpacked.2);
+//!     let packed = unpacked.pack_to_vec().unwrap();
+//!     assert_eq!(&raw[..], &packed[..]);
+//! }
+//! ```
 
 use internal_prelude::v1::*;
 
