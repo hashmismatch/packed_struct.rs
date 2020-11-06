@@ -4,8 +4,8 @@ impl PackedStruct for bool {
     type ByteArray = [u8; 1];
 
     #[inline]
-    fn pack(&self) -> [u8; 1] {
-        if *self { [1] } else { [0] }
+    fn pack(&self) -> PackingResult<[u8; 1]> {
+        Ok(if *self { [1] } else { [0] })
     }
 
     #[inline]
@@ -30,8 +30,8 @@ impl PackedStruct for u8 {
     type ByteArray = [u8; 1];
 
     #[inline]
-    fn pack(&self) -> [u8; 1] {
-        [*self]
+    fn pack(&self) -> PackingResult<[u8; 1]> {
+        Ok([*self])
     }
 
     #[inline]
@@ -52,8 +52,8 @@ impl PackedStruct for i8 {
     type ByteArray = [u8; 1];
 
     #[inline]
-    fn pack(&self) -> Self::ByteArray {
-        [*self as u8]
+    fn pack(&self) -> PackingResult<Self::ByteArray> {
+        Ok([*self as u8])
     }
 
     #[inline]
@@ -74,8 +74,8 @@ impl PackedStruct for () {
     type ByteArray = [u8; 0];
 
     #[inline]
-    fn pack(&self) -> [u8; 0] {
-        []
+    fn pack(&self) -> PackingResult<[u8; 0]> {
+        Ok([])
     }
 
     #[inline]

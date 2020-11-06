@@ -3,6 +3,8 @@
 //! support.
 
 use internal_prelude::v1::*;
+use crate::{PackingResult, lib_get_slice, lib_get_mut_slice};
+
 use super::types_bits::*;
 
 
@@ -63,7 +65,7 @@ impl<T, B> Integer<T, B> where Self: Copy {
 }
 
 /// Convert an integer of a specific bit width into native types.
-pub trait SizedInteger<T, B: NumberOfBits> {
+pub trait SizedInteger<T, B: NumberOfBits> where Self: Sized {
     /// The bit mask that is used for all incoming values. For an integer
     /// of width 8, that is 0xFF.
     fn value_bit_mask() -> T;
@@ -72,13 +74,13 @@ pub trait SizedInteger<T, B: NumberOfBits> {
     /// Convert to the platform's native type.
     fn to_primitive(&self) -> T;
     /// Convert to a MSB byte representation. 0xAABB is converted into [0xAA, 0xBB].
-    fn to_msb_bytes(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
+    fn to_msb_bytes(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>;
     /// Convert to a LSB byte representation. 0xAABB is converted into [0xBB, 0xAA].
-    fn to_lsb_bytes(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes where B: BitsFullBytes;
+    fn to_lsb_bytes(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> where B: BitsFullBytes;
     /// Convert from a MSB byte array.
-    fn from_msb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> Self;
+    fn from_msb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self>;
     /// Convert from a LSB byte array.
-    fn from_lsb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> Self where B: BitsFullBytes;
+    fn from_lsb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self> where B: BitsFullBytes;
 }
 
 /// Convert a native platform integer type into a byte array.
@@ -218,27 +220,29 @@ macro_rules! integer_bytes_impl {
             }
 
             #[inline]
-            fn to_msb_bytes(&self) -> <<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes
+            fn to_msb_bytes(&self) -> PackingResult<<<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>
             {
                 let mut ret: <<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes = Default::default();
                 let b = self.num.to_msb_bytes();
                 let skip = b.len() - ret.len();
-                ret.copy_from_slice(&b[skip..]);
-                ret
+                let b = lib_get_slice(&b, skip..)?;
+                ret.copy_from_slice(b);
+                Ok(ret)
             }
 
             #[inline]
-            fn to_lsb_bytes(&self) -> <<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes
+            fn to_lsb_bytes(&self) -> PackingResult<<<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>
             {
                 let mut ret: <<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes = Default::default();
                 let b = self.num.to_lsb_bytes();
                 let take = ret.len();
-                ret.copy_from_slice(&b[0..take]);
-                ret
+                let b = lib_get_slice(&b, 0..take)?;
+                ret.copy_from_slice(b);
+                Ok(ret)
             }
 
             #[inline]
-            fn from_msb_bytes(bytes: &<<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> Self
+            fn from_msb_bytes(bytes: &<<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self>
             {
                 let mut native_bytes = Default::default();
                 {
@@ -251,11 +255,11 @@ macro_rules! integer_bytes_impl {
                     native_bytes.copy_from_slice(&bytes[..]);
                 }
                 let v = <$T>::from_msb_bytes(&native_bytes);
-                Self::from_primitive(v)
+                Ok(Self::from_primitive(v))
             }
 
             #[inline]
-            fn from_lsb_bytes(bytes: &<<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> Self
+            fn from_lsb_bytes(bytes: &<<$TB as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self>
             {
                 let mut native_bytes = Default::default();
                 {
@@ -270,7 +274,7 @@ macro_rules! integer_bytes_impl {
                 }
 
                 let v = <$T>::from_lsb_bytes(&native_bytes);
-                Self::from_primitive(v)
+                Ok(Self::from_primitive(v))
             }
         }
 
@@ -545,13 +549,13 @@ impl<T, B, I> PackedStruct for MsbInteger<T, B, I>
 {
     type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
 
-    fn pack(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes {
+    fn pack(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> {
         self.0.to_msb_bytes()
     }
 
     #[inline]
     fn unpack(src: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> Result<Self, PackingError> {
-        let n = I::from_msb_bytes(src);
+        let n = I::from_msb_bytes(src)?;
         let n = MsbInteger(n, Default::default(), Default::default());
         Ok(n)
     }
@@ -598,13 +602,13 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
 {
     type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
 
-    fn pack(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes {
-        self.0.to_lsb_bytes()        
+    fn pack(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> {
+        self.0.to_lsb_bytes()
     }
 
     #[inline]
-    fn unpack(src: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> Result<Self, PackingError> {
-        let n = I::from_lsb_bytes(src);
+    fn unpack(src: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self> {
+        let n = I::from_lsb_bytes(src)?;
         let n = LsbInteger(n, Default::default(), Default::default());
         Ok(n)
     }

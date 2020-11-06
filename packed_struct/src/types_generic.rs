@@ -6,7 +6,7 @@ impl<T> PackedStructSlice for T where T: PackedStruct, T::ByteArray : ByteArray 
         if output.len() != <T::ByteArray as ByteArray>::len() {
             return Err(PackingError::BufferSizeMismatch { expected: <T::ByteArray as ByteArray>::len(), actual: output.len() });
         }
-        let packed = self.pack();                
+        let packed = self.pack()?;
         &mut output[..].copy_from_slice(&packed.as_bytes_slice());
         Ok(())
     }
