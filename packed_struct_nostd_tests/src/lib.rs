@@ -62,7 +62,7 @@ mod tests {
             sensor_value: -1503
         };
 
-        let packed: [u8; 4] = reg.pack();
+        let packed: [u8; 4] = reg.pack().unwrap();
         assert_eq!([0x8B, 0xE7, 0x21, 0xFA], packed);
         let unpacked = ControlRegister::unpack(&[0x8B, 0xE7, 0x21, 0xFA]).unwrap();
         assert_eq!(unpacked, reg);
