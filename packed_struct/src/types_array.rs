@@ -3,14 +3,16 @@ use super::packing::*;
 macro_rules! packable_u8_array {
     ($N: expr) => (
 
-        impl PackedStruct<[u8; $N]> for [u8; $N] {
+        impl PackedStruct for [u8; $N] {
+            type ByteArray = [u8; $N];
+
             #[inline]
-            fn pack(&self) -> [u8; $N] {
+            fn pack(&self) -> Self::ByteArray {
                 *self
             }
 
             #[inline]
-            fn unpack(src: &[u8; $N]) -> Result<[u8; $N], PackingError> {
+            fn unpack(src: &Self::ByteArray) -> Result<Self::ByteArray, PackingError> {
                 Ok(*src)
             }
         }
@@ -19,11 +21,12 @@ macro_rules! packable_u8_array {
             #[inline]
             fn packed_bits() -> usize {
                 $N * 8
-            }
+            } 
         }
     )
 }
 
+packable_u8_array!(0);
 packable_u8_array!(1);
 packable_u8_array!(2);
 packable_u8_array!(3);

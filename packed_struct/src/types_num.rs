@@ -3,7 +3,6 @@
 //! support.
 
 use internal_prelude::v1::*;
-
 use super::types_bits::*;
 
 
@@ -431,7 +430,7 @@ bytes8_impl!(i64);
 /// ones(2) => 0b11
 /// ones(3) => 0b111
 /// ...
-fn ones(n: u64) -> u64 {
+const fn ones(n: u64) -> u64 {
 	if n == 0 { return 0; }
 	if n >= 64 { return !0; }
 
@@ -511,7 +510,7 @@ fn test_roundtrip_u20() {
 }
 
 
-use super::packing::{PackingError, PackedStruct, PackedStructInfo, PackedStructSlice};
+use super::packing::{PackingError, PackedStruct, PackedStructInfo};
 
 /// A wrapper that packages the integer as a MSB packaged byte array. Usually
 /// invoked using code generation.
@@ -541,9 +540,11 @@ impl<T, B, I> Display for MsbInteger<T, B, I> where I: Display {
     }
 }
 
-impl<T, B, I> PackedStruct<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> for MsbInteger<T, B, I>
+impl<T, B, I> PackedStruct for MsbInteger<T, B, I>
     where B: NumberOfBits, I: SizedInteger<T, B>
 {
+    type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
+
     fn pack(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes {
         self.0.to_msb_bytes()
     }
@@ -563,35 +564,6 @@ impl<T, B, I> PackedStructInfo for MsbInteger<T, B, I> where B: NumberOfBits {
     }
 }
 
-impl<T, B, I> PackedStructSlice for MsbInteger<T, B, I> where B: NumberOfBits, I: SizedInteger<T, B> {
-    fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), PackingError> {
-        let expected_bytes = <B as NumberOfBits>::Bytes::number_of_bytes() as usize;
-        if output.len() != expected_bytes {
-            return Err(PackingError::BufferSizeMismatch { expected: expected_bytes, actual: output.len() });
-        }
-        let packed = self.pack();
-        &mut output[..].copy_from_slice(packed.as_bytes_slice());
-        Ok(())
-    }
-
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
-        let expected_bytes = <B as NumberOfBits>::Bytes::number_of_bytes() as usize;
-        if src.len() < expected_bytes {
-            return Err(PackingError::BufferSizeMismatch { expected: expected_bytes, actual: src.len() });
-        }
-        let mut s = Default::default();
-        // hack to infer the type
-        {
-            Self::unpack(&s)?;
-        }
-        s.as_mut_bytes_slice().copy_from_slice(&src[..expected_bytes]);
-        Self::unpack(&s)
-    }
-
-    fn packed_bytes() -> usize {
-        <B as NumberOfBits>::Bytes::number_of_bytes() as usize
-    }
-}
 
 /// A wrapper that packages the integer as a LSB packaged byte array. Usually
 /// invoked using code generation.
@@ -621,9 +593,11 @@ impl<T, B, I> Display for LsbInteger<T, B, I> where I: Display {
     }
 }
 
-impl<T, B, I> PackedStruct<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> for LsbInteger<T, B, I>
+impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
     where B: NumberOfBits, I: SizedInteger<T, B>, B: BitsFullBytes
 {
+    type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
+
     fn pack(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes {
         self.0.to_lsb_bytes()        
     }
@@ -643,35 +617,6 @@ impl<T, B, I> PackedStructInfo for LsbInteger<T, B, I> where B: NumberOfBits {
     }
 }
 
-impl<T, B, I> PackedStructSlice for LsbInteger<T, B, I> where B: NumberOfBits + BitsFullBytes, I: SizedInteger<T, B> {
-    fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), PackingError> {
-        let expected_bytes = <B as NumberOfBits>::Bytes::number_of_bytes() as usize;
-        if output.len() != expected_bytes {
-            return Err(PackingError::BufferSizeMismatch { expected: expected_bytes, actual: output.len() });
-        }
-        let packed = self.pack();
-        &mut output[..].copy_from_slice(packed.as_bytes_slice());
-        Ok(())
-    }
-
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
-        let expected_bytes = <B as NumberOfBits>::Bytes::number_of_bytes() as usize;
-        if src.len() < expected_bytes {
-            return Err(PackingError::BufferSizeMismatch { expected: expected_bytes, actual: src.len() });
-        }
-        let mut s = Default::default();
-        // hack to infer the type
-        {
-            Self::unpack(&s)?;
-        }
-        s.as_mut_bytes_slice().copy_from_slice(&src[..expected_bytes]);
-        Self::unpack(&s)
-    }
-
-    fn packed_bytes() -> usize {
-        <B as NumberOfBits>::Bytes::number_of_bytes() as usize
-    }
-}
 
 #[test]
 fn test_packed_int_msb() {
@@ -720,6 +665,8 @@ fn test_struct_info() {
 
 #[test]
 fn test_slice_packing() {
+    use packing::PackedStructSlice;
+
     let mut data = vec![0xAA, 0xBB, 0xCC, 0xDD];
     let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
     assert_eq!(0xAABBCCDD, **unpacked);
@@ -739,7 +686,9 @@ fn test_packed_int_lsb_sub() {
 
 #[test]
 fn test_big_slice_unpacking() {
-    let data = vec![0xAA, 0xBB, 0xCC, 0xDD, 0xEE];
+    use packing::PackedStructSlice;
+    
+    let data = vec![0xAA, 0xBB, 0xCC, 0xDD];
     let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
     assert_eq!(0xAABBCCDD, **unpacked);
 }

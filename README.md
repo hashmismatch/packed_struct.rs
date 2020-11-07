@@ -32,8 +32,8 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
 
 ```toml
 [dependencies]
-packed_struct = "0.3"
-packed_struct_codegen = "0.3"
+packed_struct = "0.4"
+packed_struct_codegen = "0.4"
 ```
 ### Including the library and the code generator
 

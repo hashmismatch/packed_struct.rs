@@ -93,7 +93,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
             impl #impl_generics #name #ty_generics #where_clause {
                 #[allow(dead_code)]
                 /// Display formatter for console applications
-                pub fn packed_struct_display_formatter<'a>(&'a self) -> ::packed_struct::debug_fmt::PackedStructDisplay<'a, Self, [u8; #num_bytes]> {
+                pub fn packed_struct_display_formatter<'a>(&'a self) -> ::packed_struct::debug_fmt::PackedStructDisplay<'a, Self> {
                     ::packed_struct::debug_fmt::PackedStructDisplay::new(self)
                 }
             }
@@ -105,10 +105,12 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
     quote! {
         #type_documentation
-        impl #impl_generics ::packed_struct::PackedStruct<[u8; #num_bytes]> for #name #ty_generics #where_clause {
+        impl #impl_generics ::packed_struct::PackedStruct for #name #ty_generics #where_clause {
+            type ByteArray = [u8; #num_bytes];
+
             #[inline]
             #[allow(unused_imports, unused_parens)]
-            fn pack(&self) -> [u8; #num_bytes] {
+            fn pack(&self) -> Self::ByteArray {
                 use ::packed_struct::*;
 
                 let mut target = [0 as u8; #num_bytes];
@@ -120,7 +122,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
             #[inline]
             #[allow(unused_imports, unused_parens)]
-            fn unpack(src: &[u8; #num_bytes]) -> #result_ty <#name, ::packed_struct::PackingError> {
+            fn unpack(src: &Self::ByteArray) -> #result_ty <#name, ::packed_struct::PackingError> {
                 use ::packed_struct::*;
 
                 #(#unpack_fields)*
@@ -137,40 +139,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
                 #num_bits
             }
         }
-
-        impl #impl_generics ::packed_struct::PackedStructSlice for #name #ty_generics #where_clause {
-            #[inline]
-            #[allow(unused_imports)]
-            fn pack_to_slice(&self, output: &mut [u8]) -> #result_ty <(), ::packed_struct::PackingError> {
-                use ::packed_struct::*;
-
-                if output.len() != #num_bytes {
-                    return Err(::packed_struct::PackingError::BufferTooSmall);
-                }
-                let packed = self.pack();                
-                &mut output[..].copy_from_slice(&packed[..]);
-                Ok(())
-            }
-
-            #[inline]
-            #[allow(unused_imports)]
-            fn unpack_from_slice(src: &[u8]) -> #result_ty <Self, ::packed_struct::PackingError> {
-                use ::packed_struct::*;
-
-                if src.len() < #num_bytes {
-                    return Err(::packed_struct::PackingError::BufferTooSmall);
-                }
-                let mut s = [0; #num_bytes];
-                &mut s[..].copy_from_slice(&src[..#num_bytes]);
-                Self::unpack(&s)
-            }
-
-            #[inline]
-            fn packed_bytes() -> usize {
-                #num_bytes
-            }
-        }
-
+        
         #debug_fmt
     }
 }

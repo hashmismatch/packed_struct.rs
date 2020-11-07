@@ -296,6 +296,7 @@ mod internal_prelude;
 mod packing;
 
 mod primitive_enum;
+
 pub use primitive_enum::*;
 
 
@@ -305,8 +306,14 @@ pub mod debug_fmt;
 mod types_array;
 mod types_basic;
 mod types_bits;
+mod types_generic;
 mod types_num;
 mod types_reserved;
+
+pub mod types_tuples;
+
+#[cfg(any(feature="alloc", feature="std"))]
+mod types_vec;
 
 /// Implementations and wrappers for various packing types.
 pub mod types {
@@ -320,6 +327,9 @@ pub mod types {
     pub use super::types_num::*;
     pub use super::types_array::*;
     pub use super::types_reserved::*;
+    pub use super::types_generic::*;
+    #[cfg(any(feature="alloc", feature="std"))]
+    pub use super::types_vec::*;
 }
 
 pub use self::packing::*;
@@ -344,4 +354,16 @@ pub mod prelude {
 
     pub use types::*;
     pub use types::bits as packed_bits;
+}
+
+use internal_prelude::v1::*;
+
+fn lib_get_slice<T, I: slice::SliceIndex<[T]>>(src: &[T], index: I) -> Result<&<I as slice::SliceIndex<[T]>>::Output, PackingError> {
+    let slice_len = src.len();
+    src.get(index).ok_or(PackingError::SliceIndexingError { slice_len })
+}
+
+fn lib_get_mut_slice<T, I: slice::SliceIndex<[T]>>(src: &mut [T], index: I) -> Result<&mut <I as slice::SliceIndex<[T]>>::Output, PackingError> {
+    let slice_len = src.len();
+    src.get_mut(index).ok_or(PackingError::SliceIndexingError { slice_len })
 }
