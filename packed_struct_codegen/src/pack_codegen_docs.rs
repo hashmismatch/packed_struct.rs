@@ -71,7 +71,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
                 use ::packed_struct::PackedStruct;
                 
                 let fields = #debug_fields_fn(self);
-                let packed: [u8; #num_bytes] = self.pack();
+                let packed: [u8; #num_bytes] = self.pack()?;
                 ::packed_struct::debug_fmt::packable_fmt_fields(fmt, &packed, &fields)
             }
 

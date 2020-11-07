@@ -76,7 +76,7 @@
 //!         enabled: true
 //!     };
 //!
-//!     let packed = test.pack();
+//!     let packed = test.pack().unwrap();
 //!     assert_eq!([0b10111001], packed);
 //!
 //!     let unpacked = TestPack::unpack(&packed).unwrap();
@@ -160,7 +160,7 @@
 //!         int2: 0x11223344
 //!     };
 //!
-//!     let packed = example.pack();
+//!     let packed = example.pack().unwrap();
 //!     assert_eq!([0xAA, 0xBB, 0x11, 0x22, 0x33, 0x44], packed);
 //! }
 //! ```
@@ -184,7 +184,7 @@
 //!         int1: 0xCCBBAA.into()
 //!     };
 //!
-//!     let packed = example.pack();
+//!     let packed = example.pack().unwrap();
 //!     assert_eq!([0xAA, 0xBB, 0xCC], packed);
 //! }
 //! ```
@@ -222,7 +222,7 @@
 //!         ]
 //!     };
 //!
-//!     let packed = example.pack();
+//!     let packed = example.pack().unwrap();
 //!     let unpacked = Settings::unpack(&packed).unwrap();
 //!
 //!     assert_eq!(example, unpacked);

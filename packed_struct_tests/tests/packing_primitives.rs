@@ -25,7 +25,7 @@ fn test_packed_primitives() {
         num2: 0b0101010111010101
     };
 
-    let packed = i.pack();
+    let packed = i.pack().unwrap();
     assert_eq!(&packed, &[0b00101010, 0b10101010, 0b10111010, 0b10101010, 0b10100000, 0]);
 }
 
@@ -53,7 +53,7 @@ fn test_packed_int_msb_endian() {
         ..Default::default()
     };
 
-    let packed = i.pack();
+    let packed = i.pack().unwrap();
     let unpacked = IntsMsb::unpack(&packed).unwrap();
     assert_eq!(i, unpacked);
 }
@@ -82,7 +82,7 @@ fn test_packed_int_lsb_endian() {
         ..Default::default()
     };
 
-    let packed = i.pack();
+    let packed = i.pack().unwrap();
     let unpacked = IntsLsb::unpack(&packed).unwrap();
     assert_eq!(i, unpacked);
 }

@@ -25,7 +25,7 @@ fn test_packed_compact_byte() {
         field_c: 0b010.into()
     };
 
-    let packed = reg.pack();
+    let packed = reg.pack().unwrap();
     assert_eq!(&packed, &[0b10111010]);
 
     let unpacked = RegA::unpack(&packed).unwrap();

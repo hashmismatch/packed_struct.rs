@@ -19,7 +19,7 @@ pub struct StructOne {
 #[cfg(test)]
 fn test_packed_reserved_fields() {
     let s = StructOne::default();
-    let packed = s.pack();
+    let packed = s.pack().unwrap();
     assert_eq!([0b0000_0_111], packed);
 
     let unpacked = StructOne::unpack(&[0b1111_1_000]).unwrap();

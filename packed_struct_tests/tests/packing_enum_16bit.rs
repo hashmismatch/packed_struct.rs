@@ -24,7 +24,7 @@ fn prim() {
         large: LargeEnum::Value1024
     };
 
-    let packed = st.pack();
+    let packed = st.pack().unwrap();
     assert_eq!([0b0000_0100, 0b0000_0000], packed);
 
     let unpacked = StructWithBitsEnum::unpack(&packed).unwrap();

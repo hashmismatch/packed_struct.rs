@@ -20,7 +20,7 @@ fn test_packed_struct_msp() {
         i2c_errors: 1
     };
 
-    let packed = reg.pack();
+    let packed = reg.pack().unwrap();
     assert_eq!(&packed, &[0xBB, 0xAA, 0x01, 0x00]);
 
     let unpacked = MspStatus::unpack(&packed).unwrap();

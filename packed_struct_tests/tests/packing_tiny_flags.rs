@@ -22,7 +22,7 @@ fn test_tiny_flags() {
         flag2: false
     };
 
-    let packed = flag.pack();
+    let packed = flag.pack().unwrap();
     assert_eq!([0b00001110], packed);
     let unpacked = TinyFlags::unpack(&packed).unwrap();
     assert_eq!(unpacked, flag);
@@ -43,7 +43,7 @@ fn test_tiny_flags() {
         ]
     };
 
-    let packed = example.pack();
+    let packed = example.pack().unwrap();
     let unpacked = Settings::unpack(&packed).unwrap();
 
     assert_eq!(example, unpacked);

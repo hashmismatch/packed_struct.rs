@@ -110,14 +110,14 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
 
             #[inline]
             #[allow(unused_imports, unused_parens)]
-            fn pack(&self) -> Self::ByteArray {
+            fn pack(&self) -> ::packed_struct::PackingResult<Self::ByteArray> {
                 use ::packed_struct::*;
 
                 let mut target = [0 as u8; #num_bytes];
 
                 #(#pack_fields)*
 
-                target
+                Ok(target)
             }
 
             #[inline]
@@ -297,7 +297,7 @@ fn pack_field(name: &syn::Ident, field: &FieldRegular) -> quote::Tokens {
 
     quote! {
         {
-            { & #output }.pack()
+            { & #output }.pack()?
         }
     }
 }
@@ -318,7 +318,7 @@ fn unpack_field(field: &FieldRegular) -> quote::Tokens {
                     use ::packed_struct::types::bits::*;
 
                     let res: #result_ty <#endian <_, _, #integer >, PackingError> = <#endian <_, _, _>>::unpack(& #unpack );
-                    let unpacked = try!(res);
+                    let unpacked = res?;
                     **unpacked
                 };
 

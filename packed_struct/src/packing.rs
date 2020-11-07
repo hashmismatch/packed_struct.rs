@@ -80,4 +80,10 @@ impl ::std::error::Error for PackingError {
     }
 }
 
+impl From<PackingError> for fmt::Error {
+    fn from(_: PackingError) -> Self {
+        Self
+    }
+}
+
 pub type PackingResult<T> = Result<T, PackingError>;

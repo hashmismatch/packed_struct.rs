@@ -18,7 +18,7 @@ fn test_packed_arrays() {
         arr1: [1, 2, 3, 4, 5, 6, 7]
     };
 
-    let packed = a.pack();
+    let packed = a.pack().unwrap();
     assert_eq!(&packed, &[1, 2, 3, 4, 5, 6, 7]);
     
     let unpacked = Arrays::unpack(&packed).unwrap();
@@ -51,7 +51,7 @@ fn test_packed_array_of_structs() {
         ]
     };
 
-    let packed: [u8; 4*6] = p.pack();
+    let packed: [u8; 4*6] = p.pack().unwrap();
 
     let unpacked = Packaged::unpack(&packed).unwrap();
     assert_eq!(&p, &unpacked);

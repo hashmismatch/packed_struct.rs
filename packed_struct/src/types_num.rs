@@ -453,8 +453,8 @@ fn test_u16() {
     let val = 0xABCD;
     let num: Integer<u16, Bits16> = val.into();
     assert_eq!(val, *num);
-    assert_eq!([0xAB, 0xCD], num.to_msb_bytes());
-    assert_eq!([0xCD, 0xAB], num.to_lsb_bytes());
+    assert_eq!([0xAB, 0xCD], num.to_msb_bytes().unwrap());
+    assert_eq!([0xCD, 0xAB], num.to_lsb_bytes().unwrap());
 }
 
 #[test]
@@ -462,8 +462,8 @@ fn test_u32() {
     let val = 0x4589ABCD;
     let num: Integer<u32, Bits32> = val.into();
     assert_eq!(val, *num);
-    assert_eq!([0x45, 0x89, 0xAB, 0xCD], num.to_msb_bytes());
-    assert_eq!([0xCD, 0xAB, 0x89, 0x45], num.to_lsb_bytes());
+    assert_eq!([0x45, 0x89, 0xAB, 0xCD], num.to_msb_bytes().unwrap());
+    assert_eq!([0xCD, 0xAB, 0x89, 0x45], num.to_lsb_bytes().unwrap());
 }
 
 #[test]
@@ -471,19 +471,19 @@ fn test_u64() {
     let val = 0x1122334455667788;
     let num: Integer<u64, Bits64> = val.into();
     assert_eq!(val, *num);
-    assert_eq!([0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88], num.to_msb_bytes());
-    assert_eq!([0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11], num.to_lsb_bytes());
+    assert_eq!([0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88], num.to_msb_bytes().unwrap());
+    assert_eq!([0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11], num.to_lsb_bytes().unwrap());
 }
 
 #[test]
 fn test_roundtrip_u32() {
     let val = 0x11223344;
     let num: Integer<u32, Bits32> = val.into();
-    let msb_bytes = num.to_msb_bytes();
+    let msb_bytes = num.to_msb_bytes().unwrap();
     let from_msb = u32::from_msb_bytes(&msb_bytes);
     assert_eq!(val, from_msb);
 
-    let lsb_bytes = num.to_lsb_bytes();
+    let lsb_bytes = num.to_lsb_bytes().unwrap();
     let from_lsb = u32::from_lsb_bytes(&lsb_bytes);
     assert_eq!(val, from_lsb);
 }
@@ -492,14 +492,14 @@ fn test_roundtrip_u32() {
 fn test_roundtrip_u24() {
     let val = 0xCCBBAA;
     let num: Integer<u32, Bits24> = val.into();
-    let msb_bytes = num.to_msb_bytes();
+    let msb_bytes = num.to_msb_bytes().unwrap();
     assert_eq!([0xCC, 0xBB, 0xAA], msb_bytes);
-    let from_msb = <Integer<u32, Bits24>>::from_msb_bytes(&msb_bytes);
+    let from_msb = <Integer<u32, Bits24>>::from_msb_bytes(&msb_bytes).unwrap();
     assert_eq!(val, *from_msb);
 
-    let lsb_bytes = num.to_lsb_bytes();
+    let lsb_bytes = num.to_lsb_bytes().unwrap();
     assert_eq!([0xAA, 0xBB, 0xCC], lsb_bytes);
-    let from_lsb = <Integer<u32, Bits24>>::from_lsb_bytes(&lsb_bytes);
+    let from_lsb = <Integer<u32, Bits24>>::from_lsb_bytes(&lsb_bytes).unwrap();
     assert_eq!(val, *from_lsb);
 }
 
@@ -507,9 +507,9 @@ fn test_roundtrip_u24() {
 fn test_roundtrip_u20() {
     let val = 0xFBBAA;
     let num: Integer<u32, Bits20> = val.into();
-    let msb_bytes = num.to_msb_bytes();
+    let msb_bytes = num.to_msb_bytes().unwrap();
     assert_eq!([0x0F, 0xBB, 0xAA], msb_bytes);
-    let from_msb = <Integer<u32, Bits20>>::from_msb_bytes(&msb_bytes);
+    let from_msb = <Integer<u32, Bits20>>::from_msb_bytes(&msb_bytes).unwrap();
     assert_eq!(val, *from_msb);    
 }
 
@@ -627,7 +627,7 @@ fn test_packed_int_msb() {
     let val = 0xAABBCCDD;
     let typed: Integer<u32, Bits32> = val.into();
     let endian = typed.as_packed_msb();
-    let packed = endian.pack();
+    let packed = endian.pack().unwrap();
     assert_eq!([0xAA, 0xBB, 0xCC, 0xDD], packed);
     
     let unpacked: MsbInteger<_, _, Integer<u32, Bits32>> = MsbInteger::unpack(&packed).unwrap();
@@ -639,7 +639,7 @@ fn test_packed_int_partial() {
     let val = 0b10_10101010;
     let typed: Integer<u16, Bits10> = val.into();
     let endian = typed.as_packed_msb();
-    let packed = endian.pack();
+    let packed = endian.pack().unwrap();
     assert_eq!([0b00000010, 0b10101010], packed);
     
     let unpacked: MsbInteger<_, _, Integer<u16, Bits10>> = MsbInteger::unpack(&packed).unwrap();
@@ -651,7 +651,7 @@ fn test_packed_int_lsb() {
     let val = 0xAABBCCDD;
     let typed: Integer<u32, Bits32> = val.into();
     let endian = typed.as_packed_lsb();
-    let packed = endian.pack();
+    let packed = endian.pack().unwrap();
     assert_eq!([0xDD, 0xCC, 0xBB, 0xAA], packed);
     
     let unpacked: LsbInteger<_, _, Integer<u32, Bits32>> = LsbInteger::unpack(&packed).unwrap();
@@ -684,7 +684,7 @@ fn test_packed_int_lsb_sub() {
     let val = 0xAABBCC;
     let typed: Integer<u32, Bits24> = val.into();
     let endian = typed.as_packed_lsb();
-    let packed = endian.pack();
+    let packed = endian.pack().unwrap();
     assert_eq!([0xCC, 0xBB, 0xAA], packed);
 }
 

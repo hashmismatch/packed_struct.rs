@@ -28,7 +28,7 @@ fn test_packed_struct_u8() {
         low_power: true
     };
 
-    let packed = reg.pack();
+    let packed = reg.pack().unwrap();
     assert_eq!(&[0b01010100], &packed);
 }
 
@@ -55,7 +55,7 @@ fn test_packed_struct_range() {
             num2: 0b1101010111010101
         };
 
-        let packed = i.pack();
+        let packed = i.pack().unwrap();
         assert_eq!(&packed, &[0b00111010, 0b10101010, 0b10111010, 0b10111010, 0b10100000, 0]);
     }
 }    
