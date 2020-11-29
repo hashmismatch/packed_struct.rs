@@ -1,23 +1,23 @@
 extern crate syn;
 
 #[cfg(feature="std")]
-pub fn collections_prefix() -> syn::Ty {
-    syn::parse_type("::std").unwrap()
+pub fn collections_prefix() -> syn::Type {
+    syn::parse_str("::std").unwrap()
 }
 
 #[cfg(not(feature="std"))]
-pub fn collections_prefix() -> syn::Ty {
-    syn::parse_type("::alloc").unwrap()
+pub fn collections_prefix() -> syn::Type {
+    syn::parse_str("::alloc").unwrap()
 }
 
 #[cfg(feature="std")]
-pub fn result_type() -> syn::Ty {
-    syn::parse_type("::std::result::Result").expect("result type parse error")
+pub fn result_type() -> syn::Type {
+    syn::parse_str("::std::result::Result").expect("result type parse error")
 }
 
 #[cfg(not(feature="std"))]
-pub fn result_type() -> syn::Ty {
-    syn::parse_type("::core::result::Result").expect("result type parse error")
+pub fn result_type() -> syn::Type {
+    syn::parse_str("::core::result::Result").expect("result type parse error")
 }
 
 

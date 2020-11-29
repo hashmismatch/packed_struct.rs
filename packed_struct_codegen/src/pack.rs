@@ -3,6 +3,7 @@ extern crate syn;
 
 use std::ops::*;
 use pack_parse::*;
+use syn::parse::{Parse, ParseStream};
 
 #[derive(Debug)]
 pub struct FieldMidPositioning {
@@ -25,7 +26,7 @@ pub enum FieldKind {
 
 #[derive(Debug)]
 pub struct FieldRegular {
-    pub ty: syn::Ty,
+    pub ty: syn::Type,
     pub serialization_wrappers: Vec<SerializationWrapper>,
     pub bit_width: usize,
     /// The range as parsed by our parser. A single byte: 0..7
@@ -37,23 +38,21 @@ pub struct FieldRegular {
 #[derive(Debug, Clone)]
 pub enum SerializationWrapper {
     IntegerWrapper {
-        integer: syn::Ty,
+        integer: syn::Type,
     },
     EndiannesWrapper {
-        endian: syn::Ty
+        endian: syn::Type
     },
     PrimitiveEnumWrapper
 }
 
 
-#[derive(Debug)]
 pub struct PackStruct {
-    pub ast: syn::MacroInput,    
+    // pub ast: syn::DeriveInput,
     pub fields: Vec<FieldKind>,
     pub num_bytes: usize,
     pub num_bits: usize
 }
-
 
 
 
