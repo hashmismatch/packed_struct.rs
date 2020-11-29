@@ -251,7 +251,7 @@ macro_rules! integer_bytes_impl {
                 }
                 let skip = native_bytes.len() - bytes.len();
                 {
-                    let native_bytes = &mut native_bytes[skip..];
+                    let native_bytes = lib_get_mut_slice(&mut native_bytes, skip..)?;
                     native_bytes.copy_from_slice(&bytes[..]);
                 }
                 let v = <$T>::from_msb_bytes(&native_bytes);
@@ -269,7 +269,7 @@ macro_rules! integer_bytes_impl {
 
                 {
                     let take = bytes.len();
-                    let native_bytes = &mut native_bytes[..take];
+                    let native_bytes = lib_get_mut_slice(&mut native_bytes, ..take)?;
                     native_bytes.copy_from_slice(&bytes[..]);
                 }
 
