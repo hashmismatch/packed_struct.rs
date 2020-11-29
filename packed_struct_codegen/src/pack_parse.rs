@@ -45,7 +45,7 @@ pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &s
 
             },
             _ => {
-                panic!("unsupported meta");
+                //panic!("unsupported meta: {:?}", meta);
             }
         }
     }
@@ -131,74 +131,79 @@ fn get_builtin_type_bit_width(p: &syn::PathSegment) -> Option<usize> {
 }
 
 
-fn get_field_mid_positioning(field: &syn::Field) -> FieldMidPositioning {
+fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPositioning> {
     
-    todo!();
-    // let mut array_size = 1;
-    // let bit_width_builtin: Option<usize>;
+    let mut array_size = 1;
+    let bit_width_builtin: Option<usize>;
 
-    // let _ty = match field.ty {
-    //     syn::Ty::Path (None, syn::Path { ref segments, .. }) => {
-    //         if segments.len() == 1 {                
-    //             let ref segment = segments[0];
+    let _ty = match &field.ty {
+        //syn::Ty::Path (None, syn::Path { ref segments, .. }) => {
+        syn::Type::Path(type_path) if type_path.path.segments.len() == 1 => {
+            let ref segment = type_path.path.segments[0];
 
-    //             bit_width_builtin = get_builtin_type_bit_width(segment);
-    //             segment.clone()
-    //         } else {
-    //             panic!("Unsupported path type: {:#?}", field.ty);
-    //         }
-    //     },
-    //     syn::Ty::Array(ref ty, ref size) => {
-        
-    //         if let syn::Ty::Path (None, syn::Path { ref segments, .. }) = **ty {
-    //             if segments.len() == 1 {
-    //                 if let &syn::ConstExpr::Lit(syn::Lit::Int(size, _)) = size {
-    //                     let ref segment = segments[0];
-    //                     bit_width_builtin = get_builtin_type_bit_width(segment);
-    //                     array_size = size as usize;
+            bit_width_builtin = get_builtin_type_bit_width(segment);
+            segment.clone()
+        },
+        //syn::Ty::Array(ref ty, ref size) => {
+        syn::Type::Array(type_array) => {
+            
 
-    //                     if size == 0 { panic!("Arrays sized 0 are not supported."); }
+/*
+message: type_array: TypeArray { bracket_token: Bracket, elem: Path(TypePath { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "TinyFlags", span: #0 bytes(813..822) }, arguments: None }] } }), semi_token: Semi, len: Lit(ExprLit { attrs: [], lit: Int(LitInt { token: 4 }) }) }
+*/
+
+            panic!("type_array: {:?}", type_array);
+
+            /*
+            if let syn::Ty::Path (None, syn::Path { ref segments, .. }) = **ty {
+                if segments.len() == 1 {
+                    if let &syn::ConstExpr::Lit(syn::Lit::Int(size, _)) = size {
+                        let ref segment = segments[0];
+                        bit_width_builtin = get_builtin_type_bit_width(segment);
+                        array_size = size as usize;
+
+                        if size == 0 { panic!("Arrays sized 0 are not supported."); }
                         
-    //                     segment.clone()
-    //                 } else {
-    //                     panic!("unsupported array size: {:?}", size);
-    //                 }
-    //             } else {
-    //                 panic!("Unsupported path type: {:#?}", ty);
-    //             }
-    //         } else {
-    //             panic!("Unsupported path type: {:#?}", ty);
-    //         }
+                        segment.clone()
+                    } else {
+                        panic!("unsupported array size: {:?}", size);
+                    }
+                } else {
+                    panic!("Unsupported path type: {:#?}", ty);
+                }
+            } else {
+                panic!("Unsupported path type: {:#?}", ty);
+            }
+            */
+        },
+        _ => { panic!("Unsupported type: {:?}", field.ty); }
+    };
 
-    //     },
-    //     _ => { panic!("Unsupported type: {:?}", field.ty); }
-    // };
+    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field")?);
 
-    // let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field"));
-
-    // let bits_position = field_attributes.iter().filter_map(|a| match a {
-    //     &PackFieldAttribute::BitPosition(b) | &PackFieldAttribute::BytePosition(b) => Some(b),
-    //     _ => None
-    // }).next().unwrap_or(BitsPositionParsed::Next);
+    let bits_position = field_attributes.iter().filter_map(|a| match a {
+        &PackFieldAttribute::BitPosition(b) | &PackFieldAttribute::BytePosition(b) => Some(b),
+        _ => None
+    }).next().unwrap_or(BitsPositionParsed::Next);
     
-    // let bit_width = if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::SizeBits(bits) = a { Some(bits) } else { None }).next() {
-    //     if array_size > 1 { panic!("Please use the 'element_size_bits' or 'element_size_bytes' for arrays."); }
-    //     bits
-    // } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::ElementSizeBits(bits) = a { Some(bits) } else { None }).next() {
-    //     bits * array_size
-    // } else if let BitsPositionParsed::Range(a, b) = bits_position {
-    //     (b as isize - a as isize).abs() as usize + 1
-    // } else if let Some(bit_width_builtin) = bit_width_builtin {
-    //     // todo: is it even possible to hit this branch?
-    //     bit_width_builtin * array_size
-    // } else {
-    //     panic!("Couldn't determine the width of this field: {:?}", field);
-    // };
+    let bit_width = if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::SizeBits(bits) = a { Some(bits) } else { None }).next() {
+        if array_size > 1 { panic!("Please use the 'element_size_bits' or 'element_size_bytes' for arrays."); }
+        bits
+    } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::ElementSizeBits(bits) = a { Some(bits) } else { None }).next() {
+        bits * array_size
+    } else if let BitsPositionParsed::Range(a, b) = bits_position {
+        (b as isize - a as isize).abs() as usize + 1
+    } else if let Some(bit_width_builtin) = bit_width_builtin {
+        // todo: is it even possible to hit this branch?
+        bit_width_builtin * array_size
+    } else {
+        panic!("Couldn't determine the width of this field: {:?}", field);
+    };
 
-    // FieldMidPositioning {
-    //     bit_width: bit_width,
-    //     bits_position: bits_position
-    // }
+    Ok(FieldMidPositioning {
+        bit_width: bit_width,
+        bits_position: bits_position
+    })
 }
 
 
@@ -375,82 +380,78 @@ pub fn parse_num(s: &str) -> usize {
 pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     let attributes = PackStructAttribute::parse_all(&parse_sub_attributes(&ast.attrs, "packed_struct")?);
 
+    let data_struct = match &ast.data {
+        syn::Data::Struct(data) => data,
+        _ => panic!("#[derive(PackedStruct)] can only be used with braced structs")
+    };
+    let fields: Vec<_> = data_struct.fields.iter().collect();
+
+    if ast.generics.params.len() > 0 {
+        panic!("Structures with generic fields currently aren't supported.");
+    }
+
+    let bit_positioning = {
+        attributes.iter().filter_map(|a| match a {
+            &PackStructAttribute::BitNumbering(b) => Some(b),
+            _ => None
+        }).next()
+    };
+
+    let default_int_endianness = attributes.iter().filter_map(|a| match a {
+        &PackStructAttribute::DefaultIntEndianness(i) => Some(i),
+        _ => None
+    }).next();
+
+    let struct_size_bytes = attributes.iter().filter_map(|a| {
+        if let &PackStructAttribute::SizeBytes(size_bytes) = a {
+            Some(size_bytes)
+        } else {
+            None
+        }
+    }).next();
+
+    let first_field_is_auto_positioned = {
+        if let Some(ref field) = fields.first() {
+            let mp = get_field_mid_positioning(field)?;
+            mp.bits_position == BitsPositionParsed::Next
+        } else {
+            false
+        }
+    };
+
+    let mut fields_parsed: Vec<FieldKind> = vec![];
+    {
+        let mut prev_bit_range = None;
+        for field in &fields {
+            let mp = get_field_mid_positioning(field)?;
+            let bits_position = match (bit_positioning, mp.bits_position) {
+                (Some(BitNumbering::Lsb0), BitsPositionParsed::Next) | (Some(BitNumbering::Lsb0), BitsPositionParsed::Start(_)) => {
+                    panic!("LSB0 field positioning currently requires explicit, full field positions.");
+                },
+                (Some(BitNumbering::Lsb0), BitsPositionParsed::Range(start, end)) => {
+                    if let Some(struct_size_bytes) = struct_size_bytes {
+                        BitsPositionParsed::range_in_order( (struct_size_bytes * 8) - 1 - start, (struct_size_bytes * 8) - 1 - end )
+                    } else {
+                        panic!("LSB0 field positioning currently requires explicit struct byte size.");
+                    }
+                },
+
+                (None, p @ BitsPositionParsed::Next) => p,
+                (Some(BitNumbering::Msb0), p) => p,
+
+                (None, _) => {
+                    panic!("Please explicitly specify the bit numbering mode on the struct with an attribute: #[packed_struct(bit_numbering=\"msb0\")] or \"lsb0\".");
+                }
+            };
+            let bit_range = bits_position.to_bits_position().get_bits_range(mp.bit_width, &prev_bit_range);
+
+            fields_parsed.push(parse_field(field, &mp, &bit_range, default_int_endianness));
+
+            prev_bit_range = Some(bit_range);
+        }
+    }
 
     todo!();
-
-    // let fields: Vec<_> = match ast.body {
-    //     syn::Body::Struct(syn::VariantData::Struct(ref fields)) => {
-    //         fields.iter().collect()
-    //     },
-    //     _ => panic!("#[derive(PackedStruct)] can only be used with braced structs"),
-    // };
-
-    // if ast.generics.ty_params.len() > 0 {
-    //     panic!("Structures with generic fields currently aren't supported.");
-    // }
-
-    // let bit_positioning = {
-    //     attributes.iter().filter_map(|a| match a {
-    //         &PackStructAttribute::BitNumbering(b) => Some(b),
-    //         _ => None
-    //     }).next()
-    // };
-
-    // let default_int_endianness = attributes.iter().filter_map(|a| match a {
-    //     &PackStructAttribute::DefaultIntEndianness(i) => Some(i),
-    //     _ => None
-    // }).next();
-
-    // let struct_size_bytes = attributes.iter().filter_map(|a| {
-    //     if let &PackStructAttribute::SizeBytes(size_bytes) = a {
-    //         Some(size_bytes)
-    //     } else {
-    //         None
-    //     }}).next();
-
-
-
-    // let first_field_is_auto_positioned = {
-    //     if let Some(ref field) = fields.first() {
-    //         let mp = get_field_mid_positioning(field);
-    //         mp.bits_position == BitsPositionParsed::Next
-    //     } else {
-    //         false
-    //     }
-    // };
-
-
-    // let mut fields_parsed: Vec<FieldKind> = vec![];
-    // {
-    //     let mut prev_bit_range = None;
-    //     for field in &fields {
-    //         let mp = get_field_mid_positioning(field);
-    //         let bits_position = match (bit_positioning, mp.bits_position) {
-    //             (Some(BitNumbering::Lsb0), BitsPositionParsed::Next) | (Some(BitNumbering::Lsb0), BitsPositionParsed::Start(_)) => {
-    //                 panic!("LSB0 field positioning currently requires explicit, full field positions.");
-    //             },
-    //             (Some(BitNumbering::Lsb0), BitsPositionParsed::Range(start, end)) => {
-    //                 if let Some(struct_size_bytes) = struct_size_bytes {
-    //                     BitsPositionParsed::range_in_order( (struct_size_bytes * 8) - 1 - start, (struct_size_bytes * 8) - 1 - end )
-    //                 } else {
-    //                     panic!("LSB0 field positioning currently requires explicit struct byte size.");
-    //                 }
-    //             },
-
-    //             (None, p @ BitsPositionParsed::Next) => p,
-    //             (Some(BitNumbering::Msb0), p) => p,
-
-    //             (None, _) => {
-    //                 panic!("Please explicitly specify the bit numbering mode on the struct with an attribute: #[packed_struct(bit_numbering=\"msb0\")] or \"lsb0\".");
-    //             }
-    //         };
-    //         let bit_range = bits_position.to_bits_position().get_bits_range(mp.bit_width, &prev_bit_range);
-
-    //         fields_parsed.push(parse_field(field, &mp, &bit_range, default_int_endianness));
-
-    //         prev_bit_range = Some(bit_range);
-    //     }        
-    // }
 
     // let num_bits: usize = {
     //     if let Some(struct_size_bytes) = struct_size_bytes {
