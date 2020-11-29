@@ -11,27 +11,43 @@ use std::ops::Range;
 pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str) -> syn::Result<Vec<(String, String)>> {
     let mut r = vec![];
 
-    for attr in attributes {        
-
+    for attr in attributes {
         let meta = attr.parse_meta()?;
 
-        panic!("Meta: {:?}", meta);
+        match &meta {
+            &syn::Meta::List(ref metalist) => {
+                if let Some(path) = metalist.path.get_ident() {
+                    if path == main_attribute {
+                        for nv in &metalist.nested {
+                            match nv {
+                                syn::NestedMeta::Meta(m) => {
 
-        /*
-        if let &syn::Meta::List(ref ident, ref list) = &meta {
-            if ident.as_ref() != main_attribute { continue; }
+                                    match m {
+                                        syn::Meta::Path(_) => {}
+                                        syn::Meta::List(_) => {}
+                                        syn::Meta::NameValue(nv) => {
+                                            match (nv.path.get_ident(), &nv.lit) {
+                                                (Some(key), syn::Lit::Str(lit)) => {
+                                                    r.push((key.to_string(), lit.value()));
+                                                },
+                                                (_, _) => ()
+                                            }
+                                        }
+                                    }
 
-            for item in list {
-                if let &syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref ident, ref lit)) = item {
-                    let n = ident.as_ref();
-                    
-                    if let &syn::Lit::Str(ref v, _) = lit {
-                        r.push((n.to_string(), v.to_string()));
+                                }
+                                syn::NestedMeta::Lit(l) => {}
+                            }
+                        }
                     }
                 }
+                
+
+            },
+            _ => {
+                panic!("unsupported meta");
             }
         }
-        */
     }
 
     Ok(r)
