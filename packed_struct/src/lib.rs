@@ -278,8 +278,6 @@
 //! # fn main() {}
 //! ```
 
-#![deny(clippy::indexing_slicing)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #![cfg_attr(feature="alloc", feature(alloc))]
