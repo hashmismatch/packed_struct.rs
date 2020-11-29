@@ -12,9 +12,9 @@ use crate::types_bits::ByteArray;
 pub trait PackedStruct where Self: Sized {
     type ByteArray : ByteArray;
     /// Packs the structure into a byte array.
-    fn pack(&self) -> Self::ByteArray;
+    fn pack(&self) -> PackingResult<Self::ByteArray>;
     /// Unpacks the structure from a byte array.
-    fn unpack(src: &Self::ByteArray) -> Result<Self, PackingError>;
+    fn unpack(src: &Self::ByteArray) -> PackingResult<Self>;
 }
 
 /// Infos about a particular type that can be packaged.
@@ -26,14 +26,14 @@ pub trait PackedStructInfo {
 /// A structure that can be packed and unpacked from a slice of bytes.
 pub trait PackedStructSlice where Self: Sized {
     /// Pack the structure into an output buffer.
-    fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), PackingError>;
+    fn pack_to_slice(&self, output: &mut [u8]) -> PackingResult<()>;
     /// Unpack the structure from a buffer.
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError>;
+    fn unpack_from_slice(src: &[u8]) -> PackingResult<Self>;
     /// Number of bytes that the type or this particular instance of this structure demands for packing or unpacking.
-    fn packed_bytes_size(opt_self: Option<&Self>) -> Result<usize, PackingError>;
+    fn packed_bytes_size(opt_self: Option<&Self>) -> PackingResult<usize>;
 
     #[cfg(any(feature="alloc", feature="std"))]
-    fn pack_to_vec(&self) -> Result<Vec<u8>, PackingError> {
+    fn pack_to_vec(&self) -> PackingResult<Vec<u8>> {
         let size = Self::packed_bytes_size(Some(self))?;
         let mut buf = vec![0; size];
         self.pack_to_slice(&mut buf)?;
@@ -79,3 +79,11 @@ impl ::std::error::Error for PackingError {
         }
     }
 }
+
+impl From<PackingError> for fmt::Error {
+    fn from(_: PackingError) -> Self {
+        Self
+    }
+}
+
+pub type PackingResult<T> = Result<T, PackingError>;

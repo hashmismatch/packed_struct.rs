@@ -21,7 +21,7 @@ fn test_serialization_autosize_msb0() {
             bool2: true
         };
 
-    let packed = b.pack();
+    let packed = b.pack().unwrap();
     assert_eq!(&packed, &[0b10000000, 0b10000000]);
 
     let unpacked = Bools::unpack(&packed).unwrap();
@@ -45,7 +45,7 @@ fn test_serialization_autosize_lsb0() {
             bool2: true
         };
 
-    let packed = b.pack();
+    let packed = b.pack().unwrap();
     assert_eq!(&packed, &[0b10000000, 0b10000000]);
 
     let unpacked = Bools::unpack(&packed).unwrap();

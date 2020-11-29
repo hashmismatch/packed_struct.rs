@@ -44,7 +44,7 @@
 
 use internal_prelude::v1::*;
 
-use crate::{PackedStructSlice, PackingError, lib_get_slice, lib_get_mut_slice};
+use crate::{PackedStructSlice, PackingError, PackingResult, lib_get_mut_slice, lib_get_slice};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum StructLength {
@@ -66,20 +66,21 @@ impl StructLengthBuilder {
         }
     }
 
-    fn add<S: PackedStructSlice>(&mut self, st: Option<&S>) -> Result<StructLength, PackingError> {
+    fn add<S: PackedStructSlice>(&mut self, st: Option<&S>) -> PackingResult<StructLength> {
         let len = match S::packed_bytes_size(st) {
             Err(PackingError::InstanceRequiredForSize) => StructLength::Dynamic,
             Err(e) => return Err(e),
             Ok(s) => StructLength::Static(s)
         };
-        self.lengths[self.i] = len;
+        let target = lib_get_mut_slice(&mut self.lengths, self.i)?;
+        *target = len;
         self.i += 1;
         Ok(len)
     }
 
-    fn build(self, total_length: usize) -> Result<StructLengths, PackingError> {
+    fn build(self, total_length: usize) -> PackingResult<StructLengths> {
         // at most one can be dynamic!
-        let lengths = &self.lengths[..self.i];
+        let lengths = lib_get_slice(&self.lengths, ..self.i)?;
         let dy = lengths.iter().filter(|l| l == &&StructLength::Dynamic).count();
         if dy > 1 {
             return Err(PackingError::MoreThanOneDynamicType);
@@ -98,14 +99,15 @@ impl StructLengthBuilder {
 
         let mut output_lengths = [0; 16];
         for (i, l) in lengths.iter().enumerate() {
-            output_lengths[i] = match l {
+            let output = lib_get_mut_slice(&mut output_lengths, i)?;
+            *output = match l {
                 StructLength::Empty => return Err(PackingError::InternalError), /* shouldn't happen */
                 StructLength::Dynamic => len_dy,
                 StructLength::Static(s) => *s
             };
         }
 
-        Ok(StructLengths::new(output_lengths, self.i))
+        StructLengths::new(output_lengths, self.i)
     }
 }
 
@@ -115,23 +117,24 @@ struct StructLengths {
 }
 
 impl StructLengths {
-    fn new(lengths: [usize; 16], len: usize) -> Self {
+    fn new(lengths: [usize; 16], len: usize) -> PackingResult<Self> {
         let mut ranges = [0..0, 0..0, 0..0, 0..0, 0..0, 0..0, 0..0, 0..0, 0..0, 0..0, 0..0, 0..0 , 0..0, 0..0, 0..0, 0..0];
         let mut n = 0;
         for i in 0..len {
-            let l = lengths[i];
-            ranges[i] = n..(n+l);
+            let l = lib_get_slice(&lengths, i)?;
+            let ranges_out = lib_get_mut_slice(&mut ranges, i)?;
+            *ranges_out = n..(n+l);
             n += l;
         }
 
-        StructLengths {
+        Ok(StructLengths {
             ranges,
             len
-        }
+        })
     }
 
-    fn get_ranges(&self) -> &[Range<usize>] {
-        &self.ranges[..self.len]
+    fn get_ranges(&self) -> PackingResult<&[Range<usize>]> {
+        lib_get_slice(&self.ranges, ..self.len)
     }
 }
 
@@ -162,7 +165,7 @@ macro_rules! tuple_impls {
             $typ: PackedStructSlice,
             $( $ntyp: PackedStructSlice ),*
         {
-            fn pack_to_slice(&self, output: &mut [u8]) -> Result<(), crate::PackingError> {
+            fn pack_to_slice(&self, output: &mut [u8]) -> PackingResult<()> {
                 let lengths = {
                     let mut builder = StructLengthBuilder::new();
                     builder.add::<$typ>(Some(&self.$idx))?;
@@ -170,7 +173,7 @@ macro_rules! tuple_impls {
                     builder.build(output.len())?
                 };
 
-                let ranges = lengths.get_ranges();
+                let ranges = lengths.get_ranges()?;
 
                 self.$idx.pack_to_slice(lib_get_mut_slice(output, ranges.get($idx).ok_or(crate::PackingError::InternalError)?.clone())?)?;
                 $( self.$nidx.pack_to_slice(lib_get_mut_slice(output, ranges.get($nidx).ok_or(crate::PackingError::InternalError)?.clone())?)?; )*
@@ -178,7 +181,7 @@ macro_rules! tuple_impls {
                 Ok(())
             }
 
-            fn unpack_from_slice(src: &[u8]) -> Result<Self, crate::PackingError> {
+            fn unpack_from_slice(src: &[u8]) -> PackingResult<Self> {
                 let lengths = {
                     let mut builder = StructLengthBuilder::new();                    
                     builder.add::<$typ>(None)?;
@@ -186,7 +189,7 @@ macro_rules! tuple_impls {
                     builder.build(src.len())?
                 };
 
-                let ranges = lengths.get_ranges();
+                let ranges = lengths.get_ranges()?;
 
                 Ok(
                     (
@@ -196,7 +199,7 @@ macro_rules! tuple_impls {
                 )
             }
 
-            fn packed_bytes_size(opt_self: Option<&Self>) -> Result<usize, PackingError> {
+            fn packed_bytes_size(opt_self: Option<&Self>) -> PackingResult<usize> {
                 let sizes = [
                     $typ::packed_bytes_size(opt_self.map(|s| &s.$idx))?,
                     $( $ntyp::packed_bytes_size(opt_self.map(|s| &s.$nidx))? ),*

@@ -30,7 +30,7 @@ fn test_serialization_codegen() {
             bool3: true
         };
 
-    let packed = b.pack();
+    let packed = b.pack().unwrap();
     assert_eq!(&packed, &[0b10010100, 0b10101010, 0b10100000, 0b00000101]);
 
     let unpacked = Bools::unpack(&packed).unwrap();

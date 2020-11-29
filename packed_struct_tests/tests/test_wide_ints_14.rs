@@ -19,7 +19,7 @@ macro_rules! test_int_14 {
             let roundtrip = |x: u16| {
                 let mut t: Test = Default::default();
                 t.int1 = x.into();
-                let packed = t.pack();
+                let packed = t.pack().unwrap();
 
                 let unpacked = Test::unpack(&packed).unwrap();
                 assert_eq!(unpacked, t);

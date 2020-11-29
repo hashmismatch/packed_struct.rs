@@ -31,7 +31,7 @@ fn prim() {
         enabled: true
     };
 
-    let packed = test.pack();
+    let packed = test.pack().unwrap();
     assert_eq!([0b00110010], packed);
 
     let unpacked = TestPack::unpack(&packed).unwrap();

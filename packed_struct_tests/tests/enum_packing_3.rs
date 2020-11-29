@@ -41,7 +41,7 @@ fn enum_packing_3() {
         mode: SelfTestMode::DebugMode,
     };
 
-    let packed = test.pack();
+    let packed = test.pack().unwrap();
     let unpacked = TestPack::unpack(&packed).unwrap();
     assert_eq!(&test, &unpacked);
 
@@ -49,6 +49,6 @@ fn enum_packing_3() {
     let m = TestPackMode {
         mode: a
     };
-    let p = m.pack();
+    let p = m.pack().unwrap();
     assert_eq!(&[3], &p);
 }

@@ -38,7 +38,7 @@ fn test_serialization_codegen() {
     p.voltage = 0b10_11111111.into();
     p.maximum_current = 0b10_10101010.into();
         
-    let packed = p.pack();
+    let packed = p.pack().unwrap();
     assert_eq!([0b00000010, 0b0000_1011, 0b111111_10, 0b10101010], packed);
 
     let unpacked = PowerDataObjectFixed::unpack(&packed).unwrap();

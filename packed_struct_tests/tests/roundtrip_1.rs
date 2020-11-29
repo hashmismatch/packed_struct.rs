@@ -78,7 +78,7 @@ fn test_roundtrip_1() {
             f15: if (rnd.next() % 2) == 0 { true } else { false }
         };
 
-        let packed = s.pack();
+        let packed = s.pack().unwrap();
 
         let unpacked = RoundtripAligned::unpack(&packed).unwrap();
         assert_eq!(&s, &unpacked);

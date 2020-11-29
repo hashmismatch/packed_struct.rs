@@ -49,7 +49,7 @@ fn test_display() {
         sensor_value: -1503
     };
 
-    let packed: [u8; 4] = reg.pack();
+    let packed: [u8; 4] = reg.pack().unwrap();
     let unpacked = ControlRegister::unpack(&[0x8B, 0xE7, 0x21, 0xFA]).unwrap();
 
     println!("{}", reg);

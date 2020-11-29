@@ -28,7 +28,7 @@ fn test_packing_bit_positions() {
         val5: true
     };
 
-    let packed = a.pack();
+    let packed = a.pack().unwrap();
     assert_eq!([255], packed);
 
     let unpacked = SmallInts::unpack(&packed).unwrap();
@@ -52,7 +52,7 @@ fn test_packing_bit_positions_lsb() {
         val2: true
     };
 
-    let packed = a.pack();
+    let packed = a.pack().unwrap();
     assert_eq!(&[0b01000111], &packed);
 
     let unpacked = SmallIntsLsb::unpack(&packed).unwrap();
@@ -80,7 +80,7 @@ fn test_packing_byte_position() {
         checksum: 869034217895
     };
     
-    let packed = b.pack();
+    let packed = b.pack().unwrap();
     assert_eq!(packed.len(), 13);
 
     let unpacked = BufferChecksum::unpack(&packed).unwrap();

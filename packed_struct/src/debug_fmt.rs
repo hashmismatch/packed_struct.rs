@@ -107,7 +107,12 @@ use crate::types_bits::ByteArray;
 
 impl<'a, P> fmt::Display for PackedStructDisplay<'a, P> where P: PackedStruct + PackedStructDebug {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let packed = self.packed_struct.pack();
+        let packed = match self.packed_struct.pack() {
+            Ok(packed) => packed,
+            Err(e) => {
+                return f.write_fmt(format_args!("Error while packing: {:?}", e));                
+            }
+        };
         let packed = packed.as_bytes_slice();
         let l = packed.len();
 

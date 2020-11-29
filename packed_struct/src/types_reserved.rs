@@ -68,8 +68,8 @@ use types_bits::{NumberOfBits, NumberOfBytes, ByteArray};
 
 impl<V, B> PackedStruct for ReservedBits<V, B> where Self: Default, V: ReservedBitValue, B: NumberOfBits {
     type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
-    fn pack(&self) -> <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes {
-        <<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>::new(V::get_reserved_bit_value_byte())
+    fn pack(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> {
+        Ok(<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>::new(V::get_reserved_bit_value_byte()))
     }
 
     fn unpack(_src: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> Result<Self, PackingError> {

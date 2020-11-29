@@ -2,7 +2,7 @@
 
 use internal_prelude::v1::*;
 
-use crate::{PackedStructSlice, PackingError};
+use crate::{PackedStructSlice, PackingError, lib_get_mut_slice, lib_get_slice};
 
 /// This can only be used as a vector of structures that have a statically known size
 impl<T> PackedStructSlice for Vec<T> where T: PackedStructSlice {
@@ -15,7 +15,8 @@ impl<T> PackedStructSlice for Vec<T> where T: PackedStructSlice {
         let size = T::packed_bytes_size(None)?;
 
         for (i, item) in self.iter().enumerate() {
-            item.pack_to_slice(&mut output[(i * size)..((i+1)*size)])?;
+            let mut item_out = lib_get_mut_slice(output, (i * size)..((i+1)*size))?;
+            item.pack_to_slice(item_out)?;
         }
 
         Ok(())
@@ -32,7 +33,8 @@ impl<T> PackedStructSlice for Vec<T> where T: PackedStructSlice {
 
         let mut vec = Vec::with_capacity(n);
         for i in 0..n {
-            let item = T::unpack_from_slice(&src[(i*item_size)..((i+1)*item_size)])?;
+            let item_src = lib_get_slice(src, (i*item_size)..((i+1)*item_size))?;
+            let item = T::unpack_from_slice(item_src)?;
             vec.push(item);
         }        
 

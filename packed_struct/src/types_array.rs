@@ -7,8 +7,8 @@ macro_rules! packable_u8_array {
             type ByteArray = [u8; $N];
 
             #[inline]
-            fn pack(&self) -> Self::ByteArray {
-                *self
+            fn pack(&self) -> PackingResult<Self::ByteArray> {
+                Ok(*self)
             }
 
             #[inline]

@@ -22,7 +22,7 @@ fn test_pos() {
         num2: 28.into()
     };
 
-    let packed = s.pack();
+    let packed = s.pack().unwrap();
     let unpacked = IntsLsbPosBits::unpack(&packed).unwrap();
 
     assert_eq!(unpacked, s);
