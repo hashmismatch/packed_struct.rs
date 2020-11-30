@@ -4,9 +4,12 @@ extern crate syn;
 use pack::*;
 use pack_parse_attributes::*;
 
+use syn::spanned::Spanned;
 use utils::*;
 
 use std::ops::Range;
+
+use crate::utils_syn::{get_expr_int_val, get_single_segment};
 
 pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str) -> syn::Result<Vec<(String, String)>> {
     let mut r = vec![];
@@ -137,46 +140,33 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
     let bit_width_builtin: Option<usize>;
 
     let _ty = match &field.ty {
-        //syn::Ty::Path (None, syn::Path { ref segments, .. }) => {
-        syn::Type::Path(type_path) if type_path.path.segments.len() == 1 => {
-            let ref segment = type_path.path.segments[0];
+        syn::Type::Path(type_path) => {
+            let segment = get_single_segment(type_path)?;
 
             bit_width_builtin = get_builtin_type_bit_width(segment);
             segment.clone()
         },
-        //syn::Ty::Array(ref ty, ref size) => {
         syn::Type::Array(type_array) => {
             
+            let path = match *type_array.elem {
+                syn::Type::Path(ref p) => p,
+                _ => return Err(syn::Error::new(type_array.elem.span(), "Unknown array path type"))
+            };
 
-/*
-message: type_array: TypeArray { bracket_token: Bracket, elem: Path(TypePath { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "TinyFlags", span: #0 bytes(813..822) }, arguments: None }] } }), semi_token: Semi, len: Lit(ExprLit { attrs: [], lit: Int(LitInt { token: 4 }) }) }
-*/
+            let segment = get_single_segment(path)?;
+            
+            bit_width_builtin = get_builtin_type_bit_width(segment);
+            let size = get_expr_int_val(&type_array.len)?;
 
-            panic!("type_array: {:?}", type_array);
+            if size == 0 { 
+                return Err(syn::Error::new(type_array.len.span(), "Arrays sized 0 are not supported."));
+            }            
+            
+            array_size = size;
 
-            /*
-            if let syn::Ty::Path (None, syn::Path { ref segments, .. }) = **ty {
-                if segments.len() == 1 {
-                    if let &syn::ConstExpr::Lit(syn::Lit::Int(size, _)) = size {
-                        let ref segment = segments[0];
-                        bit_width_builtin = get_builtin_type_bit_width(segment);
-                        array_size = size as usize;
-
-                        if size == 0 { panic!("Arrays sized 0 are not supported."); }
-                        
-                        segment.clone()
-                    } else {
-                        panic!("unsupported array size: {:?}", size);
-                    }
-                } else {
-                    panic!("Unsupported path type: {:#?}", ty);
-                }
-            } else {
-                panic!("Unsupported path type: {:#?}", ty);
-            }
-            */
+            segment.clone()
         },
-        _ => { panic!("Unsupported type: {:?}", field.ty); }
+        _ => { return Err(syn::Error::new(field.ty.span(), "Unsupported type")); }
     };
 
     let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field")?);
