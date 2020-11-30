@@ -2,7 +2,7 @@
 
 extern crate proc_macro;
 extern crate packed_struct;
-
+extern crate proc_macro2;
 
 extern crate syn;
 #[macro_use]

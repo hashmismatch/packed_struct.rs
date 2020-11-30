@@ -4,6 +4,7 @@ extern crate syn;
 use pack::*;
 use pack_parse_attributes::*;
 
+use quote::TokenStreamExt;
 use syn::spanned::Spanned;
 use utils::*;
 
@@ -441,74 +442,54 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         }
     }
 
-    todo!();
+    let num_bits: usize = {
+        if let Some(struct_size_bytes) = struct_size_bytes {
+            struct_size_bytes * 8
+        } else {
+            let last_bit = fields_parsed.iter().map(|f| match f {
+                &FieldKind::Regular { ref field, .. } => field.bit_range_rust.end,
+                &FieldKind::Array { ref elements, .. } => elements.last().unwrap().bit_range_rust.end
+            }).max().unwrap();
+            last_bit
+        }
+    };
 
-    // let num_bits: usize = {
-    //     if let Some(struct_size_bytes) = struct_size_bytes {
-    //         struct_size_bytes * 8
-    //     } else {
-    //         let last_bit = fields_parsed.iter().map(|f| match f {
-    //             &FieldKind::Regular { ref field, .. } => field.bit_range_rust.end,
-    //             &FieldKind::Array { ref elements, .. } => elements.last().unwrap().bit_range_rust.end
-    //         }).max().unwrap();
-    //         last_bit
-    //     }
-    // };
+    let num_bytes = (num_bits as f32 / 8.0).ceil() as usize;
 
-    // let num_bytes = (num_bits as f32 / 8.0).ceil() as usize;
+    if first_field_is_auto_positioned && (num_bits % 8) != 0 && struct_size_bytes == None {
+        return Err(syn::Error::new(fields[0].span(), "Please explicitly position the bits of the first field of this structure, as the alignment isn't obvious to the end user."));
+    }
 
-    // if first_field_is_auto_positioned && (num_bits % 8) != 0 && struct_size_bytes == None {
-    //     panic!("Please explicitly position the bits of the first field of this structure ({}), as alignment isn't obvious to the end user.", ast.ident);
-    // }
+    // check for overlaps
+    {
+        let mut bits = vec![None; num_bytes * 8];
+        for field in &fields_parsed {
+            let mut find_overlaps = |name: String, range: &Range<usize>| {
+                for i in range.start .. (range.end+1) {
+                    if let Some(&Some(ref n)) = bits.get(i) {
+                        panic!("Overlap in bits between fields {} and {}", n, name);
+                    }
 
-    // // check for overlaps
-    // {
-    //     let mut bits = vec![None; num_bytes * 8];
-    //     for field in &fields_parsed {
-    //         let mut find_overlaps = |name: String, range: &Range<usize>| {
-    //             for i in range.start .. (range.end+1) {
-    //                 if let Some(&Some(ref n)) = bits.get(i) {
-    //                     panic!("Overlap in bits between fields {} and {}", n, name);
-    //                 }
+                    bits[i] = Some(name.clone());
+                }
+            };
 
-    //                 bits[i] = Some(name.clone());
-    //             }
-    //         };
-
-    //         match field {
-    //             &FieldKind::Regular { ref field, ref ident } => {
-    //                 find_overlaps(syn_to_string(ident), &field.bit_range);
-    //             },
-    //             &FieldKind::Array { ref ident, ref elements, .. } => {
-    //                 for (i, field) in elements.iter().enumerate() {
-    //                     find_overlaps(format!("{}[{}]", syn_to_string(ident), i), &field.bit_range);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+            match field {
+                &FieldKind::Regular { ref field, ref ident } => {
+                    find_overlaps(ident.to_string(), &field.bit_range);
+                },
+                &FieldKind::Array { ref ident, ref elements, .. } => {
+                    for (i, field) in elements.iter().enumerate() {
+                        find_overlaps(format!("{}[{}]", ident.to_string(), i), &field.bit_range);
+                    }
+                }
+            }
+        }
+    }
         
-    // PackStruct {
-    //     ast: ast.clone(),
-    //     fields: fields_parsed,
-    //     num_bytes: num_bytes,
-    //     num_bits: num_bits
-    // }
+    Ok(PackStruct {
+        fields: fields_parsed,
+        num_bytes,
+        num_bits
+    })
 }
-
-
-/*
-pub fn syn_to_string<T: ::quote::ToTokens>(thing: &T) -> String {
-    syn_to_tokens(thing).as_str().into()
-}
-
-pub fn append_to_tokens<T: ::quote::ToTokens>(thing: &T, tokens: &mut ::quote::Tokens) {
-    thing.to_tokens(tokens)
-}
-
-pub fn syn_to_tokens<T: ::quote::ToTokens>(thing: &T) -> quote::Tokens {
-    let mut t = ::quote::Tokens::new();
-    append_to_tokens(thing, &mut t);
-    t
-}
-*/

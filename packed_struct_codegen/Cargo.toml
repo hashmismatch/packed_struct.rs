@@ -8,6 +8,7 @@ authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 
 [dependencies]
 quote = "1.0"
+proc-macro2 = "1.0"
 packed_struct = { version = "0.4", default-features = false }
 
 [dependencies.syn]
