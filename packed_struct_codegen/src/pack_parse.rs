@@ -201,7 +201,7 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
     
     match &field.ty {
         syn::Type::Path(path) => {
-            let segment = get_single_segment(&path)?;
+            //let segment = get_single_segment(&path)?;
             return Ok(
                 FieldKind::Regular {
                     field: parse_reg_field(field, &field.ty, bit_range, default_endianness)?,
@@ -211,12 +211,14 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
         },
         syn::Type::Array(type_array) => {
 
+            /*
             let path = match *type_array.elem {
                 syn::Type::Path(ref p) => p,
                 _ => return Err(syn::Error::new(type_array.elem.span(), "Unknown array path type"))
             };
+            */
 
-            let segment = get_single_segment(path)?;
+            //let segment = get_single_segment(path)?;
 
             let size = get_expr_int_val(&type_array.len)?;
 
@@ -229,8 +231,8 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
             for i in 0..size as usize {
                 let s = bit_range.start + (i * element_size_bits);
                 let element_bit_range = s..(s + element_size_bits - 1);
-                panic!("todo xxx");
-                //elements.push(parse_reg_field(field,  &ty, &element_bit_range, default_endianness)?);
+                //panic!("todo xxx");
+                elements.push(parse_reg_field(field, &type_array.elem, &element_bit_range, default_endianness)?);
             }
             
             return Ok(FieldKind::Array {

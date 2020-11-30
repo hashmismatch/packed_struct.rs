@@ -87,10 +87,7 @@ pub fn derive_primitive_i64(input: TokenStream) -> TokenStream {
 fn derive_primitive(input: TokenStream, ty: Option<syn::Type>) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-
-    todo!("primitive enum derive");
-
-    //let prim = primitive_enum::derive(&input, ty);
+    let prim = primitive_enum::derive(&input, ty);
 
     // quote!(#prim).to_string().parse().unwrap()
 }
