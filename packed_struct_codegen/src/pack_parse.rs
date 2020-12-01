@@ -11,7 +11,7 @@ use utils::*;
 
 use std::ops::Range;
 
-use crate::utils_syn::{get_expr_int_val, get_single_segment, get_ty_string, tokens_to_string};
+use crate::utils_syn::{get_expr_int_val, get_single_segment, tokens_to_string};
 
 pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str) -> syn::Result<Vec<(String, String)>> {
     let mut r = vec![];
@@ -46,12 +46,8 @@ pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &s
                         }
                     }
                 }
-                
-
             },
-            _ => {
-                //panic!("unsupported meta: {:?}", meta);
-            }
+            _ => ()
         }
     }
 
@@ -109,10 +105,8 @@ fn get_builtin_type_bit_width(p: &syn::PathSegment) -> syn::Result<Option<usize>
             match p.arguments {
                 ::syn::PathArguments::AngleBracketed(ref args) => {
                     for t in &args.args {
-                        if let syn::GenericArgument::Type(ty) = t {
-                            
-                            let ty_str = get_ty_string(ty)?;
-
+                        if let syn::GenericArgument::Type(ty) = t {                            
+                            let ty_str = tokens_to_string(ty);
                             if let Some(bits_pos) = ty_str.find("Bits") {
                                 let possible_int = &ty_str[(bits_pos + 4)..];
                                 if let Ok(bits) = possible_int.parse::<usize>() {
@@ -177,7 +171,9 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
     }).next().unwrap_or(BitsPositionParsed::Next);
     
     let bit_width = if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::SizeBits(bits) = a { Some(bits) } else { None }).next() {
-        if array_size > 1 { panic!("Please use the 'element_size_bits' or 'element_size_bytes' for arrays."); }
+        if array_size > 1 {
+            return Err(syn::Error::new(field.span(), "Please use the 'element_size_bits' or 'element_size_bytes' for arrays."));
+        }
         bits
     } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::ElementSizeBits(bits) = a { Some(bits) } else { None }).next() {
         bits * array_size
@@ -187,7 +183,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
         // todo: is it even possible to hit this branch?
         bit_width_builtin * array_size
     } else {
-        panic!("Couldn't determine the width of this field: {:?}", field);
+        return Err(syn::Error::new(field.span(), "Couldn't determine the bit/byte width for this field."));
     };
 
     Ok(FieldMidPositioning {
@@ -201,7 +197,6 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
     
     match &field.ty {
         syn::Type::Path(path) => {
-            //let segment = get_single_segment(&path)?;
             return Ok(
                 FieldKind::Regular {
                     field: parse_reg_field(field, &field.ty, bit_range, default_endianness)?,
@@ -210,15 +205,6 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
             );
         },
         syn::Type::Array(type_array) => {
-
-            /*
-            let path = match *type_array.elem {
-                syn::Type::Path(ref p) => p,
-                _ => return Err(syn::Error::new(type_array.elem.span(), "Unknown array path type"))
-            };
-            */
-
-            //let segment = get_single_segment(path)?;
 
             let size = get_expr_int_val(&type_array.len)?;
 
@@ -231,7 +217,6 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
             for i in 0..size as usize {
                 let s = bit_range.start + (i * element_size_bits);
                 let element_bit_range = s..(s + element_size_bits - 1);
-                //panic!("todo xxx");
                 elements.push(parse_reg_field(field, &type_array.elem, &element_bit_range, default_endianness)?);
             }
             
@@ -241,7 +226,7 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
                 elements
             });
         },
-        _ => {  }
+        _ => ()
     };
 
     Err(syn::Error::new(field.span(), "Field not supported."))
@@ -460,7 +445,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     {
         let mut bits = vec![None; num_bytes * 8];
         for field in &fields_parsed {
-            let mut find_overlaps = |name: &Ident, range: &Range<usize>| {
+            let mut find_overlaps = |name: String, range: &Range<usize>| {
                 for i in range.start .. (range.end+1) {
                     if let Some(&Some(ref n)) = bits.get(i) {
                         return Err(syn::Error::new(name.span(), format!("Overlap in bits between fields {} and {}", n, name.to_string())));
@@ -474,12 +459,11 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
 
             match field {
                 &FieldKind::Regular { ref field, ref ident } => {
-                    find_overlaps(ident, &field.bit_range)?;
+                    find_overlaps(ident.to_string(), &field.bit_range)?;
                 },
                 &FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
-                        //find_overlaps(format!("{}[{}]", ident, i), &field.bit_range); // todo: array ident?
-                        find_overlaps(ident, &field.bit_range)?;
+                        find_overlaps(format!("{}[{}]", ident.to_string(), i), &field.bit_range);
                     }
                 }
             }
@@ -488,7 +472,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     
     Ok(PackStruct {
         derive_input: ast,
-        data_struct: data_struct,
+        data_struct,
         fields: fields_parsed,
         num_bytes,
         num_bits

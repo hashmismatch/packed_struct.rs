@@ -25,11 +25,11 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
     let mut unpack_struct_set = vec![];
 
     {
-        let mut reg = |src: &dyn quote::ToTokens, target: &dyn quote::ToTokens, field: &FieldRegular| {
+        let mut reg  = |src: &dyn quote::ToTokens, target: &dyn quote::ToTokens, field: &FieldRegular| -> syn::Result<()> {
             let bits = pack_bits(field);
 
             let pack = pack_field(src, field);
-            let unpack = unpack_field(field);
+            let unpack = unpack_field(field)?;
 
             let pack_bits = bits.pack;
             let unpack_bits = bits.unpack;
@@ -47,13 +47,15 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                     #unpack
                 };
             });
+
+            Ok(())
         };
 
 
         for field in &parsed.fields {
             match field {
                 &FieldKind::Regular { ref ident, ref field } => {
-                    reg(ident, ident, field);
+                    reg(ident, ident, field)?;
 
                     unpack_struct_set.push(quote! {
                         #ident: #ident
@@ -65,7 +67,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                         let src: syn::ExprIndex = syn::parse_str(&format!("{}[{}]", tokens_to_string(ident), i))?;
                         let target: syn::Ident = syn::parse_str(&format!("{}_{}", tokens_to_string(ident), i))?;
 
-                        reg(&src, &target, field);
+                        reg(&src, &target, field)?;
                         array_unpacked_elements.push(target);
                     }
 
@@ -302,7 +304,7 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
     }
 }
 
-fn unpack_field(field: &FieldRegular) -> proc_macro2::TokenStream {
+fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
     let wrappers: Vec<_> = field.serialization_wrappers.iter().rev().cloned().collect();
 
     let result_ty = result_type();
@@ -354,7 +356,7 @@ fn unpack_field(field: &FieldRegular) -> proc_macro2::TokenStream {
                 };
             },
             (_, _) => {
-                panic!("unsupported wrappers: {:#?}", wrappers);
+                return Err(syn::Error::new(field.ty.span(), "Unsupported serialization wrappers encountered!"));
             }            
         }
 
@@ -363,5 +365,5 @@ fn unpack_field(field: &FieldRegular) -> proc_macro2::TokenStream {
         if wrappers.len() == 0 || i > wrappers.len() - 1 { break; }
     }
 
-    unpack
+    Ok(unpack)
 }

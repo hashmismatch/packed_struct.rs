@@ -193,7 +193,6 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
     Ok(q)
 }
 
-#[derive(Debug)]
 struct Variant {
     variant: syn::Variant,
     discriminant: u64,
@@ -235,8 +234,12 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
     let mut neg = false;
 
     for variant in &data_enum.variants {
-        if variant.fields != syn::Fields::Unit {
-            break;
+        
+        match variant.fields {
+            syn::Fields::Named(_) | syn::Fields::Unnamed(_) => {
+                break;
+            }
+            syn::Fields::Unit => {}
         }
 
         let (discriminant, negative, suffix) = match &variant.discriminant {

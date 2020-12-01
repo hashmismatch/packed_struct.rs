@@ -20,20 +20,6 @@ pub fn get_expr_int_val(expr: &syn::Expr) -> Result<usize> {
     }
 }
 
-pub fn get_ty_string(ty: &syn::Type) -> Result<String> {
-    /*
-    match ty {
-        syn::Type::Path(type_path) => {
-            type_path.path.
-            let seg = get_single_segment(type_path)?;
-            return Ok(seg.ident.to_string());
-        },
-        _ => Err(syn::Error::new(ty.span(), "Unable to stringify the type"))
-    }*/
-
-    Ok(tokens_to_string(ty))
-}
-
 pub fn tokens_to_string<T: quote::ToTokens>(t: &T) -> String {
     let mut tokens = TokenStream::new();
     t.to_tokens(&mut tokens);

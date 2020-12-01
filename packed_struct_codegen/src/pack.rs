@@ -11,7 +11,6 @@ pub struct FieldMidPositioning {
     pub bits_position: BitsPositionParsed,
 }
 
-#[derive(Debug)]
 pub enum FieldKind {
     Regular {
         ident: syn::Ident,
@@ -24,7 +23,6 @@ pub enum FieldKind {
     }
 }
 
-#[derive(Debug)]
 pub struct FieldRegular {
     pub ty: syn::Type,
     pub serialization_wrappers: Vec<SerializationWrapper>,
@@ -35,7 +33,7 @@ pub struct FieldRegular {
     pub bit_range_rust: Range<usize>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum SerializationWrapper {
     IntegerWrapper {
         integer: syn::Type,
