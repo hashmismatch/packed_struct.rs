@@ -5,25 +5,20 @@ use pack::*;
 use pack_codegen_docs::*;
 use common::*;
 use proc_macro2::Span;
+use syn::spanned::Spanned;
 use utils::*;
 
 use crate::utils_syn::tokens_to_string;
-
-
-
-
 
 pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream> {
 
     let (impl_generics, ty_generics, where_clause) = parsed.derive_input.generics.split_for_impl();
     let name = &parsed.derive_input.ident;
 
-    //let type_documentation = type_docs(parsed);
-    let type_documentation = quote! {};
+    let type_documentation = type_docs(parsed);
     let num_bytes = parsed.num_bytes;
     let num_bits = parsed.num_bits;
-    //let num_fields = parsed.fields.len();
-
+    
 
     let mut pack_fields = vec![];
     let mut unpack_fields = vec![];
@@ -67,8 +62,6 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                 &FieldKind::Array { ref ident, ref elements, .. } => {
                     let mut array_unpacked_elements = vec![];
                     for (i, field) in elements.iter().enumerate() {
-                        //let src = syn::Ident::new(&format!("{}[{}]", tokens_to_string(ident), i), Span::call_site());
-                        //let target = syn::Ident::new(&format!("{}_{}", tokens_to_string(ident), i), Span::call_site());
                         let src: syn::ExprIndex = syn::parse_str(&format!("{}[{}]", tokens_to_string(ident), i))?;
                         let target: syn::Ident = syn::parse_str(&format!("{}_{}", tokens_to_string(ident), i))?;
 
@@ -90,8 +83,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
     let result_ty = result_type();
 
     let debug_fmt = if include_debug_codegen() {
-        //let q = struct_runtime_formatter(parsed);
-        let q = quote!{};
+        let q = struct_runtime_formatter(parsed)?;
 
         quote! {
             #q

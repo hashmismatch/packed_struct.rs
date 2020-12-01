@@ -3,6 +3,7 @@ extern crate packed_struct;
 extern crate packed_struct_codegen;
 
 use packed_struct::prelude::*;
+use packed_struct::PackedStruct;
 
 #[test]
 fn test_serialization_codegen() {
