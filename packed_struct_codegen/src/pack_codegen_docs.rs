@@ -4,11 +4,9 @@ extern crate syn;
 use pack::*;
 use common::*;
 use proc_macro2::Span;
-use quote::{ToTokens, TokenStreamExt};
+use quote::{ToTokens};
+use syn::parse_quote;
 use utils::*;
-
-
-
 
 pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream> {
     let (impl_generics, ty_generics, where_clause) = parsed.derive_input.generics.split_for_impl();
@@ -102,13 +100,21 @@ use crate::utils_syn::tokens_to_string;
 pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
     let mut doc = quote! {};
 
-    let mut doc_html = format!("/// Structure that can be packed an unpacked into {size_bytes} bytes.\r\n",
-        size_bytes = parsed.num_bytes
-    );
+    let mut doc_html = |s: &str| {        
+        let p: syn::Attribute = parse_quote! {
+            #[doc = #s ]
+        };
 
-    doc_html.push_str("/// <table>\r\n");
-    doc_html.push_str("/// <thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
-    doc_html.push_str("/// <tbody>\r\n");
+        p.to_tokens(&mut doc);
+    };
+
+    doc_html(&format!("Structure that can be packed an unpacked into {size_bytes} bytes.\r\n",
+        size_bytes = parsed.num_bytes
+    ));
+
+    doc_html("<table>\r\n");
+    doc_html("<thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
+    doc_html("<tbody>\r\n");
 
     {
         let mut emit_field_docs = |bits: &Range<usize>, field_ident, ty| {
@@ -121,10 +127,9 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
                 }
             };
 
-            // todo: friendly integer, reserved types. add LSB/MSB integer info.            
+            // todo: friendly integer, reserved types. add LSB/MSB integer info.
 
-
-            doc_html.push_str(&format!("/// <tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits_str, field_ident, tokens_to_string(ty)));
+            doc_html(&format!("<tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits_str, field_ident, tokens_to_string(ty)));
         };
 
         for field in &parsed.fields {
@@ -142,11 +147,8 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
     }
 
 
-    doc_html.push_str("/// </tbody>\r\n");
-    doc_html.push_str("/// </table>\r\n");
-
-    //doc.append(doc_html);
-    //doc_html.to_tokens(&mut doc);
+    doc_html("</tbody>\r\n");
+    doc_html("</table>\r\n");
 
     doc
 }
