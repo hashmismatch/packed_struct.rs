@@ -32,11 +32,9 @@ pub fn derive_packable_bytes(tokens: TokenStream) -> TokenStream {
         Err(e) => return e.to_compile_error().into()
     };
 
-    todo!("derive codegen");
-    
-    //let pack = pack_codegen::derive_pack(&parsed);
-
-    // quote!(#pack).to_string().parse().unwrap()        
+    pack_codegen::derive_pack(&parsed)
+        .unwrap_or_else(|err| err.to_compile_error())
+        .into()
 }
 
 #[proc_macro_derive(PrimitiveEnum)]
@@ -87,7 +85,7 @@ pub fn derive_primitive_i64(input: TokenStream) -> TokenStream {
 fn derive_primitive(input: TokenStream, ty: Option<syn::Type>) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    let prim = primitive_enum::derive(&input, ty);
-
-    // quote!(#prim).to_string().parse().unwrap()
+    primitive_enum::derive(&input, ty)
+        .unwrap_or_else(|err| err.to_compile_error())
+        .into()
 }

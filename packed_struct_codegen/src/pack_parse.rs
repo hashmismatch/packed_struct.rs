@@ -485,8 +485,10 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
             }
         }
     }
-        
+    
     Ok(PackStruct {
+        derive_input: ast,
+        data_struct: data_struct,
         fields: fields_parsed,
         num_bytes,
         num_bits
