@@ -1,9 +1,9 @@
 //! Bit-level packing and unpacking for Rust
 //! ===========================================
 //!
-//! [![Build Status](https://travis-ci.org/hashmismatch/packed_struct.rs.svg?branch=master)](https://travis-ci.org/hashmismatch/packed_struct.rs)
-//!
+//! [![Crates.io][crates-badge]][crates-url]
 //! [![Documentation](https://docs.rs/packed_struct/badge.svg)](https://docs.rs/packed_struct)
+//! ![master](https://github.com/hashmismatch/packed_struct.rs/workflows/Rust/badge.svg)
 //!
 //! # Introduction
 //!
@@ -29,8 +29,8 @@
 //!
 //! ```toml
 //! [dependencies]
-//! packed_struct = "0.3"
-//! packed_struct_codegen = "0.3"
+//! packed_struct = "0.4"
+//! packed_struct_codegen = "0.4"
 //! ```
 //! ## Including the library and the code generator
 //!
@@ -69,20 +69,27 @@
 //!     DebugMode = 3,
 //! }
 //!
-//! fn main() {
+//! fn main() -> Result<(), PackingError> {
 //!     let test = TestPack {
 //!         tiny_int: 5.into(),
 //!         mode: SelfTestMode::DebugMode,
 //!         enabled: true
 //!     };
 //!
-//!     let packed = test.pack().unwrap();
+//!     // pack into a byte array
+//!     let packed: [u8; 1] = test.pack()?;
 //!     assert_eq!([0b10111001], packed);
 //!
-//!     let unpacked = TestPack::unpack(&packed).unwrap();
+//!     // unpack from a byte array
+//!     let unpacked = TestPack::unpack(&packed)?;
 //!     assert_eq!(*unpacked.tiny_int, 5);
 //!     assert_eq!(unpacked.mode, SelfTestMode::DebugMode);
 //!     assert_eq!(unpacked.enabled, true);
+//!
+//!     // or unpack from a slice
+//!     let unpacked = TestPack::unpack_from_slice(&packed[..])?;
+//!
+//!     Ok(())
 //! }
 //! ```
 //!
@@ -277,6 +284,8 @@
 //! 
 //! # fn main() {}
 //! ```
+//! [crates-badge]: https://img.shields.io/crates/v/packed_struct.svg
+//! [crates-url]: https://crates.io/crates/packed_struct
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
