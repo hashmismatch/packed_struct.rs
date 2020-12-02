@@ -28,21 +28,24 @@ impl<T, B> Display for Integer<T, B> where T: Display {
     }
 }
 
-use serde::ser::{Serialize, Serializer};
-impl<T, B> Serialize for Integer<T, B> where T: Serialize {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
-    {
-        self.num.serialize(serializer)
-    }
-}
+#[cfg(feature = "use_serde")]
+mod serialize {
+    
 
-use serde::de::{Deserialize, Deserializer};
-impl<'de, T, B> Deserialize<'de> for Integer<T, B> where T: Deserialize<'de>, T: Into<Integer<T, B>> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
-    {
-        <T>::deserialize(deserializer).map(|n| n.into())
+    impl<T, B> Serialize for Integer<T, B> where T: Serialize {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where S: Serializer
+        {
+            self.num.serialize(serializer)
+        }
+    }
+
+    impl<'de, T, B> Deserialize<'de> for Integer<T, B> where T: Deserialize<'de>, T: Into<Integer<T, B>> {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where D: Deserializer<'de>
+        {
+            <T>::deserialize(deserializer).map(|n| n.into())
+        }
     }
 }
 
