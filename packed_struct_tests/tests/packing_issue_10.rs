@@ -62,7 +62,7 @@ fn test_packed_struct_issue_10() {
 
 fn run() -> Result<()> {
     let data = [0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF];
-    let unpacked = LedDriverConfig::unpack(&data)
+    let _unpacked = LedDriverConfig::unpack(&data)
         .chain_err(|| "unable to unpack LED driver config")?;
 
     Ok(())
