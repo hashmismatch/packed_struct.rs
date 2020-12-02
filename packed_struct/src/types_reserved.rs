@@ -15,6 +15,7 @@ pub trait ReservedBitValue {
 }
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+#[derive(Default, Copy, Clone, PartialEq)]
 pub struct BitOne;
 impl ReservedBitValue for BitOne {
     fn get_reserved_bit_value_byte() -> u8 {
@@ -23,6 +24,7 @@ impl ReservedBitValue for BitOne {
 }
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+#[derive(Default, Copy, Clone, PartialEq)]
 pub struct BitZero;
 impl ReservedBitValue for BitZero {
     fn get_reserved_bit_value_byte() -> u8 {
@@ -32,6 +34,7 @@ impl ReservedBitValue for BitZero {
 
 /// Always packs into the associated bit value. Ignores the input when unpacking.
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+#[derive(Default, Copy, Clone, PartialEq)]
 pub struct ReservedBits<V, B> {
     value: V,
     bits: PhantomData<B>

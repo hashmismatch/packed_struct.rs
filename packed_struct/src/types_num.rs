@@ -30,9 +30,10 @@ impl<T, B> Display for Integer<T, B> where T: Display {
 
 #[cfg(feature = "use_serde")]
 mod serialize {
-    
+    use serde::ser::{Serialize, Serializer};
+    use serde::de::{Deserialize, Deserializer};
 
-    impl<T, B> Serialize for Integer<T, B> where T: Serialize {
+    impl<T, B> Serialize for super::Integer<T, B> where T: Serialize {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where S: Serializer
         {
@@ -40,7 +41,7 @@ mod serialize {
         }
     }
 
-    impl<'de, T, B> Deserialize<'de> for Integer<T, B> where T: Deserialize<'de>, T: Into<Integer<T, B>> {
+    impl<'de, T, B> Deserialize<'de> for super::Integer<T, B> where T: Deserialize<'de>, T: Into<super::Integer<T, B>> {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where D: Deserializer<'de>
         {
