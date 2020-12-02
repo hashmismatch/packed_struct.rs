@@ -12,7 +12,14 @@ fn main() {
     let dest_path = Path::new(&out_dir).join("generate_bytes_and_bits.rs");
     let mut f = File::create(&dest_path).unwrap();
 
-    let up_to_bytes = 256;
+    let up_to_bytes = 
+        if cfg!(feature = "byte_types_256") {
+            256
+        } else if cfg!(feature = "byte_types_64") {
+            64
+        } else {
+            32
+        };
 
     // bytes
     for i in 0..(up_to_bytes + 1) {

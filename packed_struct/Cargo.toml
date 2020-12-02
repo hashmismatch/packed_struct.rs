@@ -23,6 +23,8 @@ default-features = false
 default = ["std"]
 std = ["serde/std"]
 alloc = []
+byte_types_64 = []
+byte_types_256 = []
 
 # comment this section when publishing new releases to crates.io!
 [dev-dependencies]
