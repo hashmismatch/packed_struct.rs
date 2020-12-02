@@ -7,12 +7,10 @@ license = "MIT OR Apache-2.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 
 [dependencies]
-quote = "^0.3.12"
+quote = "1.0"
+syn =  { version = "1.0", features = ["full"] }
+proc-macro2 = "1.0"
 packed_struct = { version = "0.4", default-features = false }
-
-[dependencies.syn]
-version = "^0.11.4"
-features = ["full", "parsing", "printing"]
 
 [lib]
 proc-macro = true

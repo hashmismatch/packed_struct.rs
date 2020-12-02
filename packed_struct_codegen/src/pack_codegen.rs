@@ -3,36 +3,32 @@ extern crate syn;
 
 use pack::*;
 use pack_codegen_docs::*;
-use pack_parse::syn_to_string;
 use common::*;
+use syn::spanned::Spanned;
 use utils::*;
 
+use crate::utils_syn::tokens_to_string;
 
+pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream> {
 
+    let (impl_generics, ty_generics, where_clause) = parsed.derive_input.generics.split_for_impl();
+    let name = &parsed.derive_input.ident;
 
-
-pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
-
-    let (impl_generics, ty_generics, where_clause) = parsed.ast.generics.split_for_impl();
-    let name = &parsed.ast.ident;
-    //let snake_name = to_snake_case(name.as_ref());
-
-    let type_documentation = type_docs(parsed);    
+    let type_documentation = type_docs(parsed);
     let num_bytes = parsed.num_bytes;
     let num_bits = parsed.num_bits;
-    //let num_fields = parsed.fields.len();
-
+    
 
     let mut pack_fields = vec![];
     let mut unpack_fields = vec![];
     let mut unpack_struct_set = vec![];
 
     {
-        let mut reg = |src: &syn::Ident, target: &syn::Ident, field: &FieldRegular| {
+        let mut reg  = |src: &dyn quote::ToTokens, target: &dyn quote::ToTokens, field: &FieldRegular| -> syn::Result<()> {
             let bits = pack_bits(field);
 
             let pack = pack_field(src, field);
-            let unpack = unpack_field(field);
+            let unpack = unpack_field(field)?;
 
             let pack_bits = bits.pack;
             let unpack_bits = bits.unpack;
@@ -50,13 +46,15 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
                     #unpack
                 };
             });
+
+            Ok(())
         };
 
 
         for field in &parsed.fields {
             match field {
                 &FieldKind::Regular { ref ident, ref field } => {
-                    reg(ident, ident, field);
+                    reg(ident, ident, field)?;
 
                     unpack_struct_set.push(quote! {
                         #ident: #ident
@@ -65,9 +63,10 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
                 &FieldKind::Array { ref ident, ref elements, .. } => {
                     let mut array_unpacked_elements = vec![];
                     for (i, field) in elements.iter().enumerate() {
-                        let src = syn::Ident::new(format!("{}[{}]", syn_to_string(ident), i));
-                        let target = syn::Ident::new(format!("{}_{}", syn_to_string(ident), i));
-                        reg(&src, &target, field);
+                        let src: syn::ExprIndex = syn::parse_str(&format!("{}[{}]", tokens_to_string(ident), i))?;
+                        let target: syn::Ident = syn::parse_str(&format!("{}_{}", tokens_to_string(ident), i))?;
+
+                        reg(&src, &target, field)?;
                         array_unpacked_elements.push(target);
                     }
 
@@ -85,7 +84,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
     let result_ty = result_type();
 
     let debug_fmt = if include_debug_codegen() {
-        let q = struct_runtime_formatter(parsed);
+        let q = struct_runtime_formatter(parsed)?;
 
         quote! {
             #q
@@ -103,7 +102,7 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
         quote! {}
     };
 
-    quote! {
+    let q = quote! {
         #type_documentation
         impl #impl_generics ::packed_struct::PackedStruct for #name #ty_generics #where_clause {
             type ByteArray = [u8; #num_bytes];
@@ -141,14 +140,16 @@ pub fn derive_pack(parsed: &PackStruct) -> quote::Tokens {
         }
         
         #debug_fmt
-    }
+    };
+
+    Ok(q)
 }
 
 
 
 struct PackBitsCopy {
-    pack: quote::Tokens,
-    unpack: quote::Tokens
+    pack: proc_macro2::TokenStream,
+    unpack: proc_macro2::TokenStream
 }
 
 fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
@@ -255,7 +256,7 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
 }
 
 
-fn pack_field(name: &syn::Ident, field: &FieldRegular) -> quote::Tokens {
+fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::TokenStream {
     let mut output = quote! { (self.#name) };
 
     for wrapper in &field.serialization_wrappers {
@@ -302,7 +303,7 @@ fn pack_field(name: &syn::Ident, field: &FieldRegular) -> quote::Tokens {
     }
 }
 
-fn unpack_field(field: &FieldRegular) -> quote::Tokens {
+fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
     let wrappers: Vec<_> = field.serialization_wrappers.iter().rev().cloned().collect();
 
     let result_ty = result_type();
@@ -354,7 +355,7 @@ fn unpack_field(field: &FieldRegular) -> quote::Tokens {
                 };
             },
             (_, _) => {
-                panic!("unsupported wrappers: {:#?}", wrappers);
+                return Err(syn::Error::new(field.ty.span(), "Unsupported serialization wrappers encountered!"));
             }            
         }
 
@@ -363,5 +364,5 @@ fn unpack_field(field: &FieldRegular) -> quote::Tokens {
         if wrappers.len() == 0 || i > wrappers.len() - 1 { break; }
     }
 
-    unpack
+    Ok(unpack)
 }

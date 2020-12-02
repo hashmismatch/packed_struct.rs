@@ -2,19 +2,18 @@ extern crate quote;
 extern crate syn;
 
 use pack::*;
-use pack_parse::syn_to_string;
 use common::*;
+use proc_macro2::Span;
+use quote::{ToTokens};
+use syn::parse_quote;
 use utils::*;
 
-
-
-
-pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
-    let (impl_generics, ty_generics, where_clause) = parsed.ast.generics.split_for_impl();
-    let name = &parsed.ast.ident;
-    let snake_name = to_snake_case(name.as_ref());
+pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream> {
+    let (impl_generics, ty_generics, where_clause) = parsed.derive_input.generics.split_for_impl();
+    let name = &parsed.derive_input.ident;
+    let snake_name = to_snake_case(&name.to_string());
     let stdlib_prefix = collections_prefix();
-    let debug_fields_fn = syn::Ident::from(format!("debug_fields_{}", snake_name));
+    let debug_fields_fn = syn::Ident::new(&format!("debug_fields_{}", snake_name), Span::call_site());
 
     let display_header = format!("{} ({} {})",
         name,
@@ -26,8 +25,8 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
     for field in &parsed.fields {
         match field {
             &FieldKind::Regular { ref ident, ref field } => {
-                let ref name_str = ident.as_ref().to_string();
-                let bits = syn::parse_expr(&format!("{}..{}", field.bit_range.start, field.bit_range.end)).unwrap();
+                let ref name_str = ident.to_string();
+                let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
                 
                 debug_fields.push(quote! {
                     ::packed_struct::debug_fmt::DebugBitField {
@@ -39,8 +38,8 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
             },
             &FieldKind::Array { ref ident, ref elements, .. } => {
                 for (i, field) in elements.iter().enumerate() {
-                    let name_str = format!("{}[{}]", syn_to_string(ident), i);
-                    let bits = syn::parse_expr(&format!("{}..{}", field.bit_range.start, field.bit_range.end)).unwrap();
+                    let name_str = format!("{}[{}]", ident.to_string(), i);
+                    let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
                     
                     debug_fields.push(quote! {
                         ::packed_struct::debug_fmt::DebugBitField {
@@ -59,7 +58,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
     let num_bytes = parsed.num_bytes;
     let result_ty = result_type();
 
-    quote! {
+    let q = quote! {
         #[doc(hidden)]
         pub fn #debug_fields_fn(src: &#name) -> [::packed_struct::debug_fmt::DebugBitField<'static>; #num_fields] {
             [#(#debug_fields),*]
@@ -88,22 +87,34 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> quote::Tokens {
                 display.fmt(f)
             }
         }
-    }
+    };
+    
+    Ok(q)
 }
 
 use std::ops::Range;
 
+use crate::utils_syn::tokens_to_string;
 
-pub fn type_docs(parsed: &PackStruct) -> quote::Tokens {
+
+pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
     let mut doc = quote! {};
 
-    let mut doc_html = format!("/// Structure that can be packed an unpacked into {size_bytes} bytes.\r\n",
-        size_bytes = parsed.num_bytes
-    );
+    let mut doc_html = |s: &str| {        
+        let p: syn::Attribute = parse_quote! {
+            #[doc = #s ]
+        };
 
-    doc_html.push_str("/// <table>\r\n");
-    doc_html.push_str("/// <thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
-    doc_html.push_str("/// <tbody>\r\n");
+        p.to_tokens(&mut doc);
+    };
+
+    doc_html(&format!("Structure that can be packed an unpacked into {size_bytes} bytes.\r\n",
+        size_bytes = parsed.num_bytes
+    ));
+
+    doc_html("<table>\r\n");
+    doc_html("<thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
+    doc_html("<tbody>\r\n");
 
     {
         let mut emit_field_docs = |bits: &Range<usize>, field_ident, ty| {
@@ -116,32 +127,28 @@ pub fn type_docs(parsed: &PackStruct) -> quote::Tokens {
                 }
             };
 
-            // todo: friendly integer, reserved types. add LSB/MSB integer info.            
+            // todo: friendly integer, reserved types. add LSB/MSB integer info.
 
-
-            doc_html.push_str(&format!("/// <tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits_str, field_ident, syn_to_string(ty)));
+            doc_html(&format!("<tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits_str, field_ident, tokens_to_string(ty)));
         };
 
         for field in &parsed.fields {
             match field {
                 &FieldKind::Regular { ref ident, ref field } => {
-                    emit_field_docs(&field.bit_range, ident.as_ref().to_string(), &field.ty);
+                    emit_field_docs(&field.bit_range, ident.to_string(), &field.ty);
                 },
                 &FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
-                        emit_field_docs(&field.bit_range, format!("{}[{}]", syn_to_string(ident), i), &field.ty);
+                        emit_field_docs(&field.bit_range, format!("{}[{}]", ident.to_string(), i), &field.ty);
                     }
                 }
-            }
-            
+            }            
         }
     }
 
 
-    doc_html.push_str("/// </tbody>\r\n");
-    doc_html.push_str("/// </table>\r\n");
-
-    doc.append(&doc_html);
+    doc_html("</tbody>\r\n");
+    doc_html("</table>\r\n");
 
     doc
 }

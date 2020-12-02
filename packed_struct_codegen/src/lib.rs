@@ -2,14 +2,14 @@
 
 extern crate proc_macro;
 extern crate packed_struct;
-
+extern crate proc_macro2;
 
 extern crate syn;
 #[macro_use]
 extern crate quote;
 
 use proc_macro::TokenStream;
-
+use syn::{DeriveInput, parse_macro_input};
 
 mod pack;
 mod pack_codegen;
@@ -20,14 +20,20 @@ mod pack_parse_attributes;
 mod primitive_enum;
 mod common;
 mod utils;
+mod utils_syn;
 
 #[proc_macro_derive(PackedStruct, attributes(packed_struct, packed_field))]
-pub fn derive_packable_bytes(input: TokenStream) -> TokenStream {
-    let ast = syn::parse_macro_input(&input.to_string()).unwrap();
-    let parsed = pack_parse::parse_struct(&ast);
-    let pack = pack_codegen::derive_pack(&parsed);
+pub fn derive_packable_bytes(tokens: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(tokens as DeriveInput);
+    
+    let parsed = match pack_parse::parse_struct(&input) {
+        Ok(p) => p,
+        Err(e) => return e.to_compile_error().into()
+    };
 
-    quote!(#pack).to_string().parse().unwrap()        
+    pack_codegen::derive_pack(&parsed)
+        .unwrap_or_else(|err| err.to_compile_error())
+        .into()
 }
 
 #[proc_macro_derive(PrimitiveEnum)]
@@ -37,51 +43,48 @@ pub fn derive_primitive_detect(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(PrimitiveEnum_u8)]
 pub fn derive_primitive_u8(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("u8").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("u8").unwrap()))
 }
 
 #[proc_macro_derive(PrimitiveEnum_u16)]
 pub fn derive_primitive_u16(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("u16").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("u16").unwrap()))
 }
 
 #[proc_macro_derive(PrimitiveEnum_u32)]
 pub fn derive_primitive_u32(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("u32").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("u32").unwrap()))
 }
 
 #[proc_macro_derive(PrimitiveEnum_u64)]
 pub fn derive_primitive_u64(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("u64").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("u64").unwrap()))
 }
 
 #[proc_macro_derive(PrimitiveEnum_i8)]
 pub fn derive_primitive_i8(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("i8").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("i8").unwrap()))
 }
 
 #[proc_macro_derive(PrimitiveEnum_i16)]
 pub fn derive_primitive_i16(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("i16").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("i16").unwrap()))
 }
 
 #[proc_macro_derive(PrimitiveEnum_i32)]
 pub fn derive_primitive_i32(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("i32").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("i32").unwrap()))
 }
 
 #[proc_macro_derive(PrimitiveEnum_i64)]
 pub fn derive_primitive_i64(input: TokenStream) -> TokenStream {
-    derive_primitive(input, Some(syn::parse_type("i64").unwrap()))
+    derive_primitive(input, Some(syn::parse_str::<syn::Type>("i64").unwrap()))
 }
 
-fn derive_primitive(input: TokenStream, ty: Option<syn::Ty>) -> TokenStream {
-    let input = match syn::parse_derive_input(&input.to_string()) {
-        Ok(tokens) => tokens,
-        Err(msg) => panic!("Internal error from `syn`: {}", msg),
-    };
+fn derive_primitive(input: TokenStream, ty: Option<syn::Type>) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
 
-    let prim = primitive_enum::derive(&input, ty);
-
-    quote!(#prim).to_string().parse().unwrap()
+    primitive_enum::derive(&input, ty)
+        .unwrap_or_else(|err| err.to_compile_error())
+        .into()
 }

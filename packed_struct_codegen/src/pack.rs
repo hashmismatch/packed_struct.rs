@@ -10,7 +10,6 @@ pub struct FieldMidPositioning {
     pub bits_position: BitsPositionParsed,
 }
 
-#[derive(Debug)]
 pub enum FieldKind {
     Regular {
         ident: syn::Ident,
@@ -23,9 +22,8 @@ pub enum FieldKind {
     }
 }
 
-#[derive(Debug)]
 pub struct FieldRegular {
-    pub ty: syn::Ty,
+    pub ty: syn::Type,
     pub serialization_wrappers: Vec<SerializationWrapper>,
     pub bit_width: usize,
     /// The range as parsed by our parser. A single byte: 0..7
@@ -34,26 +32,25 @@ pub struct FieldRegular {
     pub bit_range_rust: Range<usize>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum SerializationWrapper {
     IntegerWrapper {
-        integer: syn::Ty,
+        integer: syn::Type,
     },
     EndiannesWrapper {
-        endian: syn::Ty
+        endian: syn::Type
     },
     PrimitiveEnumWrapper
 }
 
 
-#[derive(Debug)]
-pub struct PackStruct {
-    pub ast: syn::MacroInput,    
+pub struct PackStruct<'a> {
     pub fields: Vec<FieldKind>,
     pub num_bytes: usize,
-    pub num_bits: usize
+    pub num_bits: usize,
+    pub data_struct: &'a syn::DataStruct,
+    pub derive_input: &'a syn::DeriveInput
 }
-
 
 
 

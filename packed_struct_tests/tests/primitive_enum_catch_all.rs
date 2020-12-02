@@ -2,7 +2,7 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::prelude::*;
+use packed_struct::*;
 
 #[derive(PrimitiveEnum_u8, PartialEq, Debug, Clone, Copy)]
 pub enum Field {
@@ -17,8 +17,6 @@ pub struct Register {
     #[packed_field(bits="0..4", ty="enum")]
     pub field: EnumCatchAll<Field>
 }
-
-use packed_struct::prelude::*;
 
 #[test]
 fn prim_catch_all() {
