@@ -13,6 +13,7 @@ pub use core::mem;
 pub use core::intrinsics::write_bytes;
 pub use core::ops::Deref;
 pub use core::slice;
+pub use core::hash::{Hash, Hasher};
 
 #[cfg(feature="alloc")]
 pub use alloc::vec::Vec;

@@ -56,6 +56,14 @@ impl<T, B> PartialEq for Integer<T, B> where T: PartialEq {
     }
 }
 
+impl<T, B> Eq for Integer<T, B> where T: Eq {}
+
+impl<T, B> Hash for Integer<T, B> where T: Hash {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.num.hash(state);
+    }
+}
+
 impl<T, B> Integer<T, B> where Self: Copy {
     /// Convert into a MSB packing helper
     pub fn as_packed_msb(&self) -> MsbInteger<T, B, Self> {
