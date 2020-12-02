@@ -2,8 +2,6 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::prelude::*;
-
 #[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
 pub enum EnumU8 {
     VariantMin = 0,

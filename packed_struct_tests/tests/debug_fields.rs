@@ -2,8 +2,6 @@ extern crate packed_struct;
 #[macro_use]
 extern crate packed_struct_codegen;
 
-use packed_struct::prelude::*;
-
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PrimitiveEnum_u8)]	
 #[repr(u8)]

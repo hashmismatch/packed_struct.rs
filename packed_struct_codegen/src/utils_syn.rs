@@ -1,5 +1,4 @@
 use proc_macro2::TokenStream;
-use quote::TokenStreamExt;
 use syn::{Error, PathSegment, Result, spanned::Spanned, TypePath};
 
 pub fn get_single_segment(type_path: &TypePath) -> Result<&PathSegment> {

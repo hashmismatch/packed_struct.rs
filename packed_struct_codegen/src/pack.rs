@@ -3,7 +3,6 @@ extern crate syn;
 
 use std::ops::*;
 use pack_parse::*;
-use syn::parse::{Parse, ParseStream};
 
 #[derive(Debug)]
 pub struct FieldMidPositioning {

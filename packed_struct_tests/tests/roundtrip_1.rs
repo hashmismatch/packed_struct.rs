@@ -51,7 +51,7 @@ fn test_roundtrip_1() {
 
     let mut rnd = Rnd::new(1);
 
-    for i in 0..100 {
+    for _ in 0..100 {
         let s = RoundtripAligned {
             f1: rnd.next_num(u8::max_value() as u64) as u8,
             f2: rnd.next_num(i8::max_value() as u64) as i8,

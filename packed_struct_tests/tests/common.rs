@@ -12,6 +12,8 @@ impl Rnd {
     pub fn next_num(&mut self, max: u64) -> u64 {
         self.next() % max
     }
+
+    #[allow(dead_code)]
     pub fn next_num_range(&mut self, min: u64, max: u64) -> u64 {
         let r = max - min;
         (self.next() % r) + min
