@@ -22,3 +22,4 @@ pub use std::sync::Arc;
 pub use std::str::from_utf8;
 pub use std::ops::Deref;
 pub use std::slice;
+pub use std::hash::{Hash, Hasher};
