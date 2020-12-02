@@ -5,9 +5,6 @@ Bit-level packing and unpacking for Rust
 [![Documentation](https://docs.rs/packed_struct/badge.svg)](https://docs.rs/packed_struct)
 ![master](https://github.com/hashmismatch/packed_struct.rs/workflows/Rust/badge.svg)
 
-[crates-badge]: https://img.shields.io/crates/v/packed_struct.svg
-[crates-url]: https://crates.io/crates/packed_struct
-
 ## Introduction
 
 Packing and unpacking bit-level structures is usually a programming tasks that needlessly reinvents the wheel. This library provides
@@ -70,20 +67,27 @@ pub enum SelfTestMode {
     DebugMode = 3,
 }
 
-fn main() {
+fn main() -> Result<(), PackingError> {
     let test = TestPack {
         tiny_int: 5.into(),
         mode: SelfTestMode::DebugMode,
         enabled: true
     };
 
-    let packed = test.pack();
+    // pack into a byte array
+    let packed: [u8; 1] = test.pack()?;
     assert_eq!([0b10111001], packed);
 
-    let unpacked = TestPack::unpack(&packed).unwrap();
+    // unpack from a byte array
+    let unpacked = TestPack::unpack(&packed)?;
     assert_eq!(*unpacked.tiny_int, 5);
     assert_eq!(unpacked.mode, SelfTestMode::DebugMode);
     assert_eq!(unpacked.enabled, true);
+
+    // or unpack from a slice
+    let unpacked = TestPack::unpack_from_slice(&packed[..])?;
+
+    Ok(())
 }
 ```
 
@@ -153,14 +157,15 @@ pub struct EndianExample {
     int2: i32
 }
 
-fn main() {
+fn main() -> Result<(), PackingError> {
     let example = EndianExample {
         int1: 0xBBAA,
         int2: 0x11223344
     };
 
-    let packed = example.pack();
+    let packed = example.pack()?;
     assert_eq!([0xAA, 0xBB, 0x11, 0x22, 0x33, 0x44], packed);
+    Ok(())
 }
 ```
 
@@ -178,13 +183,14 @@ pub struct LsbIntExample {
     int1: Integer<u32, packed_bits::Bits24>,
 }
 
-fn main() {
+fn main() -> Result<(), PackingError> {
     let example = LsbIntExample {
         int1: 0xCCBBAA.into()
     };
 
-    let packed = example.pack();
+    let packed = example.pack()?;
     assert_eq!([0xAA, 0xBB, 0xCC], packed);
+    Ok(())
 }
 ```
 
@@ -211,7 +217,7 @@ pub struct Settings {
     values: [TinyFlags; 4]
 }
 
-fn main() {
+fn main() -> Result<(), PackingError> {
     let example = Settings {
         values: [
             TinyFlags { flag1: true,  val1: 1.into(), flag2: false, .. TinyFlags::default() },
@@ -221,10 +227,11 @@ fn main() {
         ]
     };
 
-    let packed = example.pack();
-    let unpacked = Settings::unpack(&packed).unwrap();
+    let packed = example.pack()?;
+    let unpacked = Settings::unpack(&packed)?;
 
     assert_eq!(example, unpacked);
+    Ok(())
 }
 ```
 
@@ -238,7 +245,7 @@ Explicit or implicit backing type:
 extern crate packed_struct;
 #[macro_use] extern crate packed_struct_codegen;
 
-#[derive(PrimitiveEnum, Clone, Copy)]
+#[derive(PrimitiveEnum, Clone, Copy, PartialEq, Debug)]
 pub enum ImplicitType {
     VariantMin = 0,
     VariantMax = 255
@@ -250,6 +257,40 @@ pub enum ExplicitType {
     VariantMax = 32767
 }
 
+fn main() {
+    use packed_struct::PrimitiveEnum;
+
+    let t = ImplicitType::VariantMin;
+    let tn: u8 = t.to_primitive();
+    assert_eq!(0, tn);
+
+    let t = ImplicitType::from_primitive(255).unwrap();
+    assert_eq!(ImplicitType::VariantMax, t);
+}
 ```
+
+## Primitive enum packing with support for catch-all unknown values
+
+```rust
+extern crate packed_struct;
+#[macro_use] extern crate packed_struct_codegen;
+
+#[derive(PrimitiveEnum_u8, Debug, Clone, Copy)]
+pub enum Field {
+    A = 1,
+    B = 2,
+    C = 3
+}
+
+#[derive(PackedStruct, Debug, PartialEq)]
+#[packed_struct(bit_numbering="msb0")]
+pub struct Register {
+    #[packed_field(bits="0..4", ty="enum")]
+    field: EnumCatchAll<Field>
+}
+
+```
+[crates-badge]: https://img.shields.io/crates/v/packed_struct.svg
+[crates-url]: https://crates.io/crates/packed_struct
 
 License: MIT OR Apache-2.0
