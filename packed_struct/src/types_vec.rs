@@ -15,7 +15,7 @@ impl<T> PackedStructSlice for Vec<T> where T: PackedStructSlice {
         let size = T::packed_bytes_size(None)?;
 
         for (i, item) in self.iter().enumerate() {
-            let mut item_out = lib_get_mut_slice(output, (i * size)..((i+1)*size))?;
+            let item_out = lib_get_mut_slice(output, (i * size)..((i+1)*size))?;
             item.pack_to_slice(item_out)?;
         }
 

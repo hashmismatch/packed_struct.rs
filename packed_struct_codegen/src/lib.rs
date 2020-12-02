@@ -9,8 +9,7 @@ extern crate syn;
 extern crate quote;
 
 use proc_macro::TokenStream;
-use syn::{DeriveInput, Result, parse_macro_input};
-use syn::parse::{Parse, ParseStream};
+use syn::{DeriveInput, parse_macro_input};
 
 mod pack;
 mod pack_codegen;

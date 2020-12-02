@@ -4,8 +4,6 @@ extern crate syn;
 use pack::*;
 use pack_parse_attributes::*;
 
-use proc_macro2::Ident;
-use quote::TokenStreamExt;
 use syn::spanned::Spanned;
 use utils::*;
 
@@ -41,7 +39,7 @@ pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &s
                                     }
 
                                 }
-                                syn::NestedMeta::Lit(l) => {}
+                                syn::NestedMeta::Lit(_) => {}
                             }
                         }
                     }
@@ -196,7 +194,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
 fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>) -> syn::Result<FieldKind> {
     
     match &field.ty {
-        syn::Type::Path(path) => {
+        syn::Type::Path(_) => {
             return Ok(
                 FieldKind::Regular {
                     field: parse_reg_field(field, &field.ty, bit_range, default_endianness)?,
@@ -463,7 +461,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
                 },
                 &FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
-                        find_overlaps(format!("{}[{}]", ident.to_string(), i), &field.bit_range);
+                        find_overlaps(format!("{}[{}]", ident.to_string(), i), &field.bit_range)?;
                     }
                 }
             }

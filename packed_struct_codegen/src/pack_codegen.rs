@@ -4,7 +4,6 @@ extern crate syn;
 use pack::*;
 use pack_codegen_docs::*;
 use common::*;
-use proc_macro2::Span;
 use syn::spanned::Spanned;
 use utils::*;
 
