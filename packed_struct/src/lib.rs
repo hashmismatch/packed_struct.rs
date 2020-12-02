@@ -161,14 +161,15 @@
 //!     int2: i32
 //! }
 //!
-//! fn main() {
+//! fn main() -> Result<(), PackingError> {
 //!     let example = EndianExample {
 //!         int1: 0xBBAA,
 //!         int2: 0x11223344
 //!     };
 //!
-//!     let packed = example.pack().unwrap();
+//!     let packed = example.pack()?;
 //!     assert_eq!([0xAA, 0xBB, 0x11, 0x22, 0x33, 0x44], packed);
+//!     Ok(())
 //! }
 //! ```
 //!
@@ -186,13 +187,14 @@
 //!     int1: Integer<u32, packed_bits::Bits24>,
 //! }
 //!
-//! fn main() {
+//! fn main() -> Result<(), PackingError> {
 //!     let example = LsbIntExample {
 //!         int1: 0xCCBBAA.into()
 //!     };
 //!
-//!     let packed = example.pack().unwrap();
+//!     let packed = example.pack()?;
 //!     assert_eq!([0xAA, 0xBB, 0xCC], packed);
+//!     Ok(())
 //! }
 //! ```
 //!
@@ -219,7 +221,7 @@
 //!     values: [TinyFlags; 4]
 //! }
 //!
-//! fn main() {
+//! fn main() -> Result<(), PackingError> {
 //!     let example = Settings {
 //!         values: [
 //!             TinyFlags { flag1: true,  val1: 1.into(), flag2: false, .. TinyFlags::default() },
@@ -229,10 +231,11 @@
 //!         ]
 //!     };
 //!
-//!     let packed = example.pack().unwrap();
-//!     let unpacked = Settings::unpack(&packed).unwrap();
+//!     let packed = example.pack()?;
+//!     let unpacked = Settings::unpack(&packed)?;
 //!
 //!     assert_eq!(example, unpacked);
+//!     Ok(())
 //! }
 //! ```
 //! 
