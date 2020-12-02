@@ -249,7 +249,7 @@
 //! extern crate packed_struct;
 //! #[macro_use] extern crate packed_struct_codegen;
 //!
-//! #[derive(PrimitiveEnum, Clone, Copy)]
+//! #[derive(PrimitiveEnum, Clone, Copy, PartialEq, Debug)]
 //! pub enum ImplicitType {
 //!     VariantMin = 0,
 //!     VariantMax = 255
@@ -261,7 +261,16 @@
 //!     VariantMax = 32767
 //! }
 //! 
-//! # fn main() {}
+//! fn main() {
+//!     use packed_struct::PrimitiveEnum;
+//!     
+//!     let t = ImplicitType::VariantMin;
+//!     let tn: u8 = t.to_primitive();
+//!     assert_eq!(0, tn);
+//!
+//!     let t = ImplicitType::from_primitive(255).unwrap();
+//!     assert_eq!(ImplicitType::VariantMax, t);
+//! }
 //! ```
 //! 
 //! # Primitive enum packing with support for catch-all unknown values
