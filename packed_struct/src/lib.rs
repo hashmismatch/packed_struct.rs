@@ -287,7 +287,9 @@
 extern crate alloc;
 
 
+#[cfg(feature = "use_serde")]
 extern crate serde;
+#[cfg(feature = "use_serde")]
 #[macro_use] extern crate serde_derive;
 
 mod internal_prelude;
