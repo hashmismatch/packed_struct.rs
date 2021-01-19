@@ -16,6 +16,13 @@ pub struct Integer<T, B> {
     bits: PhantomData<B>
 }
 
+impl<T,B: NumberOfBits> Integer<T, B> {
+    fn sign_extend_bits() -> usize {
+        let native_bit_count = 8 * core::mem::size_of::<T>();
+        native_bit_count - B::number_of_bits()
+    }
+}
+
 impl<T, B> Debug for Integer<T, B> where T: Debug {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.num)
@@ -223,6 +230,14 @@ macro_rules! integer_bytes_impl {
             #[inline]
             fn from_primitive(val: $T) -> Self {
                 let v = val & Self::value_bit_mask();
+
+                let v = if <$T>::MIN == 0 { // check if this is a signed type
+                    v
+                } else {
+                    let sign_extend_bits = Integer::<$T, $TB>::sign_extend_bits();
+                    (v << sign_extend_bits) >> sign_extend_bits
+                };
+
                 Integer { num: v, bits: Default::default() }
             }
 
