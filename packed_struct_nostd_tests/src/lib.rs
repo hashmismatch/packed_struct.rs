@@ -1,9 +1,7 @@
 #![no_std]
 
-
-extern crate packed_struct;
 #[macro_use]
-extern crate packed_struct_codegen;
+extern crate packed_struct;
 
 use packed_struct::prelude::*;
 

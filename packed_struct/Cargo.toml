@@ -3,7 +3,7 @@ name = "packed_struct"
 description = "Binary-level structure packing and unpacking generator"
 repository = "https://github.com/hashmismatch/packed_struct.rs"
 homepage = "http://www.hashmismatch.net/libraries/packed-struct/"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 build = "build.rs"
 license = "MIT OR Apache-2.0"
@@ -12,17 +12,14 @@ categories = ["encoding"]
 readme = "../README.md"
 
 [dependencies]
+packed_struct_codegen = { path = "../packed_struct_codegen/", version = "0.5.0" }
 serde = { version = "1.0", optional = true, default-features = false }
 serde_derive = { version = "1.0", optional = true }
 
 [features]
 default = ["std"]
-std = ["serde/std"]
-alloc = []
+std = ["serde/std", "packed_struct_codegen/std"]
+alloc = ["packed_struct_codegen/alloc"]
 byte_types_64 = []
 byte_types_256 = []
 use_serde = ["serde", "serde_derive"]
-
-# comment this section when publishing new releases to crates.io!
-[dev-dependencies]
-packed_struct_codegen = "0.4"
