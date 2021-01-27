@@ -22,6 +22,7 @@ mod common;
 mod utils;
 mod utils_syn;
 
+/// The derive macro that generates the packing and unpacking code for your structure.
 #[proc_macro_derive(PackedStruct, attributes(packed_struct, packed_field))]
 pub fn derive_packable_bytes(tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as DeriveInput);
@@ -36,6 +37,9 @@ pub fn derive_packable_bytes(tokens: TokenStream) -> TokenStream {
         .into()
 }
 
+/// A derive macro that generates packing and unpacking code for simple enum variants.
+/// It helps with converting your enums into integer types and back, with many other helper
+/// traits.
 #[proc_macro_derive(PrimitiveEnum)]
 pub fn derive_primitive_detect(input: TokenStream) -> TokenStream {
     derive_primitive(input, None)

@@ -46,7 +46,6 @@
 //! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
-//! use packed_struct::derive::{PackedStruct, PrimitiveEnum_u8};
 //!
 //! #[derive(PackedStruct)]
 //! #[packed_struct(bit_numbering="msb0")]
@@ -97,7 +96,7 @@
 //!
 //! ```rust
 //! #[macro_use] extern crate packed_struct;
-//! use packed_struct::derive::PackedStruct;
+//! use packed_struct::prelude::*;
 //!
 //! #[derive(PackedStruct)]
 //! #[packed_struct(attr1="val", attr2="val")]
@@ -149,7 +148,6 @@
 //! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
-//! use packed_struct::derive::PackedStruct;
 //!
 //! #[derive(PackedStruct)]
 //! pub struct EndianExample {
@@ -177,7 +175,6 @@
 //! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
-//! use packed_struct::derive::PackedStruct;
 //!
 //! #[derive(PackedStruct)]
 //! #[packed_struct(endian="lsb")]
@@ -202,7 +199,6 @@
 //! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
-//! use packed_struct::derive::PackedStruct;
 //!
 //! #[derive(PackedStruct, Default, Debug, PartialEq)]
 //! #[packed_struct(bit_numbering="msb0")]
@@ -245,7 +241,7 @@
 //! 
 //! ```rust
 //! #[macro_use] extern crate packed_struct;
-//! use packed_struct::derive::{PrimitiveEnum, PrimitiveEnum_i16};
+//! use packed_struct::prelude::*;
 //!
 //! #[derive(PrimitiveEnum, Clone, Copy, PartialEq, Debug)]
 //! pub enum ImplicitType {
@@ -274,10 +270,9 @@
 //! # Primitive enum packing with support for catch-all unknown values
 //! 
 //! ```rust
-//! # use packed_struct::prelude::*;
 //! #[macro_use] extern crate packed_struct;
-//! use packed_struct::derive::{PackedStruct, PrimitiveEnum_u8};
-//!
+//! use packed_struct::prelude::*;
+//! 
 //! #[derive(PrimitiveEnum_u8, Debug, Clone, Copy)]
 //! pub enum Field {
 //!     A = 1,
@@ -365,6 +360,8 @@ pub mod derive {
 
 pub mod prelude {
     //! Re-exports the most useful traits and types. Meant to be glob imported.
+
+    pub use super::derive::*;
 
     pub use PackedStruct;
     pub use PackedStructSlice;
