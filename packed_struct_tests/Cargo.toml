@@ -3,9 +3,9 @@ name = "packed_struct_tests"
 version = "0.1.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 publish = false
+edition = "2018"
 
 [dependencies]
-packed_struct = { version = "0.4", features = ["byte_types_64", "use_serde"] }
-packed_struct_codegen = "0.4"
+packed_struct = { path = "../packed_struct/", version = "0.5", features = ["byte_types_64", "use_serde"] }
 error-chain = "0.12.0"
 serde = "1.0"

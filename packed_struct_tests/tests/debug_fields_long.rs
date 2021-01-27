@@ -1,6 +1,4 @@
-extern crate packed_struct;
-#[macro_use]
-extern crate packed_struct_codegen;
+use packed_struct::prelude::*;
 
 #[derive(PackedStruct, Debug, Copy, Clone, Default)]
 #[packed_struct(endian="msb")]

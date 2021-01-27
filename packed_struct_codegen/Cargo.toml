@@ -10,12 +10,11 @@ authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 quote = "1.0"
 syn =  { version = "1.0", features = ["full"] }
 proc-macro2 = "1.0"
-packed_struct = { version = "0.4", default-features = false }
 
 [lib]
 proc-macro = true
 
 [features]
-default = ["std"]
-std = ["packed_struct/std"]
-alloc = ["packed_struct/alloc"]
+default = []
+std = []
+alloc = []
