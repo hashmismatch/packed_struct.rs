@@ -16,7 +16,8 @@ pub struct Integer<T, B> {
     bits: PhantomData<B>
 }
 
-impl<T,B: NumberOfBits> Integer<T, B> {
+impl<T, B: NumberOfBits> Integer<T, B> {
+    /// Number of bits that are to be used for signed integer's sign extension.
     fn sign_extend_bits() -> usize {
         let native_bit_count = 8 * core::mem::size_of::<T>();
         native_bit_count - B::number_of_bits()
