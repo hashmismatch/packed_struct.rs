@@ -1,12 +1,9 @@
-extern crate quote;
-extern crate syn;
-
-use pack::*;
-use common::*;
+use crate::pack::*;
+use crate::common::*;
 use proc_macro2::Span;
 use quote::{ToTokens};
 use syn::parse_quote;
-use utils::*;
+use crate::utils::*;
 
 pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream> {
     let (impl_generics, ty_generics, where_clause) = parsed.derive_input.generics.split_for_impl();

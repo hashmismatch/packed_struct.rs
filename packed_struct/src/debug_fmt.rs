@@ -1,6 +1,6 @@
 //! Helper structures for runtime packing visualization.
 
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 
 #[cfg(any(feature="alloc", feature="std"))]
 pub trait PackedStructDebug {
@@ -101,8 +101,7 @@ impl<'a, P> PackedStructDisplay<'a, P> {
     }
 }
 
-use packing::{PackedStruct};
-
+use crate::packing::PackedStruct;
 use crate::types_bits::ByteArray;
 
 impl<'a, P> fmt::Display for PackedStructDisplay<'a, P> where P: PackedStruct + PackedStructDebug {

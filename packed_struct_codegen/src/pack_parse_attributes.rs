@@ -1,4 +1,4 @@
-use pack_parse::*;
+use crate::pack_parse::*;
 
 #[derive(Clone, Copy)]
 pub enum PackStructAttributeKind {

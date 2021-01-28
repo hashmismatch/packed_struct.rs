@@ -2,7 +2,7 @@
 //! as a native type, packing and unpacking into byte arrays, with MSB/LSB
 //! support.
 
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 use crate::{PackingResult, lib_get_slice, lib_get_mut_slice};
 
 use super::types_bits::*;
@@ -719,7 +719,7 @@ fn test_struct_info() {
 
 #[test]
 fn test_slice_packing() {
-    use packing::PackedStructSlice;
+    use crate::packing::PackedStructSlice;
 
     let mut data = vec![0xAA, 0xBB, 0xCC, 0xDD];
     let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
@@ -740,7 +740,7 @@ fn test_packed_int_lsb_sub() {
 
 #[test]
 fn test_big_slice_unpacking() {
-    use packing::PackedStructSlice;
+    use crate::packing::PackedStructSlice;
     
     let data = vec![0xAA, 0xBB, 0xCC, 0xDD];
     let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();

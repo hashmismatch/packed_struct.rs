@@ -1,6 +1,6 @@
 //! Reserved space in a packed structure, either just zeroes or ones.
 
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 
 /// Packs into a set of zeroes. Ignores the input when unpacking.
 pub type ReservedZero<B> = ReservedBits<BitZero, B>;
@@ -66,8 +66,8 @@ impl<B> Display for ReservedBits<BitOne, B> {
 
 
 
-use packing::*;
-use types_bits::{NumberOfBits, NumberOfBytes, ByteArray};
+use crate::packing::*;
+use crate::types_bits::{NumberOfBits, NumberOfBytes, ByteArray};
 
 impl<V, B> PackedStruct for ReservedBits<V, B> where Self: Default, V: ReservedBitValue, B: NumberOfBits {
     type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;

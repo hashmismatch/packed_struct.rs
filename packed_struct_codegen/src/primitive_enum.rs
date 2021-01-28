@@ -4,8 +4,8 @@ extern crate syn;
 use proc_macro2::Span;
 use quote::TokenStreamExt;
 use syn::spanned::Spanned;
-use utils::*;
-use common::collections_prefix;
+use crate::utils::*;
+use crate::common::collections_prefix;
 
 pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::Result<proc_macro2::TokenStream> {
 
@@ -132,7 +132,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
     };
 
 
-    if ::common::alloc_supported() {
+    if crate::common::alloc_supported() {
         str_format.append_all(quote! {
             impl ::packed_struct::PrimitiveEnumDynamicStr for #name {
                 #[inline]

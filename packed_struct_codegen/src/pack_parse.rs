@@ -1,11 +1,11 @@
 extern crate quote;
 extern crate syn;
 
-use pack::*;
-use pack_parse_attributes::*;
+use crate::pack::*;
+use crate::pack_parse_attributes::*;
 
 use syn::spanned::Spanned;
-use utils::*;
+use crate::utils::*;
 
 use std::ops::Range;
 

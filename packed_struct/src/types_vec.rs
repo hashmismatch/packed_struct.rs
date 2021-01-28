@@ -1,6 +1,6 @@
 //! Helpers for vectors of slice-packable structures
 
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 
 use crate::{PackedStructSlice, PackingError, lib_get_mut_slice, lib_get_slice};
 

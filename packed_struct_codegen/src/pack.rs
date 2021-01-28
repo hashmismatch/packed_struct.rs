@@ -2,7 +2,7 @@ extern crate quote;
 extern crate syn;
 
 use std::ops::*;
-use pack_parse::*;
+use crate::pack_parse::*;
 
 #[derive(Debug)]
 pub struct FieldMidPositioning {

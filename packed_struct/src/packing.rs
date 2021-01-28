@@ -1,4 +1,4 @@
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 
 use crate::types_bits::ByteArray;
 
@@ -57,8 +57,8 @@ pub enum PackingError {
     InternalError
 }
 
-impl Display for PackingError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl crate::Display for PackingError {
+    fn fmt(&self, f: &mut crate::fmt::Formatter) -> crate::fmt::Result {
         write!(f, "{:?}", self)
     }    
 }
@@ -81,7 +81,7 @@ impl ::std::error::Error for PackingError {
     }
 }
 
-impl From<PackingError> for fmt::Error {
+impl From<PackingError> for crate::fmt::Error {
     fn from(_: PackingError) -> Self {
         Self
     }
