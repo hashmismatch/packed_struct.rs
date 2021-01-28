@@ -3,6 +3,7 @@ name = "packed_struct_examples"
 version = "0.1.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 publish = false
+edition = "2018"
 
 [dependencies]
 packed_struct = { path = "../packed_struct/", version = "0.5", features = ["byte_types_64"] }

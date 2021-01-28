@@ -1,7 +1,7 @@
 //! Unit bit sizes, used as a type parameter to concrete types to signify their
 //! intended size.
 
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 
 /// Number of bits that the generic type should occupy.
 pub trait NumberOfBits: Copy + Clone + Debug + Default {

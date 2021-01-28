@@ -1,7 +1,5 @@
 use packed_struct::prelude::*;
 
-use packed_struct::prelude::*;
-
 #[derive(PackedStruct, PartialEq, Debug, Copy, Clone)]
 #[packed_struct(endian="msb")]
 pub struct TestPack {

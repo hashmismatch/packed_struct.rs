@@ -1,11 +1,11 @@
 extern crate quote;
 extern crate syn;
 
-use pack::*;
-use pack_codegen_docs::*;
-use common::*;
+use crate::pack::*;
+use crate::pack_codegen_docs::*;
+use crate::common::*;
 use syn::spanned::Spanned;
-use utils::*;
+use crate::utils::*;
 
 use crate::utils_syn::tokens_to_string;
 
@@ -344,7 +344,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
                     use ::packed_struct::types::bits::*;
 
                     let res: #result_ty <#endian <_, _, #integer_ty >, PackingError> = <#endian <_, _, #integer_ty >>::unpack(& #unpack );
-                    let unpacked = try!(res);
+                    let unpacked = res?;
                     *unpacked
                 };
             },

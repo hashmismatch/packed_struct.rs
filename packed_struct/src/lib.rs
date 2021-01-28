@@ -363,22 +363,20 @@ pub mod prelude {
 
     pub use super::derive::*;
 
-    pub use PackedStruct;
-    pub use PackedStructSlice;
-    pub use PackingError;
+    pub use crate::{PackedStruct, PackedStructSlice, PackingError};
 
-    pub use PrimitiveEnum;
+    pub use crate::PrimitiveEnum;
     #[cfg(any(feature="alloc", feature="std"))]
-    pub use PrimitiveEnumDynamicStr;
+    pub use crate::PrimitiveEnumDynamicStr;
 
     #[cfg(not(any(feature="alloc", feature="std")))]
-    pub use PrimitiveEnumStaticStr;
+    pub use crate::PrimitiveEnumStaticStr;
 
 
-    pub use EnumCatchAll;
+    pub use crate::EnumCatchAll;
 
-    pub use types::*;
-    pub use types::bits as packed_bits;
+    pub use crate::types::*;
+    pub use crate::types::bits as packed_bits;
 }
 
 use internal_prelude::v1::*;

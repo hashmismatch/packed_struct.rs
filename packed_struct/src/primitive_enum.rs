@@ -1,4 +1,4 @@
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 
 /// An enum type that can be packed or unpacked from a simple primitive integer.
 pub trait PrimitiveEnum where Self: Sized + Copy {

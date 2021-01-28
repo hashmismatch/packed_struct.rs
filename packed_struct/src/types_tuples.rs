@@ -5,8 +5,6 @@
 //! # Example with ad-hoc chained structures
 //!
 //! ```rust
-//! extern crate packed_struct;
-//!
 //! use packed_struct::prelude::*;
 //!
 //! type Message = (u8, [u8; 4], u8);
@@ -42,7 +40,7 @@
 //! }
 //! ```
 
-use internal_prelude::v1::*;
+use crate::internal_prelude::v1::*;
 
 use crate::{PackedStructSlice, PackingError, PackingResult, lib_get_mut_slice, lib_get_slice};
 
