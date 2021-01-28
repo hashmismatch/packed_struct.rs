@@ -16,6 +16,14 @@ pub struct Integer<T, B> {
     bits: PhantomData<B>
 }
 
+impl<T, B: NumberOfBits> Integer<T, B> {
+    /// Number of bits that are to be used for signed integer's sign extension.
+    fn sign_extend_bits() -> usize {
+        let native_bit_count = 8 * core::mem::size_of::<T>();
+        native_bit_count - B::number_of_bits()
+    }
+}
+
 impl<T, B> Debug for Integer<T, B> where T: Debug {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.num)
@@ -81,7 +89,7 @@ pub trait SizedInteger<T, B: NumberOfBits> where Self: Sized {
     /// The bit mask that is used for all incoming values. For an integer
     /// of width 8, that is 0xFF.
     fn value_bit_mask() -> T;
-    /// Convert from the platform native type, applying the value mask.
+    /// Convert from the platform native type, applying the value mask and preserving the correct signedness.
     fn from_primitive(val: T) -> Self;
     /// Convert to the platform's native type.
     fn to_primitive(&self) -> T;
@@ -93,6 +101,14 @@ pub trait SizedInteger<T, B: NumberOfBits> where Self: Sized {
     fn from_msb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self>;
     /// Convert from a LSB byte array.
     fn from_lsb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self> where B: BitsFullBytes;
+}
+
+/// A helper for converting specific bit width signed integers into the native type.
+pub trait SizedIntegerSigned<T, B> : SizedInteger<T, B>
+    where B: NumberOfBits
+{
+    /// Sign-extends the packed value into a properly signed representation in one's complement.
+    fn from_unpacked_to_signed(val: T) -> T;
 }
 
 /// Convert a native platform integer type into a byte array.
@@ -213,7 +229,27 @@ integer_as_bytes!(u64, 8);
 integer_as_bytes!(i64, 8);
 
 macro_rules! integer_bytes_impl {
-    ($T: ident, $TB: ident) => {
+    ($T: ident, $TB: ident; unsigned) => {
+        integer_bytes_impl!($T, $TB, unsigned);
+    };
+    ($T: ident, $TB: ident; signed) => {
+
+        impl SizedIntegerSigned<$T, $TB> for Integer<$T, $TB> {
+            fn from_unpacked_to_signed(val: $T) -> $T {
+                let sign_extend_bits = Integer::<$T, $TB>::sign_extend_bits();
+                (val << sign_extend_bits) >> sign_extend_bits
+            }
+        }
+
+        integer_bytes_impl!($T, $TB, signed);
+    };
+    ($VAL: ident; unsigned) => {
+        $VAL
+    };
+    ($VAL: ident; signed) => {
+        Self::from_unpacked_to_signed($VAL)
+    };
+    ($T: ident, $TB: ident, $SIGN: tt) => {
         impl SizedInteger<$T, $TB> for Integer<$T, $TB> {
             #[inline]
             fn value_bit_mask() -> $T {
@@ -223,6 +259,8 @@ macro_rules! integer_bytes_impl {
             #[inline]
             fn from_primitive(val: $T) -> Self {
                 let v = val & Self::value_bit_mask();
+                let v = integer_bytes_impl!(v; $SIGN);
+
                 Integer { num: v, bits: Default::default() }
             }
 
@@ -313,132 +351,132 @@ macro_rules! integer_bytes_impl {
 }
 
 macro_rules! bytes1_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits1);
-        integer_bytes_impl!($T, Bits2);
-        integer_bytes_impl!($T, Bits3);
-        integer_bytes_impl!($T, Bits4);
-        integer_bytes_impl!($T, Bits5);
-        integer_bytes_impl!($T, Bits6);
-        integer_bytes_impl!($T, Bits7);
-        integer_bytes_impl!($T, Bits8);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits1; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits2; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits3; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits4; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits5; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits6; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits7; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits8; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes2_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits9);
-        integer_bytes_impl!($T, Bits10);
-        integer_bytes_impl!($T, Bits11);
-        integer_bytes_impl!($T, Bits12);
-        integer_bytes_impl!($T, Bits13);
-        integer_bytes_impl!($T, Bits14);
-        integer_bytes_impl!($T, Bits15);
-        integer_bytes_impl!($T, Bits16);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits9; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits10; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits11; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits12; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits13; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits14; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits15; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits16; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes3_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits17);
-        integer_bytes_impl!($T, Bits18);
-        integer_bytes_impl!($T, Bits19);
-        integer_bytes_impl!($T, Bits20);
-        integer_bytes_impl!($T, Bits21);
-        integer_bytes_impl!($T, Bits22);
-        integer_bytes_impl!($T, Bits23);
-        integer_bytes_impl!($T, Bits24);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits17; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits18; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits19; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits20; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits21; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits22; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits23; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits24; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes4_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits25);
-        integer_bytes_impl!($T, Bits26);
-        integer_bytes_impl!($T, Bits27);
-        integer_bytes_impl!($T, Bits28);
-        integer_bytes_impl!($T, Bits29);
-        integer_bytes_impl!($T, Bits30);
-        integer_bytes_impl!($T, Bits31);
-        integer_bytes_impl!($T, Bits32);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits25; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits26; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits27; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits28; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits29; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits30; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits31; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits32; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes5_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits33);
-        integer_bytes_impl!($T, Bits34);
-        integer_bytes_impl!($T, Bits35);
-        integer_bytes_impl!($T, Bits36);
-        integer_bytes_impl!($T, Bits37);
-        integer_bytes_impl!($T, Bits38);
-        integer_bytes_impl!($T, Bits39);
-        integer_bytes_impl!($T, Bits40);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits33; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits34; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits35; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits36; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits37; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits38; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits39; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits40; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes6_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits41);
-        integer_bytes_impl!($T, Bits42);
-        integer_bytes_impl!($T, Bits43);
-        integer_bytes_impl!($T, Bits44);
-        integer_bytes_impl!($T, Bits45);
-        integer_bytes_impl!($T, Bits46);
-        integer_bytes_impl!($T, Bits47);
-        integer_bytes_impl!($T, Bits48);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits41; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits42; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits43; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits44; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits45; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits46; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits47; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits48; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes7_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits49);
-        integer_bytes_impl!($T, Bits50);
-        integer_bytes_impl!($T, Bits51);
-        integer_bytes_impl!($T, Bits52);
-        integer_bytes_impl!($T, Bits53);
-        integer_bytes_impl!($T, Bits54);
-        integer_bytes_impl!($T, Bits55);
-        integer_bytes_impl!($T, Bits56);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits49; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits50; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits51; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits52; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits53; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits54; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits55; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits56; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes8_impl {
-    ($T: ident) => {
-        integer_bytes_impl!($T, Bits57);
-        integer_bytes_impl!($T, Bits58);
-        integer_bytes_impl!($T, Bits59);
-        integer_bytes_impl!($T, Bits60);
-        integer_bytes_impl!($T, Bits61);
-        integer_bytes_impl!($T, Bits62);
-        integer_bytes_impl!($T, Bits63);
-        integer_bytes_impl!($T, Bits64);
+    ($T: ident, $IS_SIGNED: tt) => {
+        integer_bytes_impl!($T, Bits57; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits58; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits59; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits60; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits61; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits62; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits63; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits64; $IS_SIGNED);
     };
 }
 
-bytes1_impl!(u8);
-bytes1_impl!(i8);
+bytes1_impl!(u8, unsigned);
+bytes1_impl!(i8, signed);
 
-bytes2_impl!(u16);
-bytes2_impl!(i16);
+bytes2_impl!(u16, unsigned);
+bytes2_impl!(i16, signed);
 
-bytes3_impl!(u32);
-bytes3_impl!(i32);
+bytes3_impl!(u32, unsigned);
+bytes3_impl!(i32, signed);
 
-bytes4_impl!(u32);
-bytes4_impl!(i32);
+bytes4_impl!(u32, unsigned);
+bytes4_impl!(i32, signed);
 
-bytes5_impl!(u64);
-bytes5_impl!(i64);
+bytes5_impl!(u64, unsigned);
+bytes5_impl!(i64, signed);
 
-bytes6_impl!(u64);
-bytes6_impl!(i64);
+bytes6_impl!(u64, unsigned);
+bytes6_impl!(i64, signed);
 
-bytes7_impl!(u64);
-bytes7_impl!(i64);
+bytes7_impl!(u64, unsigned);
+bytes7_impl!(i64, signed);
 
-bytes8_impl!(u64);
-bytes8_impl!(i64);
+bytes8_impl!(u64, unsigned);
+bytes8_impl!(i64, signed);
 
 /// A positive bit mask of the desired width.
 /// 
@@ -707,4 +745,51 @@ fn test_big_slice_unpacking() {
     let data = vec![0xAA, 0xBB, 0xCC, 0xDD];
     let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
     assert_eq!(0xAABBCCDD, **unpacked);
+}
+
+/// test if the value is properly first masked and then expanded for signedness
+#[test]
+fn test_sign_extension() {
+    let val: Integer<i8, Bits4> = (127 as i8).into();
+    assert_eq!(*val, -1);
+    let val: Integer<i8, Bits4> = (63 as i8).into();
+    assert_eq!(*val, -1);
+    let val: Integer<i8, Bits4> = (31 as i8).into();
+    assert_eq!(*val, -1);
+    let val: Integer<i8, Bits4> = (15 as i8).into();
+    assert_eq!(*val, -1);
+}
+
+/// test if sign extension conversion properly handles min and max values
+#[test]
+fn test_sign_extension_limits() {
+    for i in -8..=7 {
+        let val: Integer<i8, Bits4> = (i as i8).into();
+        assert_eq!(i, *val);
+    }
+
+    for i in -64..=63 {
+        let val: Integer<i8, Bits7> = (i as i8).into();
+        assert_eq!(i, *val);
+    }
+
+    let val: Integer<i8, Bits8> = (i8::MIN).into();
+    assert_eq!(*val, i8::MIN);
+    let val: Integer<i8, Bits8> = (i8::MAX).into();
+    assert_eq!(*val, i8::MAX);
+
+    let val: Integer<i16, Bits16> = (i16::MIN).into();
+    assert_eq!(*val, i16::MIN);
+    let val: Integer<i16, Bits16> = (i16::MAX).into();
+    assert_eq!(*val, i16::MAX);
+
+    let val: Integer<i32, Bits32> = (i32::MIN).into();
+    assert_eq!(*val, i32::MIN);
+    let val: Integer<i32, Bits32> = (i32::MAX).into();
+    assert_eq!(*val, i32::MAX);
+
+    let val: Integer<i64, Bits64> = (i64::MIN).into();
+    assert_eq!(*val, i64::MIN);
+    let val: Integer<i64, Bits64> = (i64::MAX).into();
+    assert_eq!(*val, i64::MAX);
 }

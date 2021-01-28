@@ -7,18 +7,40 @@ macro_rules! test_int_14 {
 
             #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq)]
             #[packed_struct(bit_numbering="msb0", endian="msb")]
-            pub struct Test {
+            pub struct TestUnsigned {
                 #[packed_field(bits= $fi )]
                 pub int1: Integer<u16, packed_bits::Bits14>
             }
 
-            let roundtrip = |x: u16| {
-                let mut t: Test = Default::default();
-                t.int1 = x.into();
-                let packed = t.pack().unwrap();
+            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq)]
+            #[packed_struct(bit_numbering="msb0", endian="msb")]
+            pub struct TestSigned {
+                #[packed_field(bits= $fi )]
+                pub int1: Integer<i16, packed_bits::Bits14>
+            }
 
-                let unpacked = Test::unpack(&packed).unwrap();
-                assert_eq!(unpacked, t);
+            let roundtrip = |x: u16| {
+                {
+                    let mut t: TestUnsigned = Default::default();
+                    t.int1 = x.into();
+                    let packed = t.pack().unwrap();
+
+                    let unpacked = TestUnsigned::unpack(&packed).unwrap();
+                    assert_eq!(unpacked, t);
+                    assert_eq!(*unpacked.int1, x);
+                }
+
+                {
+                    let sign_extend_bits = 16 - 14;
+                    let x = ((x as i16) << sign_extend_bits) >> sign_extend_bits;
+                    let mut t: TestSigned = Default::default();
+                    t.int1 = x.into();
+                    let packed = t.pack().unwrap();
+
+                    let unpacked = TestSigned::unpack(&packed).unwrap();
+                    assert_eq!(unpacked, t);
+                    assert_eq!(*unpacked.int1, x);
+                }
             };
 
             roundtrip(0b00_101010_10101010);
