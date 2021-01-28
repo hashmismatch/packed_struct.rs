@@ -23,6 +23,12 @@
 //!  * Arrays of packed structures as fields
 //!  * Reserved fields, their bits are always 0 or 1
 //!
+//! # Crate-level feature flags
+//!  * `std`: use the Rust standard library. Default.
+//!  * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios. Requires nightly Rust.
+//!  * `use_serde`: add serialization support to the built-in helper types.
+//!  * `byte_types_64`, `byte_types_256`: enlarge the size of the generated array, byte and bit width types.
+//!
 //! # Sample usage
 //!
 //! ## Cargo.toml
@@ -31,11 +37,13 @@
 //! [dependencies]
 //! packed_struct = "0.5"
 //! ```
-//! ## Importing the library with the derive macros
+//! ## Importing the library with the the most common traits and the derive macros
 //!
 //! ```rust
-//! #[macro_use]
-//! extern crate packed_struct;
+//! // This is only needed for pre Rust 2018
+//! #[macro_use] extern crate packed_struct;
+//! // Prelude import with the common imports
+//! use packed_struct::prelude::*;
 //! # fn main() {
 //! # }
 //! ```
@@ -43,8 +51,6 @@
 //! ## Example of a single-byte structure, with a 3 bit integer, primitive enum and a bool field.
 //!
 //! ```rust
-//! #[macro_use] extern crate packed_struct;
-//!
 //! use packed_struct::prelude::*;
 //!
 //! #[derive(PackedStruct)]
@@ -95,7 +101,6 @@
 //! ## Syntax
 //!
 //! ```rust
-//! #[macro_use] extern crate packed_struct;
 //! use packed_struct::prelude::*;
 //!
 //! #[derive(PackedStruct)]
@@ -145,8 +150,6 @@
 //! ## Mixed endian integers
 //!
 //! ```rust
-//! #[macro_use] extern crate packed_struct;
-//!
 //! use packed_struct::prelude::*;
 //!
 //! #[derive(PackedStruct)]
@@ -172,8 +175,6 @@
 //! ## 24 bit LSB integers
 //!
 //! ```rust
-//! #[macro_use] extern crate packed_struct;
-//!
 //! use packed_struct::prelude::*;
 //!
 //! #[derive(PackedStruct)]
@@ -196,8 +197,6 @@
 //! ## Nested packed types within arrays
 //!
 //! ```rust
-//! #[macro_use] extern crate packed_struct;
-//!
 //! use packed_struct::prelude::*;
 //!
 //! #[derive(PackedStruct, Default, Debug, PartialEq)]
@@ -240,7 +239,6 @@
 //! Explicit or implicit backing type:
 //! 
 //! ```rust
-//! #[macro_use] extern crate packed_struct;
 //! use packed_struct::prelude::*;
 //!
 //! #[derive(PrimitiveEnum, Clone, Copy, PartialEq, Debug)]
@@ -270,7 +268,6 @@
 //! # Primitive enum packing with support for catch-all unknown values
 //! 
 //! ```rust
-//! #[macro_use] extern crate packed_struct;
 //! use packed_struct::prelude::*;
 //! 
 //! #[derive(PrimitiveEnum_u8, Debug, Clone, Copy)]

@@ -5,13 +5,13 @@ Bit-level packing and unpacking for Rust
 [![Documentation](https://docs.rs/packed_struct/badge.svg)](https://docs.rs/packed_struct)
 ![master](https://github.com/hashmismatch/packed_struct.rs/workflows/Rust/badge.svg)
 
-## Introduction
+# Introduction
 
 Packing and unpacking bit-level structures is usually a programming tasks that needlessly reinvents the wheel. This library provides
 a meta-programming approach, using attributes to define fields and how they should be packed. The resulting trait implementations
 provide safe packing, unpacking and runtime debugging formatters with per-field documentation generated for each structure.
 
-## Features
+# Features
 
  * Plain Rust structures, decorated with attributes
  * MSB or LSB integers of user-defined bit widths
@@ -23,29 +23,32 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
  * Arrays of packed structures as fields
  * Reserved fields, their bits are always 0 or 1
 
-## Sample usage
+# Crate-level feature flags
+ * `std`: use the Rust standard library. Default.
+ * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios. Requires nightly Rust.
+ * `use_serde`: add serialization support to the built-in helper types.
+ * `byte_types_64`, `byte_types_256`: enlarge the size of the generated array, byte and bit width types.
 
-### Cargo.toml
+# Sample usage
+
+## Cargo.toml
 
 ```toml
 [dependencies]
-packed_struct = "0.4"
-packed_struct_codegen = "0.4"
+packed_struct = "0.5"
 ```
-### Including the library and the code generator
+## Importing the library with the the most common traits and the derive macros
 
 ```rust
-extern crate packed_struct;
-#[macro_use]
-extern crate packed_struct_codegen;
+// This is only needed for pre Rust 2018
+#[macro_use] extern crate packed_struct;
+// Prelude import with the common imports
+use packed_struct::prelude::*;
 ```
 
-### Example of a single-byte structure, with a 3 bit integer, primitive enum and a bool field.
+## Example of a single-byte structure, with a 3 bit integer, primitive enum and a bool field.
 
 ```rust
-extern crate packed_struct;
-#[macro_use] extern crate packed_struct_codegen;
-
 use packed_struct::prelude::*;
 
 #[derive(PackedStruct)]
@@ -91,13 +94,12 @@ fn main() -> Result<(), PackingError> {
 }
 ```
 
-## Packing attributes
+# Packing attributes
 
-### Syntax
+## Syntax
 
 ```rust
-extern crate packed_struct;
-#[macro_use] extern crate packed_struct_codegen;
+use packed_struct::prelude::*;
 
 #[derive(PackedStruct)]
 #[packed_struct(attr1="val", attr2="val")]
@@ -107,7 +109,7 @@ pub struct Structure {
 }
 ```
 
-### Per-structure attributes
+## Per-structure attributes
 
 Attribute | Values | Comment
 :--|:--|:--
@@ -115,7 +117,7 @@ Attribute | Values | Comment
 ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if the bits attribute field is used.
 ```endian``` | ```msb``` or ```lsb``` | Default integer endianness
 
-### Per-field attributes
+## Per-field attributes
 
 Attribute | Values | Comment
 :--|:--|:--
@@ -128,7 +130,7 @@ Attribute | Values | Comment
 ```ty``` | ```enum``` | Packing helper for primitive enums.
 ```endian``` | ```msb``` or ```lsb``` | Integer endianness. Applies to u16/i16 and larger types.
 
-### Bit and byte positioning
+## Bit and byte positioning
 
 Used for either ```bits``` or ```bytes``` on fields. The examples are for MSB0 positioning.
 
@@ -139,14 +141,11 @@ Value | Comment
 ```0..2``` | Exclusive range, bits zero and one
 ```0:1```, ```0..=1``` | Inclusive range, bits zero and one
 
-## More examples
+# More examples
 
-### Mixed endian integers
+## Mixed endian integers
 
 ```rust
-extern crate packed_struct;
-#[macro_use] extern crate packed_struct_codegen;
-
 use packed_struct::prelude::*;
 
 #[derive(PackedStruct)]
@@ -169,12 +168,9 @@ fn main() -> Result<(), PackingError> {
 }
 ```
 
-### 24 bit LSB integers
+## 24 bit LSB integers
 
 ```rust
-extern crate packed_struct;
-#[macro_use] extern crate packed_struct_codegen;
-
 use packed_struct::prelude::*;
 
 #[derive(PackedStruct)]
@@ -194,12 +190,9 @@ fn main() -> Result<(), PackingError> {
 }
 ```
 
-### Nested packed types within arrays
+## Nested packed types within arrays
 
 ```rust
-extern crate packed_struct;
-#[macro_use] extern crate packed_struct_codegen;
-
 use packed_struct::prelude::*;
 
 #[derive(PackedStruct, Default, Debug, PartialEq)]
@@ -235,15 +228,14 @@ fn main() -> Result<(), PackingError> {
 }
 ```
 
-## Primitive enums with simple discriminants
+# Primitive enums with simple discriminants
 
 Supported backing integer types: ```u8```, ```u16```, ```u32```, ```u64```, ```i8```, ```i16```, ```i32```, ```i64```.
 
 Explicit or implicit backing type:
 
 ```rust
-extern crate packed_struct;
-#[macro_use] extern crate packed_struct_codegen;
+use packed_struct::prelude::*;
 
 #[derive(PrimitiveEnum, Clone, Copy, PartialEq, Debug)]
 pub enum ImplicitType {
@@ -269,11 +261,10 @@ fn main() {
 }
 ```
 
-## Primitive enum packing with support for catch-all unknown values
+# Primitive enum packing with support for catch-all unknown values
 
 ```rust
-extern crate packed_struct;
-#[macro_use] extern crate packed_struct_codegen;
+use packed_struct::prelude::*;
 
 #[derive(PrimitiveEnum_u8, Debug, Clone, Copy)]
 pub enum Field {
