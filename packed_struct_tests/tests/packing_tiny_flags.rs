@@ -1,7 +1,3 @@
-extern crate packed_struct;
-#[macro_use]
-extern crate packed_struct_codegen;
-
 use packed_struct::prelude::*;
 
 #[test]
@@ -12,7 +8,7 @@ fn test_tiny_flags() {
     pub struct TinyFlags {
         #[packed_field(bits="4")]
         flag1: bool,
-        val1: Integer<u8, ::packed_bits::Bits2>,
+        val1: Integer<u8, packed_bits::Bits2>,
         flag2: bool
     }
 
