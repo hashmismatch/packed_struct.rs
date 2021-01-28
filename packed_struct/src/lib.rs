@@ -29,15 +29,13 @@
 //!
 //! ```toml
 //! [dependencies]
-//! packed_struct = "0.4"
-//! packed_struct_codegen = "0.4"
+//! packed_struct = "0.5"
 //! ```
-//! ## Including the library and the code generator
+//! ## Importing the library with the derive macros
 //!
 //! ```rust
-//! extern crate packed_struct;
 //! #[macro_use]
-//! extern crate packed_struct_codegen;
+//! extern crate packed_struct;
 //! # fn main() {
 //! # }
 //! ```
@@ -45,8 +43,7 @@
 //! ## Example of a single-byte structure, with a 3 bit integer, primitive enum and a bool field.
 //!
 //! ```rust
-//! extern crate packed_struct;
-//! #[macro_use] extern crate packed_struct_codegen;
+//! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
 //!
@@ -98,8 +95,8 @@
 //! ## Syntax
 //!
 //! ```rust
-//! extern crate packed_struct;
-//! #[macro_use] extern crate packed_struct_codegen;
+//! #[macro_use] extern crate packed_struct;
+//! use packed_struct::prelude::*;
 //!
 //! #[derive(PackedStruct)]
 //! #[packed_struct(attr1="val", attr2="val")]
@@ -148,8 +145,7 @@
 //! ## Mixed endian integers
 //!
 //! ```rust
-//! extern crate packed_struct;
-//! #[macro_use] extern crate packed_struct_codegen;
+//! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
 //!
@@ -176,8 +172,7 @@
 //! ## 24 bit LSB integers
 //!
 //! ```rust
-//! extern crate packed_struct;
-//! #[macro_use] extern crate packed_struct_codegen;
+//! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
 //!
@@ -201,8 +196,7 @@
 //! ## Nested packed types within arrays
 //!
 //! ```rust
-//! extern crate packed_struct;
-//! #[macro_use] extern crate packed_struct_codegen;
+//! #[macro_use] extern crate packed_struct;
 //!
 //! use packed_struct::prelude::*;
 //!
@@ -246,8 +240,8 @@
 //! Explicit or implicit backing type:
 //! 
 //! ```rust
-//! extern crate packed_struct;
-//! #[macro_use] extern crate packed_struct_codegen;
+//! #[macro_use] extern crate packed_struct;
+//! use packed_struct::prelude::*;
 //!
 //! #[derive(PrimitiveEnum, Clone, Copy, PartialEq, Debug)]
 //! pub enum ImplicitType {
@@ -276,10 +270,9 @@
 //! # Primitive enum packing with support for catch-all unknown values
 //! 
 //! ```rust
-//! # use packed_struct::prelude::*;
-//! extern crate packed_struct;
-//! #[macro_use] extern crate packed_struct_codegen;
-//!
+//! #[macro_use] extern crate packed_struct;
+//! use packed_struct::prelude::*;
+//! 
 //! #[derive(PrimitiveEnum_u8, Debug, Clone, Copy)]
 //! pub enum Field {
 //!     A = 1,
@@ -303,10 +296,11 @@
 
 #![cfg_attr(feature="alloc", feature(alloc))]
 
+extern crate packed_struct_codegen;
+
 #[cfg(feature="alloc")]
 #[macro_use]
 extern crate alloc;
-
 
 #[cfg(feature = "use_serde")]
 extern crate serde;
@@ -321,7 +315,6 @@ mod packing;
 mod primitive_enum;
 
 pub use primitive_enum::*;
-
 
 #[cfg(any(feature="alloc", feature="std"))]
 pub mod debug_fmt;
@@ -357,9 +350,18 @@ pub mod types {
 
 pub use self::packing::*;
 
+/// The derivation macros for packing and enums.
+pub mod derive {
+    pub use packed_struct_codegen::PackedStruct;
+    pub use packed_struct_codegen::PrimitiveEnum;
+    pub use packed_struct_codegen::{PrimitiveEnum_u8, PrimitiveEnum_u16, PrimitiveEnum_u32, PrimitiveEnum_u64};
+    pub use packed_struct_codegen::{PrimitiveEnum_i8, PrimitiveEnum_i16, PrimitiveEnum_i32, PrimitiveEnum_i64};
+}
 
 pub mod prelude {
     //! Re-exports the most useful traits and types. Meant to be glob imported.
+
+    pub use super::derive::*;
 
     pub use PackedStruct;
     pub use PackedStructSlice;

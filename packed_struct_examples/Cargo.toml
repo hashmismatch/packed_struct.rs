@@ -5,5 +5,4 @@ authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 publish = false
 
 [dependencies]
-packed_struct = "0.4"
-packed_struct_codegen = "0.4"
+packed_struct = { path = "../packed_struct/", version = "0.5", features = ["byte_types_64"] }
