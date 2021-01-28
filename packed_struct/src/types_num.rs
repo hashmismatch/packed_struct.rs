@@ -750,15 +750,29 @@ fn test_big_slice_unpacking() {
 /// test if the value is properly first masked and then expanded for signedness
 #[test]
 fn test_sign_extension() {
-    let val: Integer<i8, Bits4> = (-1 as i8).into();
-    assert_eq!(*val, -1);
     let val: Integer<i8, Bits4> = (127 as i8).into();
+    assert_eq!(*val, -1);
+    let val: Integer<i8, Bits4> = (63 as i8).into();
+    assert_eq!(*val, -1);
+    let val: Integer<i8, Bits4> = (31 as i8).into();
+    assert_eq!(*val, -1);
+    let val: Integer<i8, Bits4> = (15 as i8).into();
     assert_eq!(*val, -1);
 }
 
 /// test if sign extension conversion properly handles min and max values
 #[test]
 fn test_sign_extension_limits() {
+    for i in -8..=7 {
+        let val: Integer<i8, Bits4> = (i as i8).into();
+        assert_eq!(i, *val);
+    }
+
+    for i in -64..=63 {
+        let val: Integer<i8, Bits7> = (i as i8).into();
+        assert_eq!(i, *val);
+    }
+
     let val: Integer<i8, Bits8> = (i8::MIN).into();
     assert_eq!(*val, i8::MIN);
     let val: Integer<i8, Bits8> = (i8::MAX).into();
