@@ -8,11 +8,11 @@ fn test_packed_compact_byte() {
     #[packed_struct(size_bytes="1", bit_numbering="msb0")]
     pub struct RegA {
         #[packed_field(bits="0:2")]
-        field_a: Integer<u8, packed_bits::Bits3>,
+        field_a: Integer<u8, packed_bits::Bits::<3>>,
         #[packed_field(bits="3:4")]
-        field_b: Integer<u8, packed_bits::Bits2>,
+        field_b: Integer<u8, packed_bits::Bits::<2>>,
         #[packed_field(bits="5:7")]
-        field_c: Integer<u8, packed_bits::Bits3>
+        field_c: Integer<u8, packed_bits::Bits::<3>>
     }
     
     let reg = RegA {

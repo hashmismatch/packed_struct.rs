@@ -20,7 +20,7 @@ pub struct MspStatus {
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct SmallIntsLsb {    
     #[packed_field(bits="2:0")]
-    pub val1: Integer<u8, packed_bits::Bits3>,
+    pub val1: Integer<u8, packed_bits::Bits::<3>>,
     #[packed_field(bits="6")]
     pub val2: bool
 }

@@ -64,27 +64,23 @@ impl<const N: usize> ByteArray for [u8; N] {
     }
 }
 
-macro_rules! bytes_type {
-    ($T: ident, $N: expr) => {
-        #[derive(Copy, Clone, Debug, Default, PartialEq)]
-        pub struct $T;
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct Bytes<const N: usize>;
 
-        impl NumberOfBytes for $T {
-            type AsBytes = [u8; $N];
+impl<const N: usize> NumberOfBytes for Bytes<N> {
+    type AsBytes = [u8; N];
 
-            #[inline]
-            fn number_of_bytes() -> usize {
-                $N
-            }
-        }
+    #[inline]
+    fn number_of_bytes() -> usize {
+        N
     }
 }
 
-macro_rules! bits_type {
-    ($T: ident, $N: expr, $TB: ident, $TBK: ident) => {
-        #[derive(Copy, Clone, Debug, Default, PartialEq)]
-        pub struct $T;
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct Bits<const N: usize>;
 
+macro_rules! bits_type {
+    ($T: ty, $N: expr, $TB: ty, $TBK: ident) => {
         impl NumberOfBits for $T {
             type Bytes = $TB;
 

@@ -17,37 +17,37 @@ use packed_struct::prelude::*;
 #[packed_struct(bit_numbering = "msb0")]
 pub struct LedDriverConfig {
     #[packed_field(bits = "46:47")]
-    lodvth: Integer<u8, packed_bits::Bits2>,
+    lodvth: Integer<u8, packed_bits::Bits::<2>>,
     #[packed_field(bits = "44:45")]
-    sel_td0: Integer<u8, packed_bits::Bits2>,
+    sel_td0: Integer<u8, packed_bits::Bits::<2>>,
     #[packed_field(bits = "43")]
-    sel_gdly: Integer<u8, packed_bits::Bits1>,
+    sel_gdly: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "42")]
-    xrefresh: Integer<u8, packed_bits::Bits1>,
+    xrefresh: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "41")]
-    sel_gck_edge: Integer<u8, packed_bits::Bits1>,
+    sel_gck_edge: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "40")]
-    sel_pchg: Integer<u8, packed_bits::Bits1>,
+    sel_pchg: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "39")]
-    espwm: Integer<u8, packed_bits::Bits1>,
+    espwm: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "38")]
-    lgse3: Integer<u8, packed_bits::Bits1>,
+    lgse3: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "37")]
-    sel_sck_edge: Integer<u8, packed_bits::Bits1>,
+    sel_sck_edge: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "34:36")]
-    lgse1: Integer<u8, packed_bits::Bits3>,
+    lgse1: Integer<u8, packed_bits::Bits::<3>>,
     #[packed_field(bits = "25:33", endian = "msb")]
-    ccb: Integer<u16, packed_bits::Bits9>,
+    ccb: Integer<u16, packed_bits::Bits::<9>>,
     #[packed_field(bits = "16:24", endian = "msb")]
-    ccg: Integer<u16, packed_bits::Bits9>,
+    ccg: Integer<u16, packed_bits::Bits::<9>>,
     #[packed_field(bits = "7:15", endian = "msb")]
-    ccr: Integer<u16, packed_bits::Bits9>,
+    ccr: Integer<u16, packed_bits::Bits::<9>>,
     #[packed_field(bits = "4:6")]
-    bc: Integer<u8, packed_bits::Bits3>,
+    bc: Integer<u8, packed_bits::Bits::<3>>,
     #[packed_field(bits = "3")]
-    poker_trans_mode: Integer<u8, packed_bits::Bits1>,
+    poker_trans_mode: Integer<u8, packed_bits::Bits::<1>>,
     #[packed_field(bits = "0:2")]
-    lgse2: Integer<u8, packed_bits::Bits3>,
+    lgse2: Integer<u8, packed_bits::Bits::<3>>,
 }
 
 #[test]

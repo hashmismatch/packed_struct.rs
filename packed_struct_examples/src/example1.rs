@@ -11,7 +11,7 @@ pub struct ControlRegister {
     pub power_mode: PowerMode,
     /// Voltage on the input. [mV]
     #[packed_field(bits="3:7")]
-    pub voltage_milli_volts: Integer<u8, packed_bits::Bits5>,
+    pub voltage_milli_volts: Integer<u8, packed_bits::Bits::<5>>,
     /// Is the standby LED enabled?
     #[packed_field(bits="8")]
     pub standby_led_enabled: bool,
@@ -20,7 +20,7 @@ pub struct ControlRegister {
     pub gain_stages: [bool; 4],
     /// Reserved bits, always 1
     #[packed_field(bits="13:15")]
-    pub _reserved: ReservedOnes<packed_bits::Bits3>,
+    pub _reserved: ReservedOnes<packed_bits::Bits::<3>>,
     /// Sensor's reading
     #[packed_field(bits="16:31", endian="lsb")]
     pub sensor_value: i16

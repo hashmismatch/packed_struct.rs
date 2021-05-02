@@ -229,10 +229,10 @@ integer_as_bytes!(u64, 8);
 integer_as_bytes!(i64, 8);
 
 macro_rules! integer_bytes_impl {
-    ($T: ident, $TB: ident; unsigned) => {
+    ($T: ident, $TB: ty; unsigned) => {
         integer_bytes_impl!($T, $TB, unsigned);
     };
-    ($T: ident, $TB: ident; signed) => {
+    ($T: ident, $TB: ty; signed) => {
 
         impl SizedIntegerSigned<$T, $TB> for Integer<$T, $TB> {
             fn from_unpacked_to_signed(val: $T) -> $T {
@@ -249,11 +249,11 @@ macro_rules! integer_bytes_impl {
     ($VAL: ident; signed) => {
         Self::from_unpacked_to_signed($VAL)
     };
-    ($T: ident, $TB: ident, $SIGN: tt) => {
+    ($T: ident, $TB: ty, $SIGN: tt) => {
         impl SizedInteger<$T, $TB> for Integer<$T, $TB> {
             #[inline]
             fn value_bit_mask() -> $T {
-                ones($TB::number_of_bits() as u64) as $T
+                ones(<$TB>::number_of_bits() as u64) as $T
             }
 
             #[inline]
@@ -352,105 +352,105 @@ macro_rules! integer_bytes_impl {
 
 macro_rules! bytes1_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits1; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits2; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits3; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits4; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits5; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits6; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits7; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits8; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<1>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<2>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<3>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<4>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<5>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<6>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<7>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<8>; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes2_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits9; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits10; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits11; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits12; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits13; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits14; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits15; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits16; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<9>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<10>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<11>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<12>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<13>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<14>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<15>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<16>; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes3_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits17; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits18; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits19; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits20; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits21; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits22; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits23; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits24; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<17>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<18>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<19>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<20>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<21>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<22>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<23>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<24>; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes4_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits25; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits26; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits27; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits28; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits29; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits30; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits31; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits32; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<25>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<26>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<27>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<28>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<29>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<30>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<31>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<32>; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes5_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits33; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits34; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits35; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits36; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits37; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits38; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits39; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits40; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<33>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<34>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<35>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<36>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<37>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<38>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<39>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<40>; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes6_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits41; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits42; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits43; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits44; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits45; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits46; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits47; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits48; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<41>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<42>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<43>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<44>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<45>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<46>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<47>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<48>; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes7_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits49; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits50; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits51; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits52; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits53; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits54; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits55; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits56; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<49>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<50>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<51>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<52>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<53>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<54>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<55>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<56>; $IS_SIGNED);
     };
 }
 
 macro_rules! bytes8_impl {
     ($T: ident, $IS_SIGNED: tt) => {
-        integer_bytes_impl!($T, Bits57; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits58; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits59; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits60; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits61; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits62; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits63; $IS_SIGNED);
-        integer_bytes_impl!($T, Bits64; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<57>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<58>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<59>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<60>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<61>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<62>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<63>; $IS_SIGNED);
+        integer_bytes_impl!($T, Bits::<64>; $IS_SIGNED);
     };
 }
 
@@ -493,15 +493,15 @@ const fn ones(n: u64) -> u64 {
 
 #[test]
 fn test_u8() {
-    let byte: Integer<u8, Bits8> = 0.into();
+    let byte: Integer<u8, Bits::<8>> = 0.into();
     assert_eq!(0, *byte);
-    assert_eq!(0xFF, <Integer<u8, Bits8>>::value_bit_mask());
+    assert_eq!(0xFF, <Integer<u8, Bits::<8>>>::value_bit_mask());
 }
 
 #[test]
 fn test_u16() {
     let val = 0xABCD;
-    let num: Integer<u16, Bits16> = val.into();
+    let num: Integer<u16, Bits::<16>> = val.into();
     assert_eq!(val, *num);
     assert_eq!([0xAB, 0xCD], num.to_msb_bytes().unwrap());
     assert_eq!([0xCD, 0xAB], num.to_lsb_bytes().unwrap());
@@ -510,7 +510,7 @@ fn test_u16() {
 #[test]
 fn test_u32() {
     let val = 0x4589ABCD;
-    let num: Integer<u32, Bits32> = val.into();
+    let num: Integer<u32, Bits::<32>> = val.into();
     assert_eq!(val, *num);
     assert_eq!([0x45, 0x89, 0xAB, 0xCD], num.to_msb_bytes().unwrap());
     assert_eq!([0xCD, 0xAB, 0x89, 0x45], num.to_lsb_bytes().unwrap());
@@ -519,7 +519,7 @@ fn test_u32() {
 #[test]
 fn test_u64() {
     let val = 0x1122334455667788;
-    let num: Integer<u64, Bits64> = val.into();
+    let num: Integer<u64, Bits::<64>> = val.into();
     assert_eq!(val, *num);
     assert_eq!([0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88], num.to_msb_bytes().unwrap());
     assert_eq!([0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11], num.to_lsb_bytes().unwrap());
@@ -528,7 +528,7 @@ fn test_u64() {
 #[test]
 fn test_roundtrip_u32() {
     let val = 0x11223344;
-    let num: Integer<u32, Bits32> = val.into();
+    let num: Integer<u32, Bits::<32>> = val.into();
     let msb_bytes = num.to_msb_bytes().unwrap();
     let from_msb = u32::from_msb_bytes(&msb_bytes);
     assert_eq!(val, from_msb);
@@ -541,25 +541,25 @@ fn test_roundtrip_u32() {
 #[test]
 fn test_roundtrip_u24() {
     let val = 0xCCBBAA;
-    let num: Integer<u32, Bits24> = val.into();
+    let num: Integer<u32, Bits::<24>> = val.into();
     let msb_bytes = num.to_msb_bytes().unwrap();
     assert_eq!([0xCC, 0xBB, 0xAA], msb_bytes);
-    let from_msb = <Integer<u32, Bits24>>::from_msb_bytes(&msb_bytes).unwrap();
+    let from_msb = <Integer<u32, Bits::<24>>>::from_msb_bytes(&msb_bytes).unwrap();
     assert_eq!(val, *from_msb);
 
     let lsb_bytes = num.to_lsb_bytes().unwrap();
     assert_eq!([0xAA, 0xBB, 0xCC], lsb_bytes);
-    let from_lsb = <Integer<u32, Bits24>>::from_lsb_bytes(&lsb_bytes).unwrap();
+    let from_lsb = <Integer<u32, Bits::<24>>>::from_lsb_bytes(&lsb_bytes).unwrap();
     assert_eq!(val, *from_lsb);
 }
 
 #[test]
 fn test_roundtrip_u20() {
     let val = 0xFBBAA;
-    let num: Integer<u32, Bits20> = val.into();
+    let num: Integer<u32, Bits::<20>> = val.into();
     let msb_bytes = num.to_msb_bytes().unwrap();
     assert_eq!([0x0F, 0xBB, 0xAA], msb_bytes);
-    let from_msb = <Integer<u32, Bits20>>::from_msb_bytes(&msb_bytes).unwrap();
+    let from_msb = <Integer<u32, Bits::<20>>>::from_msb_bytes(&msb_bytes).unwrap();
     assert_eq!(val, *from_msb);    
 }
 
@@ -675,36 +675,36 @@ impl<T, B, I> PackedStructInfo for LsbInteger<T, B, I> where B: NumberOfBits {
 #[test]
 fn test_packed_int_msb() {
     let val = 0xAABBCCDD;
-    let typed: Integer<u32, Bits32> = val.into();
+    let typed: Integer<u32, Bits::<32>> = val.into();
     let endian = typed.as_packed_msb();
     let packed = endian.pack().unwrap();
     assert_eq!([0xAA, 0xBB, 0xCC, 0xDD], packed);
     
-    let unpacked: MsbInteger<_, _, Integer<u32, Bits32>> = MsbInteger::unpack(&packed).unwrap();
+    let unpacked: MsbInteger<_, _, Integer<u32, Bits::<32>>> = MsbInteger::unpack(&packed).unwrap();
     assert_eq!(val, **unpacked);
 }
 
 #[test]
 fn test_packed_int_partial() {
     let val = 0b10_10101010;
-    let typed: Integer<u16, Bits10> = val.into();
+    let typed: Integer<u16, Bits::<10>> = val.into();
     let endian = typed.as_packed_msb();
     let packed = endian.pack().unwrap();
     assert_eq!([0b00000010, 0b10101010], packed);
     
-    let unpacked: MsbInteger<_, _, Integer<u16, Bits10>> = MsbInteger::unpack(&packed).unwrap();
+    let unpacked: MsbInteger<_, _, Integer<u16, Bits::<10>>> = MsbInteger::unpack(&packed).unwrap();
     assert_eq!(val, **unpacked);
 }
 
 #[test]
 fn test_packed_int_lsb() {
     let val = 0xAABBCCDD;
-    let typed: Integer<u32, Bits32> = val.into();
+    let typed: Integer<u32, Bits::<32>> = val.into();
     let endian = typed.as_packed_lsb();
     let packed = endian.pack().unwrap();
     assert_eq!([0xDD, 0xCC, 0xBB, 0xAA], packed);
     
-    let unpacked: LsbInteger<_, _, Integer<u32, Bits32>> = LsbInteger::unpack(&packed).unwrap();
+    let unpacked: LsbInteger<_, _, Integer<u32, Bits::<32>>> = LsbInteger::unpack(&packed).unwrap();
     assert_eq!(val, **unpacked);
 }
 
@@ -712,7 +712,7 @@ fn test_packed_int_lsb() {
 fn test_struct_info() {
     fn get_bits<P: PackedStructInfo>(_s: &P) -> usize { P::packed_bits() }
 
-    let typed: Integer<u32, Bits30> = 123.into();
+    let typed: Integer<u32, Bits::<30>> = 123.into();
     let msb = typed.as_packed_msb();
     assert_eq!(30, get_bits(&msb));
 }
@@ -722,7 +722,7 @@ fn test_slice_packing() {
     use crate::packing::PackedStructSlice;
 
     let mut data = vec![0xAA, 0xBB, 0xCC, 0xDD];
-    let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
+    let unpacked = <MsbInteger<_, _, Integer<u32, Bits::<32>>>>::unpack_from_slice(&data).unwrap();
     assert_eq!(0xAABBCCDD, **unpacked);
 
     unpacked.pack_to_slice(&mut data).unwrap();
@@ -732,7 +732,7 @@ fn test_slice_packing() {
 #[test]
 fn test_packed_int_lsb_sub() {
     let val = 0xAABBCC;
-    let typed: Integer<u32, Bits24> = val.into();
+    let typed: Integer<u32, Bits::<24>> = val.into();
     let endian = typed.as_packed_lsb();
     let packed = endian.pack().unwrap();
     assert_eq!([0xCC, 0xBB, 0xAA], packed);
@@ -743,20 +743,20 @@ fn test_big_slice_unpacking() {
     use crate::packing::PackedStructSlice;
     
     let data = vec![0xAA, 0xBB, 0xCC, 0xDD];
-    let unpacked = <MsbInteger<_, _, Integer<u32, Bits32>>>::unpack_from_slice(&data).unwrap();
+    let unpacked = <MsbInteger<_, _, Integer<u32, Bits::<32>>>>::unpack_from_slice(&data).unwrap();
     assert_eq!(0xAABBCCDD, **unpacked);
 }
 
 /// test if the value is properly first masked and then expanded for signedness
 #[test]
 fn test_sign_extension() {
-    let val: Integer<i8, Bits4> = (127 as i8).into();
+    let val: Integer<i8, Bits::<4>> = (127 as i8).into();
     assert_eq!(*val, -1);
-    let val: Integer<i8, Bits4> = (63 as i8).into();
+    let val: Integer<i8, Bits::<4>> = (63 as i8).into();
     assert_eq!(*val, -1);
-    let val: Integer<i8, Bits4> = (31 as i8).into();
+    let val: Integer<i8, Bits::<4>> = (31 as i8).into();
     assert_eq!(*val, -1);
-    let val: Integer<i8, Bits4> = (15 as i8).into();
+    let val: Integer<i8, Bits::<4>> = (15 as i8).into();
     assert_eq!(*val, -1);
 }
 
@@ -764,32 +764,32 @@ fn test_sign_extension() {
 #[test]
 fn test_sign_extension_limits() {
     for i in -8..=7 {
-        let val: Integer<i8, Bits4> = (i as i8).into();
+        let val: Integer<i8, Bits::<4>> = (i as i8).into();
         assert_eq!(i, *val);
     }
 
     for i in -64..=63 {
-        let val: Integer<i8, Bits7> = (i as i8).into();
+        let val: Integer<i8, Bits::<7>> = (i as i8).into();
         assert_eq!(i, *val);
     }
 
-    let val: Integer<i8, Bits8> = (i8::MIN).into();
+    let val: Integer<i8, Bits::<8>> = (i8::MIN).into();
     assert_eq!(*val, i8::MIN);
-    let val: Integer<i8, Bits8> = (i8::MAX).into();
+    let val: Integer<i8, Bits::<8>> = (i8::MAX).into();
     assert_eq!(*val, i8::MAX);
 
-    let val: Integer<i16, Bits16> = (i16::MIN).into();
+    let val: Integer<i16, Bits::<16>> = (i16::MIN).into();
     assert_eq!(*val, i16::MIN);
-    let val: Integer<i16, Bits16> = (i16::MAX).into();
+    let val: Integer<i16, Bits::<16>> = (i16::MAX).into();
     assert_eq!(*val, i16::MAX);
 
-    let val: Integer<i32, Bits32> = (i32::MIN).into();
+    let val: Integer<i32, Bits::<32>> = (i32::MIN).into();
     assert_eq!(*val, i32::MIN);
-    let val: Integer<i32, Bits32> = (i32::MAX).into();
+    let val: Integer<i32, Bits::<32>> = (i32::MAX).into();
     assert_eq!(*val, i32::MAX);
 
-    let val: Integer<i64, Bits64> = (i64::MIN).into();
+    let val: Integer<i64, Bits::<64>> = (i64::MIN).into();
     assert_eq!(*val, i64::MIN);
-    let val: Integer<i64, Bits64> = (i64::MAX).into();
+    let val: Integer<i64, Bits::<64>> = (i64::MAX).into();
     assert_eq!(*val, i64::MAX);
 }

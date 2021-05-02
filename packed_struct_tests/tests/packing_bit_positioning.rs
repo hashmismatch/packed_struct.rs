@@ -4,9 +4,9 @@ use packed_struct::prelude::*;
 #[packed_struct(bit_numbering="msb0")]
 pub struct SmallInts {    
     #[packed_field(bits="0:2")]
-    pub val1: Integer<u8, packed_bits::Bits3>,
+    pub val1: Integer<u8, packed_bits::Bits::<3>>,
     #[packed_field(bits="3:4")]
-    pub val2: Integer<u8, packed_bits::Bits2>,
+    pub val2: Integer<u8, packed_bits::Bits::<2>>,
     pub val3: bool,
     #[packed_field(bits="6")]
     pub val4: bool,
@@ -36,7 +36,7 @@ fn test_packing_bit_positions() {
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct SmallIntsLsb {    
     #[packed_field(bits="2:0")]
-    pub val1: Integer<u8, packed_bits::Bits3>,
+    pub val1: Integer<u8, packed_bits::Bits::<3>>,
     #[packed_field(bits="6")]
     pub val2: bool
 }

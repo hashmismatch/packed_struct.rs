@@ -104,11 +104,20 @@ fn get_builtin_type_bit_width(p: &syn::PathSegment) -> syn::Result<Option<usize>
                 ::syn::PathArguments::AngleBracketed(ref args) => {
                     for t in &args.args {
                         if let syn::GenericArgument::Type(ty) = t {                            
-                            let ty_str = tokens_to_string(ty);
-                            if let Some(bits_pos) = ty_str.find("Bits") {
-                                let possible_int = &ty_str[(bits_pos + 4)..];
-                                if let Ok(bits) = possible_int.parse::<usize>() {
-                                    return Ok(Some(bits));
+                            let ty_str = tokens_to_string(ty);                            
+                            let p = " Bits ";
+                            if let Some(bits_pos) = ty_str.find(p) {
+                                let ty_start = &ty_str[(bits_pos+p.len())..];                                
+                                let start = ty_start.find(|p: char| p.is_numeric());
+                                if let Some(start) = start {
+                                    let num_start = &ty_start[start..];                                    
+                                    let end = num_start.find(|p: char| !p.is_numeric());
+                                    if let Some(end) = end {
+                                        let num = &num_start[..end];
+                                        if let Ok(bits) = num.parse::<usize>() {
+                                            return Ok(Some(bits));
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -266,7 +275,7 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
         } else {
             ty_str.clone()
         };
-        let integer_wrap_ty = syn::parse_str(&format!("Integer<{}, Bits{}>", ty, bit_width))?;
+        let integer_wrap_ty = syn::parse_str(&format!("Integer<{}, Bits::<{}>>", ty, bit_width))?;
         wrappers.push(SerializationWrapper::IntegerWrapper { integer: integer_wrap_ty });
     }
 
