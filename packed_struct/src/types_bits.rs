@@ -38,6 +38,32 @@ pub trait ByteArray {
     fn new(value: u8) -> Self;
 }
 
+impl<const N: usize> ByteArray for [u8; N] {
+    #[inline]
+    fn len() -> usize {
+        N
+    }
+
+    #[inline]
+    fn as_bytes_slice(&self) -> &[u8] {
+        &self[..]
+    }
+
+    #[inline]
+    fn as_mut_bytes_slice(&mut self) -> &mut [u8] {
+        &mut self[..]
+    }
+
+    #[inline]
+    fn rotate_right(&mut self, bytes: usize) {
+        bytes_rotate_right(self, bytes)
+    }
+
+    fn new(value: u8) -> Self {
+        [value; N]
+    }
+}
+
 macro_rules! bytes_type {
     ($T: ident, $N: expr) => {
         #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -49,32 +75,6 @@ macro_rules! bytes_type {
             #[inline]
             fn number_of_bytes() -> usize {
                 $N
-            }
-        }
-
-        impl ByteArray for [u8; $N] {
-            #[inline]
-            fn len() -> usize {
-                $N
-            }
-
-            #[inline]
-            fn as_bytes_slice(&self) -> &[u8] {
-                &self[..]
-            }
-
-            #[inline]
-            fn as_mut_bytes_slice(&mut self) -> &mut [u8] {
-                &mut self[..]
-            }
-
-            #[inline]
-            fn rotate_right(&mut self, bytes: usize) {
-                bytes_rotate_right(self, bytes)
-            }
-
-            fn new(value: u8) -> Self {
-                [value; $N]
             }
         }
     }
