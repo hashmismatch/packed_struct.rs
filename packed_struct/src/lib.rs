@@ -322,6 +322,7 @@ mod types_bits;
 mod types_generic;
 mod types_num;
 mod types_reserved;
+mod utils;
 
 pub mod types_tuples;
 

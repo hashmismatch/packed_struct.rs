@@ -96,11 +96,11 @@ pub trait SizedInteger<T, B: NumberOfBits> where Self: Sized {
     /// Convert to a MSB byte representation. 0xAABB is converted into [0xAA, 0xBB].
     fn to_msb_bytes(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>;
     /// Convert to a LSB byte representation. 0xAABB is converted into [0xBB, 0xAA].
-    fn to_lsb_bytes(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes> where B: BitsFullBytes;
+    fn to_lsb_bytes(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>;
     /// Convert from a MSB byte array.
     fn from_msb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self>;
     /// Convert from a LSB byte array.
-    fn from_lsb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self> where B: BitsFullBytes;
+    fn from_lsb_bytes(bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes) -> PackingResult<Self>;
 }
 
 /// A helper for converting specific bit width signed integers into the native type.
@@ -622,14 +622,14 @@ impl<T, B, I> PackedStructInfo for MsbInteger<T, B, I> where B: NumberOfBits {
 /// A wrapper that packages the integer as a LSB packaged byte array. Usually
 /// invoked using code generation.
 pub struct LsbInteger<T, B, I>(I, PhantomData<T>, PhantomData<B>);
-impl<T, B, I> Deref for LsbInteger<T, B, I> where B: BitsFullBytes {
+impl<T, B, I> Deref for LsbInteger<T, B, I> {
     type Target = I;
 
     fn deref(&self) -> &I {
         &self.0
     }
 }
-impl<T, B, I> From<I> for LsbInteger<T, B, I> where B: BitsFullBytes {
+impl<T, B, I> From<I> for LsbInteger<T, B, I> {
     fn from(i: I) -> Self {
         LsbInteger(i, Default::default(), Default::default())
     }
@@ -648,7 +648,7 @@ impl<T, B, I> Display for LsbInteger<T, B, I> where I: Display {
 }
 
 impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
-    where B: NumberOfBits, I: SizedInteger<T, B>, B: BitsFullBytes
+    where B: NumberOfBits, I: SizedInteger<T, B>
 {
     type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
 
@@ -706,6 +706,29 @@ fn test_packed_int_lsb() {
     
     let unpacked: LsbInteger<_, _, Integer<u32, Bits::<32>>> = LsbInteger::unpack(&packed).unwrap();
     assert_eq!(val, **unpacked);
+}
+
+#[test]
+fn test_packed_int_lsb_partial() {
+    let val = 0b10_10101011;
+    let typed: Integer<u16, Bits::<10>> = val.into();
+    let endian = typed.as_packed_lsb();
+    let packed = endian.pack().unwrap();
+    assert_eq!([0b00000011, 0b10101010], packed);
+    
+    let unpacked: LsbInteger<_, _, Integer<u16, Bits::<10>>> = LsbInteger::unpack(&packed).unwrap();
+    assert_eq!(val, **unpacked);
+
+    /*
+    let val = 0xAABBCCDD;
+    let typed: Integer<u32, Bits::<32>> = val.into();
+    let endian = typed.as_packed_lsb();
+    let packed = endian.pack().unwrap();
+    assert_eq!([0xDD, 0xCC, 0xBB, 0xAA], packed);
+    
+    let unpacked: LsbInteger<_, _, Integer<u32, Bits::<32>>> = LsbInteger::unpack(&packed).unwrap();
+    assert_eq!(val, **unpacked);
+    */
 }
 
 #[test]
