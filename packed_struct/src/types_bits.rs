@@ -10,6 +10,10 @@ pub trait NumberOfBits: Copy + Clone + Debug + Default {
 
     /// The numerical number of bits.
     fn number_of_bits() -> usize;
+
+    fn byte_array_len() -> usize {
+        <<Self::Bytes as NumberOfBytes>::AsBytes as ByteArray>::len()
+    }
 }
 
 /// These bits are a multiple of 8
@@ -30,7 +34,7 @@ pub trait NumberOfBytes: Copy + Clone + Debug + Default {
 }
 
 /// Helper that allows us to cast a fixed size array into a byte slice.
-pub trait ByteArray {
+pub trait ByteArray: Clone {
     fn len() -> usize;
     fn as_bytes_slice(&self) -> &[u8];
     fn as_mut_bytes_slice(&mut self) -> &mut [u8];
