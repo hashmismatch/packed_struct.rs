@@ -3,9 +3,9 @@ name = "packed_struct"
 description = "Binary-level structure packing and unpacking generator"
 repository = "https://github.com/hashmismatch/packed_struct.rs"
 homepage = "http://www.hashmismatch.net/libraries/packed-struct/"
-version = "0.5.0"
+version = "0.6.0"
+rust = "1.51"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
-build = "build.rs"
 license = "MIT OR Apache-2.0"
 keywords = ["enum", "packing", "serialization"]
 categories = ["encoding"]
@@ -13,7 +13,7 @@ readme = "../README.md"
 edition = "2018"
 
 [dependencies]
-packed_struct_codegen = { path = "../packed_struct_codegen/", version = "0.5.0" }
+packed_struct_codegen = { path = "../packed_struct_codegen/", version = "0.6.0" }
 serde = { version = "1.0", optional = true, default-features = false }
 serde_derive = { version = "1.0", optional = true }
 bitvec = { version = "0.22.3", default-features = false }
