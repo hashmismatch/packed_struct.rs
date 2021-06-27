@@ -35,7 +35,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! packed_struct = "0.5"
+//! packed_struct = "0.6"
 //! ```
 //! ## Importing the library with the the most common traits and the derive macros
 //!
@@ -190,6 +190,37 @@
 //!
 //!     let packed = example.pack()?;
 //!     assert_eq!([0xAA, 0xBB, 0xCC], packed);
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## Nested packed types
+//! 
+//! ```rust
+//! use packed_struct::prelude::*;
+//! #[derive(PackedStruct, Debug, PartialEq)]
+//! #[packed_struct(endian="lsb")]
+//! pub struct Duration {
+//!     minutes: u8,
+//!     seconds: u8,
+//! }
+//! #[derive(PackedStruct, Debug, PartialEq)]
+//! pub struct Record {
+//!     #[packed_field(element_size_bytes="2")]
+//!     span: Duration,
+//!     events: u8,
+//! }
+//! fn main() -> Result<(), PackingError> {
+//!     let example = Record {
+//!         span: Duration {
+//!             minutes: 10,
+//!             seconds: 34,
+//!         },
+//!         events: 3,
+//!     };
+//!     let packed = example.pack()?;
+//!     let unpacked = Record::unpack(&packed)?;
+//!     assert_eq!(example, unpacked);
 //!     Ok(())
 //! }
 //! ```
