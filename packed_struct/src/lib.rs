@@ -194,6 +194,37 @@
 //! }
 //! ```
 //!
+//! ## Nested packed types
+//! 
+//! ```rust
+//! use packed_struct::prelude::*;
+//! #[derive(PackedStruct, Debug, PartialEq)]
+//! #[packed_struct(endian="lsb")]
+//! pub struct Duration {
+//!     minutes: u8,
+//!     seconds: u8,
+//! }
+//! #[derive(PackedStruct, Debug, PartialEq)]
+//! pub struct Record {
+//!     #[packed_field(element_size_bytes="2")]
+//!     span: Duration,
+//!     events: u8,
+//! }
+//! fn main() -> Result<(), PackingError> {
+//!     let example = Record {
+//!         span: Duration {
+//!             minutes: 10,
+//!             seconds: 34,
+//!         },
+//!         events: 3,
+//!     };
+//!     let packed = example.pack()?;
+//!     let unpacked = Record::unpack(&packed)?;
+//!     assert_eq!(example, unpacked);
+//!     Ok(())
+//! }
+//! ```
+//!
 //! ## Nested packed types within arrays
 //!
 //! ```rust
