@@ -35,7 +35,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! packed_struct = "0.5"
+//! packed_struct = "0.6"
 //! ```
 //! ## Importing the library with the the most common traits and the derive macros
 //!
