@@ -11,15 +11,17 @@ use std::ops::Range;
 
 use crate::utils_syn::{get_expr_int_val, get_single_segment, tokens_to_string};
 
-pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str) -> syn::Result<Vec<(String, String)>> {
+pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
     let mut r = vec![];
 
     for attr in attributes {
         let meta = attr.parse_meta()?;
-
         match &meta {
             &syn::Meta::List(ref metalist) => {
                 if let Some(path) = metalist.path.get_ident() {
+                    if path == wrong_attribute {
+                        return Err(syn::Error::new(path.span(), format!("This attribute is not supported here, did you mean {:?}?", main_attribute)));
+                    }
                     if path == main_attribute {
                         for nv in &metalist.nested {
                             match nv {
@@ -170,13 +172,13 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
         _ => { return Err(syn::Error::new(field.ty.span(), "Unsupported type")); }
     };
 
-    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field")?);
+    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field", "packed_struct")?);
 
     let bits_position = field_attributes.iter().filter_map(|a| match a {
         &PackFieldAttribute::BitPosition(b) | &PackFieldAttribute::BytePosition(b) => Some(b),
         _ => None
     }).next().unwrap_or(BitsPositionParsed::Next);
-    
+
     let bit_width = if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::SizeBits(bits) = a { Some(bits) } else { None }).next() {
         if array_size > 1 {
             return Err(syn::Error::new(field.span(), "Please use the 'element_size_bits' or 'element_size_bytes' for arrays."));
@@ -201,7 +203,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
 
 
 fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>) -> syn::Result<FieldKind> {
-    
+
     match &field.ty {
         syn::Type::Path(_) => {
             return Ok(
@@ -246,8 +248,7 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
     let bit_width = (bit_range.end - bit_range.start) + 1;
     
     let ty_str = tokens_to_string(ty);
-    
-    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field")?);
+    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field", "packed_struct")?);
 
 
     let is_enum_ty = field_attributes.iter().filter_map(|a| match a {
@@ -357,7 +358,7 @@ pub fn parse_num(s: &str) -> usize {
 
 
 pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
-    let attributes = PackStructAttribute::parse_all(&parse_sub_attributes(&ast.attrs, "packed_struct")?);
+    let attributes = PackStructAttribute::parse_all(&parse_sub_attributes(&ast.attrs, "packed_struct", "packed_field")?);
 
     let data_struct = match &ast.data {
         syn::Data::Struct(data) => data,

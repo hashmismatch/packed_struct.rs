@@ -230,7 +230,7 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
 
     let mut r = Vec::new();
 
-    let mut d = 0;
+    let mut d: Option<u64> = None;
     let mut neg = false;
 
     for variant in &data_enum.variants {
@@ -265,10 +265,15 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
                 return Err(syn::Error::new(variant.span(), "Unsupported enum const expr"));
             },
             None => {
-                if neg {
-                    (d-1, if d-1 == 0 { false } else { true }, "".into())
-                } else {
-                    (d+1, false, "".into())
+                match d {
+                    None => (0, false, "".into()),
+                    Some(d) => {
+                        if neg {
+                            (d-1, if d-1 == 0 { false } else { true }, "".into())
+                        } else {
+                            (d+1, false, "".into())
+                        }
+                    }
                 }
             }
         };
@@ -280,7 +285,7 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
             suffix
         });
 
-        d = discriminant;                
+        d = Some(discriminant);
         neg = negative;                
     }
     
