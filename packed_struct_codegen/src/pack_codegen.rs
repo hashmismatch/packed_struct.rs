@@ -162,11 +162,11 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
         
         PackBitsCopy {
             pack: quote! {
-                &mut target[#start..#end].copy_from_slice(&packed);
+                target[#start..#end].copy_from_slice(&packed);
             },
             unpack: quote! {
                 let mut b = [0; (#end - #start)];
-                &mut b[..].copy_from_slice(&src[#start..#end]);
+                b[..].copy_from_slice(&src[#start..#end]);
                 b
             }
         }
