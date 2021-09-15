@@ -4,11 +4,11 @@ use packed_struct::prelude::*;
 #[packed_struct(bit_numbering="msb0")]
 pub struct StructOne {
     #[packed_field(bits="0:3")]
-    pub _reserved1: ReservedZero<packed_bits::Bits4>,
+    pub _reserved1: ReservedZero<packed_bits::Bits::<4>>,
     #[packed_field(bits="4")]
     pub bool1: bool,
     #[packed_field(bits="5:7")]
-    pub _reserved2: ReservedOne<packed_bits::Bits3>
+    pub _reserved2: ReservedOne<packed_bits::Bits::<3>>
 }
 
 #[test]

@@ -21,16 +21,9 @@ fn main() {
             32
         };
 
-    // bytes
-    for i in 0..(up_to_bytes + 1) {
-
-        let b = format!("bytes_type!(Bytes{}, {});\r\n", i, i);
-        f.write_all(b.as_bytes()).unwrap();
-    }
-
     // bits
     for i in 1..(up_to_bytes * 8) {
-        let b = format!("bits_type!(Bits{}, {}, Bytes{}, {});\r\n", i, i, (i as f32 / 8.0).ceil() as usize, if (i % 8) == 0 {
+        let b = format!("bits_type!(Bits::<{}>, {}, Bytes::<{}>, {});\r\n", i, i, (i as f32 / 8.0).ceil() as usize, if (i % 8) == 0 {
             "BitsFullBytes"
         } else {
             "BitsPartialBytes"

@@ -1,61 +1,23 @@
-use super::packing::*;
+use crate::{PackedStruct, PackedStructInfo, PackingError, PackingResult};
 
-macro_rules! packable_u8_array {
-    ($N: expr) => (
+impl<const N: usize> PackedStruct for [u8; N] {
+    type ByteArray = [u8; N];
 
-        impl PackedStruct for [u8; $N] {
-            type ByteArray = [u8; $N];
+    #[inline]
+    fn pack(&self) -> PackingResult<Self::ByteArray> {
+        Ok(*self)
+    }
 
-            #[inline]
-            fn pack(&self) -> PackingResult<Self::ByteArray> {
-                Ok(*self)
-            }
-
-            #[inline]
-            fn unpack(src: &Self::ByteArray) -> Result<Self::ByteArray, PackingError> {
-                Ok(*src)
-            }
-        }
-
-        impl PackedStructInfo for [u8; $N] {
-            #[inline]
-            fn packed_bits() -> usize {
-                $N * 8
-            } 
-        }
-    )
+    #[inline]
+    fn unpack(src: &Self::ByteArray) -> Result<Self::ByteArray, PackingError> {
+        Ok(*src)
+    }    
 }
 
-packable_u8_array!(0);
-packable_u8_array!(1);
-packable_u8_array!(2);
-packable_u8_array!(3);
-packable_u8_array!(4);
-packable_u8_array!(5);
-packable_u8_array!(6);
-packable_u8_array!(7);
-packable_u8_array!(8);
-packable_u8_array!(9);
-packable_u8_array!(10);
-packable_u8_array!(11);
-packable_u8_array!(12);
-packable_u8_array!(13);
-packable_u8_array!(14);
-packable_u8_array!(15);
-packable_u8_array!(16);
-packable_u8_array!(17);
-packable_u8_array!(18);
-packable_u8_array!(19);
-packable_u8_array!(20);
-packable_u8_array!(21);
-packable_u8_array!(22);
-packable_u8_array!(23);
-packable_u8_array!(24);
-packable_u8_array!(25);
-packable_u8_array!(26);
-packable_u8_array!(27);
-packable_u8_array!(28);
-packable_u8_array!(29);
-packable_u8_array!(30);
-packable_u8_array!(31);
-packable_u8_array!(32);
+
+impl<const N: usize> PackedStructInfo for [u8; N] {
+    #[inline]
+    fn packed_bits() -> usize {
+        N * 8
+    } 
+}

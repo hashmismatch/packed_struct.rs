@@ -1,4 +1,5 @@
 use packed_struct::prelude::*;
+
 #[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
 pub enum EnumU8 {
     VariantMin = 0,
@@ -49,8 +50,6 @@ pub enum EnumI64 {
     VariantMin = -9223372036854775808,
     VariantMax = 9223372036854775807
 }
-
-use packed_struct::prelude::*;
 
 #[test]
 fn prim_ty() {

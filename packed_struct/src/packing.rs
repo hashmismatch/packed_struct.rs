@@ -10,7 +10,9 @@ use crate::types_bits::ByteArray;
 /// 
 /// 10 bits packs into: [0b00000011, 0b11111111]
 pub trait PackedStruct where Self: Sized {
+    /// The appropriately sized byte array into which this structure will be packed, for example [u8; 2]. 
     type ByteArray : ByteArray;
+    
     /// Packs the structure into a byte array.
     fn pack(&self) -> PackingResult<Self::ByteArray>;
     /// Unpacks the structure from a byte array.

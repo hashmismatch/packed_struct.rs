@@ -9,7 +9,7 @@ macro_rules! test_int_50 {
             #[packed_struct(bit_numbering="msb0", endian="msb")]
             pub struct Test {
                 #[packed_field(bits= $fi )]
-                pub int1: Integer<u64, packed_bits::Bits50>
+                pub int1: Integer<u64, packed_bits::Bits::<50>>
             }
 
             let roundtrip = |x: u64| {

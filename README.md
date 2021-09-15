@@ -35,7 +35,7 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
 
 ```toml
 [dependencies]
-packed_struct = "0.6"
+packed_struct = "0.10"
 ```
 ## Importing the library with the the most common traits and the derive macros
 
@@ -55,7 +55,7 @@ use packed_struct::prelude::*;
 #[packed_struct(bit_numbering="msb0")]
 pub struct TestPack {
     #[packed_field(bits="0..=2")]
-    tiny_int: Integer<u8, packed_bits::Bits3>,
+    tiny_int: Integer<u8, packed_bits::Bits::<3>>,
     #[packed_field(bits="3..=4", ty="enum")]
     mode: SelfTestMode,
     #[packed_field(bits="7")]
@@ -176,7 +176,7 @@ use packed_struct::prelude::*;
 #[derive(PackedStruct)]
 #[packed_struct(endian="lsb")]
 pub struct LsbIntExample {
-    int1: Integer<u32, packed_bits::Bits24>,
+    int1: Integer<u32, packed_bits::Bits::<24>>,
 }
 
 fn main() -> Result<(), PackingError> {
@@ -229,9 +229,9 @@ use packed_struct::prelude::*;
 #[derive(PackedStruct, Default, Debug, PartialEq)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct TinyFlags {
-    _reserved: ReservedZero<packed_bits::Bits4>,
+    _reserved: ReservedZero<packed_bits::Bits::<4>>,
     flag1: bool,
-    val1: Integer<u8, packed_bits::Bits2>,
+    val1: Integer<u8, packed_bits::Bits::<2>>,
     flag2: bool
 }
 

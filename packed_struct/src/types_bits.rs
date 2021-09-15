@@ -10,6 +10,10 @@ pub trait NumberOfBits: Copy + Clone + Debug + Default {
 
     /// The numerical number of bits.
     fn number_of_bits() -> usize;
+
+    fn byte_array_len() -> usize {
+        <<Self::Bytes as NumberOfBytes>::AsBytes as ByteArray>::len()
+    }
 }
 
 /// These bits are a multiple of 8
@@ -30,7 +34,7 @@ pub trait NumberOfBytes: Copy + Clone + Debug + Default {
 }
 
 /// Helper that allows us to cast a fixed size array into a byte slice.
-pub trait ByteArray {
+pub trait ByteArray: Clone {
     fn len() -> usize;
     fn as_bytes_slice(&self) -> &[u8];
     fn as_mut_bytes_slice(&mut self) -> &mut [u8];
@@ -38,53 +42,49 @@ pub trait ByteArray {
     fn new(value: u8) -> Self;
 }
 
-macro_rules! bytes_type {
-    ($T: ident, $N: expr) => {
-        #[derive(Copy, Clone, Debug, Default, PartialEq)]
-        pub struct $T;
+impl<const N: usize> ByteArray for [u8; N] {
+    #[inline]
+    fn len() -> usize {
+        N
+    }
 
-        impl NumberOfBytes for $T {
-            type AsBytes = [u8; $N];
+    #[inline]
+    fn as_bytes_slice(&self) -> &[u8] {
+        &self[..]
+    }
 
-            #[inline]
-            fn number_of_bytes() -> usize {
-                $N
-            }
-        }
+    #[inline]
+    fn as_mut_bytes_slice(&mut self) -> &mut [u8] {
+        &mut self[..]
+    }
 
-        impl ByteArray for [u8; $N] {
-            #[inline]
-            fn len() -> usize {
-                $N
-            }
+    #[inline]
+    fn rotate_right(&mut self, bytes: usize) {
+        bytes_rotate_right(self, bytes)
+    }
 
-            #[inline]
-            fn as_bytes_slice(&self) -> &[u8] {
-                &self[..]
-            }
-
-            #[inline]
-            fn as_mut_bytes_slice(&mut self) -> &mut [u8] {
-                &mut self[..]
-            }
-
-            #[inline]
-            fn rotate_right(&mut self, bytes: usize) {
-                bytes_rotate_right(self, bytes)
-            }
-
-            fn new(value: u8) -> Self {
-                [value; $N]
-            }
-        }
+    fn new(value: u8) -> Self {
+        [value; N]
     }
 }
 
-macro_rules! bits_type {
-    ($T: ident, $N: expr, $TB: ident, $TBK: ident) => {
-        #[derive(Copy, Clone, Debug, Default, PartialEq)]
-        pub struct $T;
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct Bytes<const N: usize>;
 
+impl<const N: usize> NumberOfBytes for Bytes<N> {
+    type AsBytes = [u8; N];
+
+    #[inline]
+    fn number_of_bytes() -> usize {
+        N
+    }
+}
+
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct Bits<const N: usize>;
+
+macro_rules! bits_type {
+    ($T: ty, $N: expr, $TB: ty, $TBK: ident) => {
         impl NumberOfBits for $T {
             type Bytes = $TB;
 

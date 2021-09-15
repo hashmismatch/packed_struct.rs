@@ -6,9 +6,9 @@ use packed_struct::prelude::*;
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct IntsLsbPosBits {
     #[packed_field(bits="0:3")]
-    num1: Integer<u8, packed_bits::Bits4>,
+    num1: Integer<u8, packed_bits::Bits::<4>>,
     #[packed_field(bits="7:4")]
-    num2: Integer<u8, packed_bits::Bits4>    
+    num2: Integer<u8, packed_bits::Bits::<4>>
 }
 
 #[test]

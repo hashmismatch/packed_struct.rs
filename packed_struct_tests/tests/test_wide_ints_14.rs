@@ -9,14 +9,14 @@ macro_rules! test_int_14 {
             #[packed_struct(bit_numbering="msb0", endian="msb")]
             pub struct TestUnsigned {
                 #[packed_field(bits= $fi )]
-                pub int1: Integer<u16, packed_bits::Bits14>
+                pub int1: Integer<u16, packed_bits::Bits::<14>>
             }
 
             #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq)]
             #[packed_struct(bit_numbering="msb0", endian="msb")]
             pub struct TestSigned {
                 #[packed_field(bits= $fi )]
-                pub int1: Integer<i16, packed_bits::Bits14>
+                pub int1: Integer<i16, packed_bits::Bits::<14>>
             }
 
             let roundtrip = |x: u16| {
