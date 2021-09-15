@@ -669,7 +669,7 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
             let leftover_bits = B::number_of_bits() % 8;            
             
             let bytes_slice = bytes.as_mut_bytes_slice();
-            let bits = BitSlice::<Msb0, _>::from_slice_mut(bytes_slice).map_err(|e| PackingError::BitsError)?;
+            let bits = BitSlice::<Msb0, _>::from_slice_mut(bytes_slice).map_err(|_| PackingError::BitsError)?;
             let s = l - B::number_of_bits();
             let (left, _) = bits.split_at_mut(l - leftover_bits);
             left.shift_right(s);
@@ -690,7 +690,7 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
 
             let mut src_bytes = (*src).clone();
             let bytes_slice = src_bytes.as_mut_bytes_slice();
-            let bits = BitSlice::<Msb0, _>::from_slice_mut(bytes_slice).map_err(|e| PackingError::BitsError)?;
+            let bits = BitSlice::<Msb0, _>::from_slice_mut(bytes_slice).map_err(|_| PackingError::BitsError)?;
             let s = l - B::number_of_bits();
             let (left, _) = bits.split_at_mut(l - leftover_bits);
             left.shift_left(s);
