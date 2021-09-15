@@ -21,8 +21,6 @@ pub enum EnumI8 {
     VariantMax = 127
 }
 
-use packed_struct::prelude::*;
-
 #[test]
 fn prim_var_ty() {
     assert_eq!(-128, EnumI8::VariantMin as i8);
