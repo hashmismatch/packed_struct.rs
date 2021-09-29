@@ -176,13 +176,13 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
         let shift = ((packed_field_len as isize*8) - (field.bit_width as isize)) - (field.bit_range_rust.start as isize - (start_byte as isize * 8));
 
         let emit_shift = |s: isize| {
-            if s == 0 {
-                quote! {}
-            } else if s > 0 {
-                quote! { << #s }
-            } else {
-                let s = -s;
-                quote! { >> #s }
+            match s {
+                0 => quote! {},
+                _ if s > 0 => quote! { << #s },
+                _ => {
+                    let s = -s;
+                    quote! { >> #s }
+                }
             }
         };
 
@@ -261,7 +261,7 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
 
     for wrapper in &field.serialization_wrappers {
         match wrapper {
-            &SerializationWrapper::PrimitiveEnum => {
+            SerializationWrapper::PrimitiveEnum => {
                 output = quote! {
                     {
                         use ::packed_struct::PrimitiveEnum;
@@ -271,7 +271,7 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
                     }
                 };
             },
-            &SerializationWrapper::Integer { ref integer } => {
+            SerializationWrapper::Integer { ref integer } => {
                 output = quote! {
                     {
                         use ::packed_struct::types::*;
@@ -282,7 +282,7 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
                     }
                 };
             },
-            &SerializationWrapper::Endiannes { ref endian } => {
+            SerializationWrapper::Endiannes { ref endian } => {
                 output = quote! {
                     {
                         use ::packed_struct::types::*;

@@ -11,7 +11,7 @@ use std::ops::Range;
 
 use crate::utils_syn::{get_expr_int_val, get_single_segment, tokens_to_string};
 
-pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
+pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
     let mut r = vec![];
 
     for attr in attributes {

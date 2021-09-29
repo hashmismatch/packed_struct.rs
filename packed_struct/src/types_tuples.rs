@@ -9,15 +9,13 @@
 //!
 //! type Message = (u8, [u8; 4], u8);
 //!
-//! fn main() {
-//!     let raw = [0x10, 0x20, 0x21, 0x22, 0x23, 0x30];
-//!     let unpacked = Message::unpack_from_slice(&raw).unwrap();
-//!     assert_eq!(0x10, unpacked.0);
-//!     assert_eq!([0x20, 0x21, 0x22, 0x23], unpacked.1);
-//!     assert_eq!(0x30, unpacked.2);
-//!     let packed = unpacked.pack_to_vec().unwrap();
-//!     assert_eq!(&raw[..], &packed[..]);
-//! }
+//! let raw = [0x10, 0x20, 0x21, 0x22, 0x23, 0x30];
+//! let unpacked = Message::unpack_from_slice(&raw).unwrap();
+//! assert_eq!(0x10, unpacked.0);
+//! assert_eq!([0x20, 0x21, 0x22, 0x23], unpacked.1);
+//! assert_eq!(0x30, unpacked.2);
+//! let packed = unpacked.pack_to_vec().unwrap();
+//! assert_eq!(&raw[..], &packed[..]);
 //! ```
 //!
 //! # Example with a dynamically sized structure
@@ -28,16 +26,14 @@
 //! use packed_struct::prelude::*;
 //!
 //! type Message = (u8, Vec<u8>, u8);
-//!
-//! fn main() {
-//!     let raw = [0x10, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x30];
-//!     let unpacked = Message::unpack_from_slice(&raw).unwrap();
-//!     assert_eq!(0x10, unpacked.0);
-//!     assert_eq!(&[0x20, 0x21, 0x22, 0x23, 0x24, 0x25], &unpacked.1[..]);
-//!     assert_eq!(0x30, unpacked.2);
-//!     let packed = unpacked.pack_to_vec().unwrap();
-//!     assert_eq!(&raw[..], &packed[..]);
-//! }
+//! 
+//! let raw = [0x10, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x30];
+//! let unpacked = Message::unpack_from_slice(&raw).unwrap();
+//! assert_eq!(0x10, unpacked.0);
+//! assert_eq!(&[0x20, 0x21, 0x22, 0x23, 0x24, 0x25], &unpacked.1[..]);
+//! assert_eq!(0x30, unpacked.2);
+//! let packed = unpacked.pack_to_vec().unwrap();
+//! assert_eq!(&raw[..], &packed[..]);
 //! ```
 
 use crate::internal_prelude::v1::*;

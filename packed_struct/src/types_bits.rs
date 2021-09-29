@@ -110,8 +110,8 @@ fn bytes_rotate_right(s: &mut [u8], bytes: usize) {
             i -= 1;
         }
     }
-    for i in 0..bytes {
-        s[i] = 0;
+    for v in s.iter_mut().take(bytes) {
+        *v = 0;
     }
 }
 

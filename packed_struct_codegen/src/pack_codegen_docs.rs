@@ -21,7 +21,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
     let mut debug_fields = vec![];
     for field in &parsed.fields {
         match field {
-            &FieldKind::Regular { ref ident, ref field } => {
+            FieldKind::Regular { ref ident, ref field } => {
                 let name_str = &ident.to_string();
                 let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
                 
@@ -33,7 +33,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
                     }
                 });
             },
-            &FieldKind::Array { ref ident, ref elements, .. } => {
+            FieldKind::Array { ref ident, ref elements, .. } => {
                 for (i, field) in elements.iter().enumerate() {
                     let name_str = format!("{}[{}]", ident.to_string(), i);
                     let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
@@ -131,10 +131,10 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
 
         for field in &parsed.fields {
             match field {
-                &FieldKind::Regular { ref ident, ref field } => {
+                FieldKind::Regular { ref ident, ref field } => {
                     emit_field_docs(&field.bit_range, ident.to_string(), &field.ty);
                 },
-                &FieldKind::Array { ref ident, ref elements, .. } => {
+                FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
                         emit_field_docs(&field.bit_range, format!("{}[{}]", ident.to_string(), i), &field.ty);
                     }
