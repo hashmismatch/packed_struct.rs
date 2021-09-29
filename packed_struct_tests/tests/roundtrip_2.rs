@@ -66,7 +66,7 @@ fn test_roundtrip_2() {
             f13: [rnd.next_num(u8::max_value() as u64) as u8, rnd.next_num(u8::max_value() as u64) as u8, rnd.next_num(u8::max_value() as u64) as u8],
             f14: [rnd.next_num(u8::max_value() as u64) as u8, rnd.next_num(u8::max_value() as u64) as u8, rnd.next_num(u8::max_value() as u64) as u8, rnd.next_num(u8::max_value() as u64) as u8],
 
-            f15: if (rnd.next() % 2) == 0 { true } else { false }
+            f15: (rnd.next() % 2) == 0
         };
 
         let packed = s.pack().unwrap();

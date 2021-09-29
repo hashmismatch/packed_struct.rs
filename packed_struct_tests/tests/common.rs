@@ -2,7 +2,7 @@
 pub struct Rnd { seed: u64 }
 impl Rnd {
     pub fn new(seed: u64) -> Rnd {
-        Rnd { seed: seed }
+        Rnd { seed }
     }
     pub fn next(&mut self) -> u64 {
         let r = self.seed;
