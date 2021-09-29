@@ -39,7 +39,7 @@ pub struct DebugBitField<'a> {
 
 
 pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[DebugBitField]) -> fmt::Result {
-    if fields.len() == 0 {
+    if fields.is_empty() {
 		return Ok(());
 	}
 

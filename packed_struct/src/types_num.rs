@@ -727,7 +727,7 @@ fn test_packed_int_msb() {
 
 #[test]
 fn test_packed_int_partial() {
-    let val = 0b10_10101010;
+    let val = 0b10_1010_1010;
     let typed: Integer<u16, Bits::<10>> = val.into();
     let endian = typed.as_packed_msb();
     let packed = endian.pack().unwrap();
@@ -751,7 +751,7 @@ fn test_packed_int_lsb() {
 
 #[test]
 fn test_packed_int_lsb_partial_b10() {
-    let val = 0b10_10101011;
+    let val = 0b10_1010_1011;
     let typed: Integer<u16, Bits::<10>> = val.into();
     let endian = typed.as_packed_lsb();
     let packed = endian.pack().unwrap();
@@ -803,13 +803,13 @@ fn test_big_slice_unpacking() {
 /// test if the value is properly first masked and then expanded for signedness
 #[test]
 fn test_sign_extension() {
-    let val: Integer<i8, Bits::<4>> = (127 as i8).into();
+    let val: Integer<i8, Bits::<4>> = 127_i8.into();
     assert_eq!(*val, -1);
-    let val: Integer<i8, Bits::<4>> = (63 as i8).into();
+    let val: Integer<i8, Bits::<4>> = 63_i8.into();
     assert_eq!(*val, -1);
-    let val: Integer<i8, Bits::<4>> = (31 as i8).into();
+    let val: Integer<i8, Bits::<4>> = 31_i8.into();
     assert_eq!(*val, -1);
-    let val: Integer<i8, Bits::<4>> = (15 as i8).into();
+    let val: Integer<i8, Bits::<4>> = 15_i8.into();
     assert_eq!(*val, -1);
 }
 
