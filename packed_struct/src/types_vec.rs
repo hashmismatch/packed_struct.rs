@@ -24,7 +24,7 @@ impl<T> PackedStructSlice for Vec<T> where T: PackedStructSlice {
 
     fn unpack_from_slice(src: &[u8]) -> Result<Self, PackingError> {
         let item_size = T::packed_bytes_size(None)?;
-        if item_size == 0 || src.len() == 0 { return Ok(vec![]); }
+        if item_size == 0 || src.is_empty() { return Ok(vec![]); }
         let modulo = src.len() % item_size;
         if modulo != 0 {
             return Err(crate::PackingError::BufferModMismatch { actual_size: src.len(), modulo_required: item_size });

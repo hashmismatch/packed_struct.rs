@@ -11,43 +11,40 @@ use std::ops::Range;
 
 use crate::utils_syn::{get_expr_int_val, get_single_segment, tokens_to_string};
 
-pub fn parse_sub_attributes(attributes: &Vec<syn::Attribute>, main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
+pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
     let mut r = vec![];
 
     for attr in attributes {
         let meta = attr.parse_meta()?;
-        match &meta {
-            &syn::Meta::List(ref metalist) => {
-                if let Some(path) = metalist.path.get_ident() {
-                    if path == wrong_attribute {
-                        return Err(syn::Error::new(path.span(), format!("This attribute is not supported here, did you mean {:?}?", main_attribute)));
-                    }
-                    if path == main_attribute {
-                        for nv in &metalist.nested {
-                            match nv {
-                                syn::NestedMeta::Meta(m) => {
+        if let syn::Meta::List(ref metalist) = meta {
+            if let Some(path) = metalist.path.get_ident() {
+                if path == wrong_attribute {
+                    return Err(syn::Error::new(path.span(), format!("This attribute is not supported here, did you mean {:?}?", main_attribute)));
+                }
+                if path == main_attribute {
+                    for nv in &metalist.nested {
+                        match nv {
+                            syn::NestedMeta::Meta(m) => {
 
-                                    match m {
-                                        syn::Meta::Path(_) => {}
-                                        syn::Meta::List(_) => {}
-                                        syn::Meta::NameValue(nv) => {
-                                            match (nv.path.get_ident(), &nv.lit) {
-                                                (Some(key), syn::Lit::Str(lit)) => {
-                                                    r.push((key.to_string(), lit.value()));
-                                                },
-                                                (_, _) => ()
-                                            }
+                                match m {
+                                    syn::Meta::Path(_) => {}
+                                    syn::Meta::List(_) => {}
+                                    syn::Meta::NameValue(nv) => {
+                                        match (nv.path.get_ident(), &nv.lit) {
+                                            (Some(key), syn::Lit::Str(lit)) => {
+                                                r.push((key.to_string(), lit.value()));
+                                            },
+                                            (_, _) => ()
                                         }
                                     }
-
                                 }
-                                syn::NestedMeta::Lit(_) => {}
+
                             }
+                            syn::NestedMeta::Lit(_) => {}
                         }
                     }
                 }
-            },
-            _ => ()
+            }
         }
     }
 
@@ -179,12 +176,12 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
         _ => None
     }).next().unwrap_or(BitsPositionParsed::Next);
 
-    let bit_width = if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::SizeBits(bits) = a { Some(bits) } else { None }).next() {
+    let bit_width = if let Some(bits) = field_attributes.iter().filter_map(|a| if let PackFieldAttribute::SizeBits(bits) = *a { Some(bits) } else { None }).next() {
         if array_size > 1 {
             return Err(syn::Error::new(field.span(), "Please use the 'element_size_bits' or 'element_size_bytes' for arrays."));
         }
         bits
-    } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let &PackFieldAttribute::ElementSizeBits(bits) = a { Some(bits) } else { None }).next() {
+    } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let PackFieldAttribute::ElementSizeBits(bits) = *a { Some(bits) } else { None }).next() {
         bits * array_size
     } else if let BitsPositionParsed::Range(a, b) = bits_position {
         (b as isize - a as isize).abs() as usize + 1
@@ -196,8 +193,8 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
     };
 
     Ok(FieldMidPositioning {
-        bit_width: bit_width,
-        bits_position: bits_position
+        bit_width,
+        bits_position
     })
 }
 
@@ -209,7 +206,7 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
             return Ok(
                 FieldKind::Regular {
                     field: parse_reg_field(field, &field.ty, bit_range, default_endianness)?,
-                    ident: field.ident.clone().ok_or(syn::Error::new(field.span(), "Missing ident!"))?
+                    ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?
                 }
             );
         },
@@ -230,7 +227,7 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
             }
             
             return Ok(FieldKind::Array {
-                ident: field.ident.clone().ok_or(syn::Error::new(field.span(), "Missing ident!"))?,
+                ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?,
                 size,
                 elements
             });
@@ -251,8 +248,8 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
     let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field", "packed_struct")?);
 
 
-    let is_enum_ty = field_attributes.iter().filter_map(|a| match a {
-        &PackFieldAttribute::Ty(TyKind::Enum) => Some(()),
+    let is_enum_ty = field_attributes.iter().filter_map(|a| match *a {
+        PackFieldAttribute::Ty(TyKind::Enum) => Some(()),
         _ => None
     }).next().is_some();
 
@@ -267,7 +264,7 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
     };
 
     if is_enum_ty {
-        wrappers.push(SerializationWrapper::PrimitiveEnumWrapper);
+        wrappers.push(SerializationWrapper::PrimitiveEnum);
     }
 
     if needs_int_wrap {
@@ -277,14 +274,14 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
             ty_str.clone()
         };
         let integer_wrap_ty = syn::parse_str(&format!("Integer<{}, Bits::<{}>>", ty, bit_width))?;
-        wrappers.push(SerializationWrapper::IntegerWrapper { integer: integer_wrap_ty });
+        wrappers.push(SerializationWrapper::Integer { integer: integer_wrap_ty });
     }
 
     if needs_endiannes_wrap {
         let mut endiannes = if let Some(endiannes) = field_attributes
             .iter()
-            .filter_map(|a| if let &PackFieldAttribute::IntEndiannes(endiannes) = a {
-                                Some(endiannes)
+            .filter_map(|a| if let PackFieldAttribute::IntEndiannes(endiannes) = a {
+                                Some(*endiannes)
                             } else {
                                 None
                             }).next()
@@ -308,13 +305,13 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
         };
 
         let endiannes_wrap_ty = syn::parse_str(&format!("{}Integer", ty_prefix)).unwrap();
-        wrappers.push(SerializationWrapper::EndiannesWrapper { endian: endiannes_wrap_ty });
+        wrappers.push(SerializationWrapper::Endiannes { endian: endiannes_wrap_ty });
     }
 
     Ok(FieldRegular {
         ty: ty.clone(),
         serialization_wrappers: wrappers,
-        bit_width: bit_width,
+        bit_width,
         bit_range: bit_range.clone(),
         bit_range_rust: bit_range.start..(bit_range.end + 1)
     })
@@ -330,8 +327,8 @@ pub enum BitsPositionParsed {
 }
 
 impl BitsPositionParsed {
-    fn to_bits_position(&self) -> Box<dyn BitsRange> {
-        match *self {
+    fn to_bits_position(self) -> Box<dyn BitsRange> {
+        match self {
             BitsPositionParsed::Next => Box::new(NextBits),
             BitsPositionParsed::Start(s) => Box::new(s),
             BitsPositionParsed::Range(a, b) => Box::new(a..b)
@@ -345,13 +342,13 @@ impl BitsPositionParsed {
 
 
 
-pub fn parse_num(s: &str) -> usize {
+pub fn parse_num(s: &str) -> Result<usize, String> {
     let s = s.trim();
 
     if s.starts_with("0x") || s.starts_with("0X") {
-        usize::from_str_radix(&s[2..], 16).expect(&format!("Invalid hex number: {:?}", s))
+        usize::from_str_radix(&s[2..], 16).map_err(|e| { format!("Invalid hex number: {:?}, parse error: {:?}", s, e) })
     } else {
-        s.parse().expect(&format!("Invalid decimal number: {:?}", s))
+        s.parse().map_err(|e| format!("Invalid decimal number: {:?}, parse error: {:?}", s, e))
     }
 }
 
@@ -366,24 +363,24 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     };
     let fields: Vec<_> = data_struct.fields.iter().collect();
 
-    if ast.generics.params.len() > 0 {
+    if !ast.generics.params.is_empty() {
         return Err(syn::Error::new(ast.span(), "Structures with generic fields currently aren't supported."));
     }
 
     let bit_positioning = {
-        attributes.iter().filter_map(|a| match a {
-            &PackStructAttribute::BitNumbering(b) => Some(b),
+        attributes.iter().filter_map(|a| match *a {
+            PackStructAttribute::BitNumbering(b) => Some(b),
             _ => None
         }).next()
     };
 
-    let default_int_endianness = attributes.iter().filter_map(|a| match a {
-        &PackStructAttribute::DefaultIntEndianness(i) => Some(i),
+    let default_int_endianness = attributes.iter().filter_map(|a| match *a {
+        PackStructAttribute::DefaultIntEndianness(i) => Some(i),
         _ => None
     }).next();
 
     let struct_size_bytes = attributes.iter().filter_map(|a| {
-        if let &PackStructAttribute::SizeBytes(size_bytes) = a {
+        if let PackStructAttribute::SizeBytes(size_bytes) = *a {
             Some(size_bytes)
         } else {
             None
@@ -391,7 +388,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     }).next();
 
     let first_field_is_auto_positioned = {
-        if let Some(ref field) = fields.first() {
+        if let Some(field) = fields.first() {
             let mp = get_field_mid_positioning(field)?;
             mp.bits_position == BitsPositionParsed::Next
         } else {
@@ -436,8 +433,8 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
             struct_size_bytes * 8
         } else {
             let last_bit = fields_parsed.iter().map(|f| match f {
-                &FieldKind::Regular { ref field, .. } => field.bit_range_rust.end,
-                &FieldKind::Array { ref elements, .. } => elements.last().unwrap().bit_range_rust.end
+                FieldKind::Regular { ref field, .. } => field.bit_range_rust.end,
+                FieldKind::Array { ref elements, .. } => elements.last().unwrap().bit_range_rust.end
             }).max().unwrap();
             last_bit
         }
@@ -456,7 +453,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
             let mut find_overlaps = |name: String, range: &Range<usize>| {
                 for i in range.start .. (range.end+1) {
                     if let Some(&Some(ref n)) = bits.get(i) {
-                        return Err(syn::Error::new(name.span(), format!("Overlap in bits between fields {} and {}", n, name.to_string())));
+                        return Err(syn::Error::new(name.span(), format!("Overlap in bits between fields {} and {}", n, name)));
                     }
 
                     bits[i] = Some(name.clone());
@@ -466,10 +463,10 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
             };
 
             match field {
-                &FieldKind::Regular { ref field, ref ident } => {
+                FieldKind::Regular { ref field, ref ident } => {
                     find_overlaps(ident.to_string(), &field.bit_range)?;
                 },
-                &FieldKind::Array { ref ident, ref elements, .. } => {
+                FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
                         find_overlaps(format!("{}[{}]", ident.to_string(), i), &field.bit_range)?;
                     }

@@ -34,13 +34,13 @@ pub struct FieldRegular {
 
 #[derive(Clone)]
 pub enum SerializationWrapper {
-    IntegerWrapper {
+    Integer {
         integer: syn::Type,
     },
-    EndiannesWrapper {
+    Endiannes {
         endian: syn::Type
     },
-    PrimitiveEnumWrapper
+    PrimitiveEnum
 }
 
 

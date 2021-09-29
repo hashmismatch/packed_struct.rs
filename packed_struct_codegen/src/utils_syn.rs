@@ -3,7 +3,7 @@ use syn::{Error, PathSegment, Result, spanned::Spanned, TypePath};
 
 pub fn get_single_segment(type_path: &TypePath) -> Result<&PathSegment> {
     if type_path.path.segments.len() == 1 {
-        let ref segment = type_path.path.segments[0];
+        let segment = &type_path.path.segments[0];
         return Ok(segment);
     }
 

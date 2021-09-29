@@ -284,16 +284,14 @@
 //!     VariantMax = 32767
 //! }
 //! 
-//! fn main() {
-//!     use packed_struct::PrimitiveEnum;
-//!     
-//!     let t = ImplicitType::VariantMin;
-//!     let tn: u8 = t.to_primitive();
-//!     assert_eq!(0, tn);
+//! use packed_struct::PrimitiveEnum;
+//! 
+//! let t = ImplicitType::VariantMin;
+//! let tn: u8 = t.to_primitive();
+//! assert_eq!(0, tn);
 //!
-//!     let t = ImplicitType::from_primitive(255).unwrap();
-//!     assert_eq!(ImplicitType::VariantMax, t);
-//! }
+//! let t = ImplicitType::from_primitive(255).unwrap();
+//! assert_eq!(ImplicitType::VariantMax, t);
 //! ```
 //! 
 //! # Primitive enum packing with support for catch-all unknown values
@@ -314,8 +312,6 @@
 //!     #[packed_field(bits="0..4", ty="enum")]
 //!     field: EnumCatchAll<Field>
 //! }
-//! 
-//! # fn main() {}
 //! ```
 //! [crates-badge]: https://img.shields.io/crates/v/packed_struct.svg
 //! [crates-url]: https://crates.io/crates/packed_struct

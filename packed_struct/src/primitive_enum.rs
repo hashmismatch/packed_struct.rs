@@ -80,11 +80,11 @@ impl<E> PrimitiveEnum for EnumCatchAll<E>
     }
 
     fn from_str(s: &str) -> Option<Self> {
-        E::from_str(s).map(|e| EnumCatchAll::Enum(e))
+        E::from_str(s).map(EnumCatchAll::Enum)
     }
 
     fn from_str_lower(s: &str) -> Option<Self> {
-        E::from_str_lower(s).map(|e| EnumCatchAll::Enum(e))
+        E::from_str_lower(s).map(EnumCatchAll::Enum)
     }
 }
 

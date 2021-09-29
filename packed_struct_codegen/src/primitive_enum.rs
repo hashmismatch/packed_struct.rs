@@ -11,7 +11,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
 
     let stdlib_prefix = collections_prefix();
 
-    let ref name = ast.ident;
+    let name = &ast.ident;
     let v = get_unitary_enum(ast)?;
 
     let from_primitive_match: Vec<_> = v.iter().map(|x| {
@@ -53,32 +53,30 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
         let min_ty: Vec<String> = v.iter().map(|d| {
             if !d.suffix.is_empty() {
                 d.suffix.clone()
-            } else {
-                if d.negative {
-                    let n = d.discriminant as i64;
-                    if n < <i32>::min_value() as i64 {
-                        "i64".into()
-                    } else {
-                        let n = -n;
-                        if n < <i16>::min_value() as i64 {
-                            "i32".into()
-                        } else if n < <i8>::min_value() as i64 {
-                            "i16".into()
-                        } else {
-                            "i8".into()
-                        }
-                    }
+            } else if d.negative {
+                let n = d.discriminant as i64;
+                if n < <i32>::min_value() as i64 {
+                    "i64".into()
                 } else {
-                    let n = d.discriminant as u64;
-                    if n > <u32>::max_value() as u64 {
-                        "u64".into()
-                    } else if n > <u16>::max_value() as u64 {
-                        "u32".into()
-                    } else if n > <u8>::max_value() as u64 {
-                        "u16".into()
+                    let n = -n;
+                    if n < <i16>::min_value() as i64 {
+                        "i32".into()
+                    } else if n < <i8>::min_value() as i64 {
+                        "i16".into()
                     } else {
-                        "u8".into()
+                        "i8".into()
                     }
+                }
+            } else {
+                let n = d.discriminant as u64;
+                if n > <u32>::max_value() as u64 {
+                    "u64".into()
+                } else if n > <u16>::max_value() as u64 {
+                    "u32".into()
+                } else if n > <u8>::max_value() as u64 {
+                    "u16".into()
+                } else {
+                    "u8".into()
                 }
             }
         }).collect();
@@ -208,15 +206,13 @@ impl Variant {
         );
         let v: syn::LitInt = syn::parse_str(&s).expect("Error mid-parsing for disc value");
 
-        let q = if self.negative {
+        if self.negative {
             quote! {
                 - #v
             }
         } else {
             quote! { #v }
-        };
-        
-        q
+        }
     }
 }
 
@@ -269,7 +265,7 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
                     None => (0, false, "".into()),
                     Some(d) => {
                         if neg {
-                            (d-1, if d-1 == 0 { false } else { true }, "".into())
+                            (d-1, d-1 != 0, "".into())
                         } else {
                             (d+1, false, "".into())
                         }

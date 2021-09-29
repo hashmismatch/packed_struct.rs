@@ -53,14 +53,14 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
 
         for field in &parsed.fields {
             match field {
-                &FieldKind::Regular { ref ident, ref field } => {
+                FieldKind::Regular { ref ident, ref field } => {
                     reg(ident, ident, field)?;
 
                     unpack_struct_set.push(quote! {
-                        #ident: #ident
+                        #ident
                     });
                 },
-                &FieldKind::Array { ref ident, ref elements, .. } => {
+                FieldKind::Array { ref ident, ref elements, .. } => {
                     let mut array_unpacked_elements = vec![];
                     for (i, field) in elements.iter().enumerate() {
                         let src: syn::ExprIndex = syn::parse_str(&format!("{}[{}]", tokens_to_string(ident), i))?;
@@ -176,13 +176,13 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
         let shift = ((packed_field_len as isize*8) - (field.bit_width as isize)) - (field.bit_range_rust.start as isize - (start_byte as isize * 8));
 
         let emit_shift = |s: isize| {
-            if s == 0 {
-                quote! {}
-            } else if s > 0 {
-                quote! { << #s }
-            } else {
-                let s = -s;
-                quote! { >> #s }
+            match s {
+                0 => quote! {},
+                _ if s > 0 => quote! { << #s },
+                _ => {
+                    let s = -s;
+                    quote! { >> #s }
+                }
             }
         };
 
@@ -261,7 +261,7 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
 
     for wrapper in &field.serialization_wrappers {
         match wrapper {
-            &SerializationWrapper::PrimitiveEnumWrapper => {
+            SerializationWrapper::PrimitiveEnum => {
                 output = quote! {
                     {
                         use ::packed_struct::PrimitiveEnum;
@@ -271,7 +271,7 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
                     }
                 };
             },
-            &SerializationWrapper::IntegerWrapper { ref integer } => {
+            SerializationWrapper::Integer { ref integer } => {
                 output = quote! {
                     {
                         use ::packed_struct::types::*;
@@ -282,7 +282,7 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
                     }
                 };
             },
-            &SerializationWrapper::EndiannesWrapper { ref endian } => {
+            SerializationWrapper::Endiannes { ref endian } => {
                 output = quote! {
                     {
                         use ::packed_struct::types::*;
@@ -312,7 +312,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
     let mut i = 0;
     loop {
         match (wrappers.get(i), wrappers.get(i+1)) {
-            (Some(&SerializationWrapper::EndiannesWrapper { ref endian }), Some(&SerializationWrapper::IntegerWrapper { ref integer })) => {
+            (Some(&SerializationWrapper::Endiannes { ref endian }), Some(&SerializationWrapper::Integer { ref integer })) => {
                 
                 unpack = quote! {
                     use ::packed_struct::types::*;
@@ -325,7 +325,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
 
                 i += 1;
             }
-            (Some(&SerializationWrapper::PrimitiveEnumWrapper), _) => {
+            (Some(&SerializationWrapper::PrimitiveEnum), _) => {
                 let ty = &field.ty;
                 
                 unpack = quote! {
@@ -336,7 +336,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
                     r?
                 };
             },
-            (Some(&SerializationWrapper::EndiannesWrapper { ref endian }), _) => {
+            (Some(&SerializationWrapper::Endiannes { ref endian }), _) => {
                 let integer_ty = &field.ty;
 
                 unpack = quote! {
@@ -361,7 +361,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
 
         i += 1;
 
-        if wrappers.len() == 0 || i > wrappers.len() - 1 { break; }
+        if wrappers.is_empty() || i > wrappers.len() - 1 { break; }
     }
 
     Ok(unpack)

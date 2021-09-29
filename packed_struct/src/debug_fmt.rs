@@ -39,7 +39,7 @@ pub struct DebugBitField<'a> {
 
 
 pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[DebugBitField]) -> fmt::Result {
-    if fields.len() == 0 {
+    if fields.is_empty() {
 		return Ok(());
 	}
 
@@ -125,8 +125,8 @@ impl<'a, P> fmt::Display for PackedStructDisplay<'a, P> where P: PackedStruct + 
         if self.raw_decimal {
             f.write_str("Decimal\r\n")?;
             f.write_str("[")?;
-            for i in 0..l {
-                write!(f, "{}", packed[i])?;
+            for (i, p) in packed.iter().enumerate().take(l) {
+                write!(f, "{}", p)?;
                 if (i + 1) != l {
                     f.write_str(", ")?;
                 }
@@ -141,8 +141,8 @@ impl<'a, P> fmt::Display for PackedStructDisplay<'a, P> where P: PackedStruct + 
         if self.raw_hex {
             f.write_str("Hex\r\n")?;
             f.write_str("[")?;
-            for i in 0..l {
-                write!(f, "0x{:X}", packed[i])?;
+            for (i, p) in packed.iter().enumerate().take(l) {
+                write!(f, "0x{:X}", p)?;
                 if (i + 1) != l {
                     f.write_str(", ")?;
                 }
@@ -155,8 +155,9 @@ impl<'a, P> fmt::Display for PackedStructDisplay<'a, P> where P: PackedStruct + 
         if self.raw_binary {
             f.write_str("Binary\r\n")?;
             f.write_str("[")?;
-            for i in 0..l {
-                write!(f, "0b{:08b}", packed[i])?;
+
+            for (i, p) in packed.iter().enumerate().take(l) {
+                write!(f, "0b{:08b}", p)?;
                 if (i + 1) != l {
                     f.write_str(", ")?;
                 }
