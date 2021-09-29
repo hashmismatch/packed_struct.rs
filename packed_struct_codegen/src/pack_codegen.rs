@@ -57,7 +57,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                     reg(ident, ident, field)?;
 
                     unpack_struct_set.push(quote! {
-                        #ident: #ident
+                        #ident
                     });
                 },
                 FieldKind::Array { ref ident, ref elements, .. } => {

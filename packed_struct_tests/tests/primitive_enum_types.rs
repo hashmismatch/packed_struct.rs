@@ -1,3 +1,4 @@
+#![allow(clippy::enum_clike_unportable_variant)]
 use packed_struct::prelude::*;
 
 #[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]

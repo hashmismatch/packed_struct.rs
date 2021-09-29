@@ -19,5 +19,5 @@ fn test_packed_reserved_fields() {
     assert_eq!([0b0000_0111], packed);
 
     let unpacked = StructOne::unpack(&[0b1111_1000]).unwrap();
-    assert_eq!(true, unpacked.bool1);
+    assert!(unpacked.bool1);
 }
