@@ -19,6 +19,8 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Run Clippy on generated test code - fail on warnings
+      run: cargo clippy -p packed_struct_tests --all-targets -- -D warnings
     - name: Rust no_std tests
       run: cd packed_struct_nostd_tests && cargo test --verbose
   
