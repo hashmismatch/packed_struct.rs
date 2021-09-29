@@ -22,7 +22,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
     for field in &parsed.fields {
         match field {
             &FieldKind::Regular { ref ident, ref field } => {
-                let ref name_str = ident.to_string();
+                let name_str = &ident.to_string();
                 let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
                 
                 debug_fields.push(quote! {

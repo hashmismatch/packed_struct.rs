@@ -361,7 +361,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
 
         i += 1;
 
-        if wrappers.len() == 0 || i > wrappers.len() - 1 { break; }
+        if wrappers.is_empty() || i > wrappers.len() - 1 { break; }
     }
 
     Ok(unpack)
