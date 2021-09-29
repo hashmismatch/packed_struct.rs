@@ -19,7 +19,7 @@ impl BitsRange for Range<usize> {
 
 impl BitsRange for NextBits {    
     fn get_bits_range(&self, packed_bit_width: usize, prev_range: &Option<Range<usize>>) -> Range<usize> {
-        if let &Some(ref prev_range) = prev_range {
+        if let Some(ref prev_range) = prev_range {
             (prev_range.end + 1)..((prev_range.end + 1) + (packed_bit_width as usize) - 1)
         } else {
             0..((packed_bit_width as usize) - 1)
