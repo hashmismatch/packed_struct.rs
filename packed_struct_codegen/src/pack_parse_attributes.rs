@@ -187,7 +187,7 @@ pub fn parse_position_val(v: &str, multiplier: usize) -> Result<BitsPositionPars
         let n = parse_num(&v)?;
         return Ok(BitsPositionParsed::Start(n * multiplier));
     } else if v.ends_with(':') {
-        let v = v.replace(":", "");
+        let v = v.replace(':', "");
         let n = parse_num(&v)?;
         return Ok(BitsPositionParsed::Start(n * multiplier));
     } else if v.contains(':') || v.contains("..=") {

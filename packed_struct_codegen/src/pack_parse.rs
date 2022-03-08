@@ -205,7 +205,7 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
         syn::Type::Path(_) => {
             return Ok(
                 FieldKind::Regular {
-                    field: parse_reg_field(field, &field.ty, bit_range, default_endianness)?,
+                    field: Box::new(parse_reg_field(field, &field.ty, bit_range, default_endianness)?),
                     ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?
                 }
             );
@@ -468,7 +468,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
                 },
                 FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
-                        find_overlaps(format!("{}[{}]", ident.to_string(), i), &field.bit_range)?;
+                        find_overlaps(format!("{}[{}]", ident, i), &field.bit_range)?;
                     }
                 }
             }
