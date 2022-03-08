@@ -35,7 +35,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
             },
             FieldKind::Array { ref ident, ref elements, .. } => {
                 for (i, field) in elements.iter().enumerate() {
-                    let name_str = format!("{}[{}]", ident.to_string(), i);
+                    let name_str = format!("{}[{}]", ident, i);
                     let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
                     
                     debug_fields.push(quote! {
@@ -136,7 +136,7 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
                 },
                 FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
-                        emit_field_docs(&field.bit_range, format!("{}[{}]", ident.to_string(), i), &field.ty);
+                        emit_field_docs(&field.bit_range, format!("{}[{}]", ident, i), &field.ty);
                     }
                 }
             }            
