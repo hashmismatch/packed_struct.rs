@@ -29,7 +29,7 @@ pub struct ControlRegister {
     pub sensor_value: i16
 }
 
-#[derive(PrimitiveEnum, Debug, Copy, Clone, PartialEq)]
+#[derive(PrimitiveEnum_u8, Debug, Copy, Clone, PartialEq)]
 pub enum PowerMode {
     /// The sensor is turned off
     Off = 0,
