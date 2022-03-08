@@ -7,7 +7,7 @@ use syn::spanned::Spanned;
 use crate::utils::*;
 use crate::common::collections_prefix;
 
-pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::Result<proc_macro2::TokenStream> {
+pub fn derive(ast: &syn::DeriveInput, prim_type: syn::Type) -> syn::Result<proc_macro2::TokenStream> {
 
     let stdlib_prefix = collections_prefix();
 
@@ -15,10 +15,11 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
     let v = get_unitary_enum(ast)?;
 
     let from_primitive_match: Vec<_> = v.iter().map(|x| {
-        let d = x.get_discriminant();
         let n = &x.variant.ident;
         quote! {
-            #d => Some(#name::#n)
+            if val == #name::#n as #prim_type {
+                return Some(#name::#n);
+            }
         }
     }).collect();
 
@@ -49,65 +50,8 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
     }).collect();
     let all_variants_len = all_variants.len();
 
-    if prim_type.is_none() {
-        let min_ty: Vec<String> = v.iter().map(|d| {
-            if !d.suffix.is_empty() {
-                d.suffix.clone()
-            } else if d.negative {
-                let n = d.discriminant as i64;
-                if n < <i32>::min_value() as i64 {
-                    "i64".into()
-                } else {
-                    let n = -n;
-                    if n < <i16>::min_value() as i64 {
-                        "i32".into()
-                    } else if n < <i8>::min_value() as i64 {
-                        "i16".into()
-                    } else {
-                        "i8".into()
-                    }
-                }
-            } else {
-                let n = d.discriminant as u64;
-                if n > <u32>::max_value() as u64 {
-                    "u64".into()
-                } else if n > <u16>::max_value() as u64 {
-                    "u32".into()
-                } else if n > <u8>::max_value() as u64 {
-                    "u16".into()
-                } else {
-                    "u8".into()
-                }
-            }
-        }).collect();
-
-        // first mention, higher priority
-        let priority = [
-            "i64",
-            "i32",
-            "i16",
-            "i8",
-            "u64",
-            "u32",
-            "u16",
-            "u8"
-        ];
-        
-        let mut ty = "u8".to_string();
-        for t in min_ty {
-            if priority.iter().position(|&x| x == t).unwrap() < priority.iter().position(|&x| x == ty).unwrap() {
-                ty = t;
-            }
-        }
-        
-        prim_type = Some(syn::parse_str(&ty).expect("int ty parsing failed"));
-    }    
-
-    let prim_type = prim_type.expect("Unable to detect the primitive type for this enum.");
-
     let all_variants_const_ident = syn::Ident::new(&format!("{}_ALL", to_snake_case(&name.to_string())).to_uppercase(), Span::call_site());
     
-
     let mut str_format = {
         let to_display_str = to_display_str.clone();
         let all_variants_const_ident = all_variants_const_ident.clone();
@@ -158,10 +102,9 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
 
             #[inline]
             fn from_primitive(val: #prim_type) -> Option<Self> {
-                match val {
-                    #(#from_primitive_match),* ,
-                    _ => None
-                }
+                #(#from_primitive_match)*
+
+                None
             }
 
             #[inline]
@@ -192,30 +135,8 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
 }
 
 struct Variant {
-    variant: syn::Variant,
-    discriminant: u64,
-    negative: bool,
-    suffix: String
+    variant: syn::Variant
 }
-
-impl Variant {
-    fn get_discriminant(&self) -> proc_macro2::TokenStream {
-        let s = format!("{}{}",
-            self.discriminant,
-            self.suffix
-        );
-        let v: syn::LitInt = syn::parse_str(&s).expect("Error mid-parsing for disc value");
-
-        if self.negative {
-            quote! {
-                - #v
-            }
-        } else {
-            quote! { #v }
-        }
-    }
-}
-
 
 fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
     let data_enum = if let syn::Data::Enum(data_enum) = &input.data {
@@ -226,9 +147,6 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
 
     let mut r = Vec::new();
 
-    let mut d: Option<u64> = None;
-    let mut neg = false;
-
     for variant in &data_enum.variants {
         
         match variant.fields {
@@ -238,51 +156,9 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
             syn::Fields::Unit => {}
         }
 
-        let (discriminant, negative, suffix) = match &variant.discriminant {
-            Some((_, syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref lit_int), .. }))) => {
-                (lit_int.base10_parse()?, false, lit_int.suffix().into())
-            },
-            Some((_,
-                syn::Expr::Unary(syn::ExprUnary {
-                    op: syn::UnOp::Neg(_),
-                    expr,
-                    ..
-                }) 
-            )) => {
-
-                match **expr {
-                    syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref lit_int), .. }) => {
-                        (lit_int.base10_parse()?, true, lit_int.suffix().into())
-                    },
-                    _ => return Err(syn::Error::new(expr.span(), "Unsupported enum const expr (negated)"))
-                }
-            }
-            Some(_) => {
-                return Err(syn::Error::new(variant.span(), "Unsupported enum const expr"));
-            },
-            None => {
-                match d {
-                    None => (0, false, "".into()),
-                    Some(d) => {
-                        if neg {
-                            (d-1, d-1 != 0, "".into())
-                        } else {
-                            (d+1, false, "".into())
-                        }
-                    }
-                }
-            }
-        };
-
         r.push(Variant {
-            variant: variant.clone(),
-            discriminant,
-            negative,
-            suffix
+            variant: variant.clone()
         });
-
-        d = Some(discriminant);
-        neg = negative;                
     }
     
     Ok(r)

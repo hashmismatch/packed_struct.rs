@@ -272,7 +272,7 @@
 //! ```rust
 //! use packed_struct::prelude::*;
 //!
-//! #[derive(PrimitiveEnum, Clone, Copy, PartialEq, Debug)]
+//! #[derive(PrimitiveEnum_u8, Clone, Copy, PartialEq, Debug)]
 //! pub enum ImplicitType {
 //!     VariantMin = 0,
 //!     VariantMax = 255
@@ -377,7 +377,6 @@ pub use self::packing::*;
 /// The derivation macros for packing and enums.
 pub mod derive {
     pub use packed_struct_codegen::PackedStruct;
-    pub use packed_struct_codegen::PrimitiveEnum;
     pub use packed_struct_codegen::{PrimitiveEnum_u8, PrimitiveEnum_u16, PrimitiveEnum_u32, PrimitiveEnum_u64};
     pub use packed_struct_codegen::{PrimitiveEnum_i8, PrimitiveEnum_i16, PrimitiveEnum_i32, PrimitiveEnum_i64};
 }
