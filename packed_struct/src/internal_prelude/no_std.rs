@@ -19,3 +19,6 @@ pub use core::hash::{Hash, Hasher};
 pub use alloc::vec::Vec;
 #[cfg(feature="alloc")]
 pub use alloc::borrow::Cow;
+#[cfg(feature="alloc")]
+pub use alloc::fmt::Formatter;
+
