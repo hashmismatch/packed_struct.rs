@@ -1,3 +1,5 @@
+#![allow(clippy::to_string_in_format_args)]
+
 use crate::pack::*;
 use crate::common::*;
 use proc_macro2::Span;
