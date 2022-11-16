@@ -202,7 +202,7 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
         syn::Type::Path(_) => {
             return Ok(
                 FieldKind::Regular {
-                    field: parse_reg_field(field, &field.ty, bit_range, default_endianness)?,
+                    field: Box::new(parse_reg_field(field, &field.ty, bit_range, default_endianness)?),
                     ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?
                 }
             );

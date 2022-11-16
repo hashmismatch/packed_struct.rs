@@ -13,7 +13,7 @@ pub struct FieldMidPositioning {
 pub enum FieldKind {
     Regular {
         ident: syn::Ident,
-        field: FieldRegular
+        field: Box<FieldRegular>
     },
     Array {
         ident: syn::Ident,
