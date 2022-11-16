@@ -2,7 +2,7 @@ use std::any::type_name;
 
 use packed_struct::{PrimitiveEnumStaticStr, prelude::*};
 
-#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumImplicit {
     Zero,
     One,
@@ -10,7 +10,7 @@ pub enum EnumImplicit {
     Three
 }
 
-#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumExplicit {
     Zero = 0,
     One,
@@ -18,7 +18,7 @@ pub enum EnumExplicit {
     Three
 }
 
-#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumExplicitHalf {
     Zero,
     One = 1,
@@ -26,7 +26,7 @@ pub enum EnumExplicitHalf {
     Three
 }
 
-#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumExplicitHalfZero {
     Zero = 0,
     One,
@@ -34,7 +34,7 @@ pub enum EnumExplicitHalfZero {
     Three
 }
 
-#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumExplicitFull {
     Zero = 0,
     One = 1,
@@ -42,7 +42,7 @@ pub enum EnumExplicitFull {
     Three = 3
 }
 
-#[derive(PrimitiveEnum_i8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_i8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumExplicitNegative {
     MinusTwo = -2,
     MinusOne = -1,
@@ -51,7 +51,7 @@ pub enum EnumExplicitNegative {
     Two = 2
 }
 
-#[derive(PrimitiveEnum_i8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_i8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumExplicitNegativeOne {
     MinusOne = -1,
     Zero,
@@ -60,7 +60,7 @@ pub enum EnumExplicitNegativeOne {
 }
 
 
-#[derive(PrimitiveEnum_i8, Clone, Copy, Debug, PartialEq)]
+#[derive(PrimitiveEnum_i8, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnumExplicitNegativeTwo {
     MinusTwo = -2,
     MinusOne,

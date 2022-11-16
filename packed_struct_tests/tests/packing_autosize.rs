@@ -3,7 +3,7 @@ use packed_struct::prelude::*;
 #[test]
 fn test_serialization_autosize_msb0() {
 
-    #[derive(PackedStruct, PartialEq, Debug)]
+    #[derive(PackedStruct, PartialEq, Debug, Eq)]
     #[packed_struct(bit_numbering="msb0")]
     pub struct Bools {
         #[packed_field(bits="8")]
@@ -27,7 +27,7 @@ fn test_serialization_autosize_msb0() {
 #[test]
 fn test_serialization_autosize_lsb0() {
     // todo: LSB0 mode should be able to figure out its own size
-    #[derive(PackedStruct, PartialEq, Debug)]
+    #[derive(PackedStruct, PartialEq, Debug, Eq)]
     #[packed_struct(size_bytes="2", bit_numbering="lsb0")]
     pub struct Bools {
         #[packed_field(bits="15")]

@@ -30,11 +30,8 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
                                     syn::Meta::Path(_) => {}
                                     syn::Meta::List(_) => {}
                                     syn::Meta::NameValue(nv) => {
-                                        match (nv.path.get_ident(), &nv.lit) {
-                                            (Some(key), syn::Lit::Str(lit)) => {
-                                                r.push((key.to_string(), lit.value()));
-                                            },
-                                            (_, _) => ()
+                                        if let (Some(key), syn::Lit::Str(lit)) = (nv.path.get_ident(), &nv.lit) {
+                                            r.push((key.to_string(), lit.value()));
                                         }
                                     }
                                 }
@@ -52,7 +49,7 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// https://en.wikipedia.org/wiki/Bit_numbering
 pub enum BitNumbering {
     Lsb0,
@@ -184,7 +181,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
     } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let PackFieldAttribute::ElementSizeBits(bits) = *a { Some(bits) } else { None }).next() {
         bits * array_size
     } else if let BitsPositionParsed::Range(a, b) = bits_position {
-        (b as isize - a as isize).abs() as usize + 1
+        (b as isize - a as isize).unsigned_abs() as usize + 1
     } else if let Some(bit_width_builtin) = bit_width_builtin {
         // todo: is it even possible to hit this branch?
         bit_width_builtin * array_size
@@ -319,7 +316,7 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum BitsPositionParsed {
     Next,
     Start(usize),
@@ -442,7 +439,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
 
     let num_bytes = (num_bits as f32 / 8.0).ceil() as usize;
 
-    if first_field_is_auto_positioned && (num_bits % 8) != 0 && struct_size_bytes == None {
+    if first_field_is_auto_positioned && (num_bits % 8) != 0 && struct_size_bytes.is_none() {
         return Err(syn::Error::new(fields[0].span(), "Please explicitly position the bits of the first field of this structure, as the alignment isn't obvious to the end user."));
     }
 
@@ -468,7 +465,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
                 },
                 FieldKind::Array { ref ident, ref elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
-                        find_overlaps(format!("{}[{}]", ident.to_string(), i), &field.bit_range)?;
+                        find_overlaps(format!("{}[{}]", ident, i), &field.bit_range)?;
                     }
                 }
             }

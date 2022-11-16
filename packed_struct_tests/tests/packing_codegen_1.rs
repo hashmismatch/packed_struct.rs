@@ -3,7 +3,7 @@ use packed_struct::prelude::*;
 #[test]
 fn test_serialization_codegen() {
 
-    #[derive(PackedStruct, PartialEq, Debug)]
+    #[derive(PackedStruct, PartialEq, Eq, Debug)]
     #[packed_struct(size_bytes="4", bit_numbering="msb0")]
     pub struct Bools {
         #[packed_field(bits="0")]

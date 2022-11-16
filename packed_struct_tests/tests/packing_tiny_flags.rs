@@ -3,7 +3,7 @@ use packed_struct::prelude::*;
 #[test]
 fn test_tiny_flags() {
 
-    #[derive(PackedStruct, Debug, PartialEq)]
+    #[derive(PackedStruct, Debug, PartialEq, Eq)]
     #[packed_struct(bit_numbering="msb0")]
     pub struct TinyFlags {
         #[packed_field(bits="4")]
@@ -23,7 +23,7 @@ fn test_tiny_flags() {
     let unpacked = TinyFlags::unpack(&packed).unwrap();
     assert_eq!(unpacked, flag);
 
-    #[derive(PackedStruct, Debug, PartialEq)]
+    #[derive(PackedStruct, Debug, PartialEq, Eq)]
     #[packed_struct]
     pub struct Settings {
         #[packed_field(element_size_bits="4")]

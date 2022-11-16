@@ -4,7 +4,7 @@ use packed_struct::prelude::*;
 #[cfg(test)]
 fn test_packed_arrays() {
     
-    #[derive(PackedStruct, PartialEq, Debug)]
+    #[derive(PackedStruct, PartialEq, Eq, Debug)]
     #[packed_struct(size_bytes="7")]
     pub struct Arrays {
         arr1: [u8; 7]
@@ -24,14 +24,14 @@ fn test_packed_arrays() {
 #[test]
 fn test_packed_array_of_structs() {
 
-    #[derive(PackedStruct, Debug, PartialEq)]
+    #[derive(PackedStruct, Debug, PartialEq, Eq)]
     #[packed_struct(size_bytes="6", endian="msb")]
     pub struct Simple {
         f1: u16,
         f2: u32
     }
 
-    #[derive(PackedStruct, Debug, PartialEq)]
+    #[derive(PackedStruct, Debug, PartialEq, Eq)]
     pub struct Packaged {
         #[packed_field(element_size_bytes="6")]
         p: [Simple; 4]

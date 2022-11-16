@@ -1,6 +1,6 @@
 use packed_struct::prelude::*;
 
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumI8 {
     VariantMin = -128,
     

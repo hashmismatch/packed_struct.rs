@@ -4,7 +4,7 @@ use packed_struct::prelude::*;
 #[cfg(test)]
 fn test_packed_compact_byte() {
     
-    #[derive(PackedStruct, PartialEq, Debug)]
+    #[derive(PackedStruct, PartialEq, Debug, Eq)]
     #[packed_struct(size_bytes="1", bit_numbering="msb0")]
     pub struct RegA {
         #[packed_field(bits="0:2")]

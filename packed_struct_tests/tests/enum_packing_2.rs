@@ -18,7 +18,7 @@ pub enum DataRate {
 }
 
 // Imaginary register, for test purposes only
-#[derive(PackedStruct, Copy, Clone, Debug, PartialEq)]
+#[derive(PackedStruct, Copy, Clone, Debug, PartialEq, Eq)]
 #[packed_struct(bit_numbering="msb0")]
 /// Control register 4
 pub struct ControlRegister4 {

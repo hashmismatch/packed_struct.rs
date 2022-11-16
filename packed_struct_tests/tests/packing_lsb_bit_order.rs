@@ -2,7 +2,7 @@ use packed_struct::prelude::*;
 
 // both orders (high-low, low-high) should be supported!
 
-#[derive(PackedStruct, Copy, Clone, Debug, PartialEq)]
+#[derive(PackedStruct, Copy, Clone, Debug, PartialEq, Eq)]
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct IntsLsbPosBits {
     #[packed_field(bits="0:3")]

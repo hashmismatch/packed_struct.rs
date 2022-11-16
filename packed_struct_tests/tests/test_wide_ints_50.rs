@@ -5,7 +5,7 @@ macro_rules! test_int_50 {
         #[test]
         fn $f() {
 
-            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq)]
+            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq, Eq)]
             #[packed_struct(bit_numbering="msb0", endian="msb")]
             pub struct Test {
                 #[packed_field(bits= $fi )]

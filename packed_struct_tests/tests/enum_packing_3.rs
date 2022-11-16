@@ -1,6 +1,6 @@
 use packed_struct::prelude::*;
 
-#[derive(PackedStruct, PartialEq, Debug, Copy, Clone)]
+#[derive(PackedStruct, PartialEq, Eq, Debug, Copy, Clone)]
 #[packed_struct(endian="msb")]
 pub struct TestPack {
     a1: i32,
@@ -11,13 +11,13 @@ pub struct TestPack {
     mode: SelfTestMode 
 }
 
-#[derive(PackedStruct, PartialEq, Debug, Copy, Clone)]
+#[derive(PackedStruct, PartialEq, Eq, Debug, Copy, Clone)]
 pub struct TestPackMode {
     #[packed_field(size_bytes="1", ty="enum")]
     mode: SelfTestMode 
 }
 
-#[derive(PrimitiveEnum_u8, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum_u8, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum SelfTestMode {
     NormalMode = 0,
     PositiveSignSelfTest = 1,
