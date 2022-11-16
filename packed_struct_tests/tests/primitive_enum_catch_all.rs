@@ -1,6 +1,6 @@
 use packed_struct::prelude::*;
 
-#[derive(PrimitiveEnum_u8, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum_u8, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Field {
     A = 1,
     B = 2,

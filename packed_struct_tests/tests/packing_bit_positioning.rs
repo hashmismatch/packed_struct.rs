@@ -1,6 +1,6 @@
 use packed_struct::prelude::*;
 
-#[derive(PackedStruct, PartialEq, Debug)]
+#[derive(PackedStruct, PartialEq, Eq, Debug)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct SmallInts {    
     #[packed_field(bits="0:2")]
@@ -32,7 +32,7 @@ fn test_packing_bit_positions() {
 }
 
 
-#[derive(PackedStruct, PartialEq, Debug)]
+#[derive(PackedStruct, PartialEq, Eq, Debug)]
 #[packed_struct(size_bytes="1", bit_numbering="lsb0")]
 pub struct SmallIntsLsb {    
     #[packed_field(bits="2:0")]
@@ -59,7 +59,7 @@ fn test_packing_bit_positions_lsb() {
 
 #[test]
 fn test_packing_byte_position() {
-    #[derive(Copy, Clone, Debug, PartialEq, PackedStruct)]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PackedStruct)]
     #[packed_struct(bit_numbering="msb0", endian="msb")]
     pub struct BufferChecksum {
         #[packed_field(bytes="0")]

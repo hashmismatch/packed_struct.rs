@@ -6,7 +6,7 @@ use common::*;
 #[test]
 fn test_roundtrip_1() {
 
-    #[derive(PackedStruct, Debug, PartialEq)]
+    #[derive(PackedStruct, Debug, PartialEq, Eq)]
     #[packed_struct(bit_numbering="msb0")]
     pub struct RoundtripAligned {
         #[packed_field(bits="0..")]

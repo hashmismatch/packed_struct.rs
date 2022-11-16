@@ -1,52 +1,52 @@
 #![allow(clippy::enum_clike_unportable_variant)]
 use packed_struct::prelude::*;
 
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumU8 {
     VariantMin = 0,
     VariantMax = 255
 }
 
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumU16 {
     VariantMin = 0,
     VariantMax = 65535
 }
 
 #[repr(u32)]
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumU32 {
     VariantMin = 0,
     VariantMax = 4294967295
 }
 
 #[cfg(target_pointer_width = "64")]
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumU64 {
     VariantMin = 0,
     VariantMax = 1844674407370955165
 }
 
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumI8 {
     VariantMin = -128,
     VariantMax = 127
 }
 
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumI16 {
     VariantMin = -32768,
     VariantMax = 32767
 }
 
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumI32 {
     VariantMin = -2147483648,
     VariantMax = 2147483647
 }
 
 #[cfg(target_pointer_width = "64")]
-#[derive(PrimitiveEnum, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum EnumI64 {
     VariantMin = -9223372036854775808,
     VariantMax = 9223372036854775807

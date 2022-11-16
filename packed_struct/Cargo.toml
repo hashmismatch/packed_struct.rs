@@ -16,7 +16,7 @@ edition = "2018"
 packed_struct_codegen = { path = "../packed_struct_codegen/", version = "0.10.1" }
 serde = { version = "1.0", optional = true, default-features = false }
 serde_derive = { version = "1.0", optional = true }
-bitvec = { version = "0.22.3", default-features = false }
+bitvec = { version = "1.0", default-features = false }
 
 [features]
 default = ["std"]

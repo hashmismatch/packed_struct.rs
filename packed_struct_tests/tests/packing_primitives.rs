@@ -29,7 +29,7 @@ fn test_packed_primitives() {
 #[cfg(test)]
 fn test_packed_int_msb_endian() {
 
-    #[derive(Copy, Clone, Debug, Default, PartialEq, PackedStruct)]
+    #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PackedStruct)]
     #[packed_struct(endian="msb", bit_numbering="msb0")]
     pub struct IntsMsb {
         #[packed_field(bytes="0")]
@@ -58,7 +58,7 @@ fn test_packed_int_msb_endian() {
 #[cfg(test)]
 fn test_packed_int_lsb_endian() {
 
-    #[derive(Copy, Clone, Debug, Default, PartialEq, PackedStruct)]
+    #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PackedStruct)]
     #[packed_struct(endian="lsb", bit_numbering="msb0")]
     pub struct IntsLsb {
         #[packed_field(bytes="0")]

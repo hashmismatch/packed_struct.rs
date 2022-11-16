@@ -1,6 +1,6 @@
 use packed_struct::prelude::*;
 
-#[derive(PackedStruct, Default, Copy, Clone, PartialEq)]
+#[derive(PackedStruct, Default, Copy, Clone, PartialEq, Eq)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct StructOne {
     #[packed_field(bits="0:3")]

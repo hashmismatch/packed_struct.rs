@@ -5,14 +5,14 @@ macro_rules! test_int_14 {
         #[test]
         fn $f() {
 
-            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq)]
+            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq, Eq)]
             #[packed_struct(bit_numbering="msb0", endian="msb")]
             pub struct TestUnsigned {
                 #[packed_field(bits= $fi )]
                 pub int1: Integer<u16, packed_bits::Bits::<14>>
             }
 
-            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq)]
+            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq, Eq)]
             #[packed_struct(bit_numbering="msb0", endian="msb")]
             pub struct TestSigned {
                 #[packed_field(bits= $fi )]

@@ -4,7 +4,7 @@ use packed_struct::prelude::*;
 #[cfg(test)]
 fn test_packed_struct_msp() {
     
-    #[derive(PackedStruct, PartialEq, Debug)]
+    #[derive(PackedStruct, PartialEq, Eq, Debug)]
     #[packed_struct(size_bytes="4", endian="lsb")]
     pub struct MspStatus {
         cycle_time: u16,

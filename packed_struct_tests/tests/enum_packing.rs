@@ -1,6 +1,6 @@
 use packed_struct::prelude::*;
 
-#[derive(PackedStruct, PartialEq, Debug, Copy, Clone)]
+#[derive(PackedStruct, PartialEq, Eq, Debug, Copy, Clone)]
 #[packed_struct(bit_numbering="msb0")]
 pub struct TestPack {
     #[packed_field(bits = "2:3", ty="enum")]
@@ -9,7 +9,7 @@ pub struct TestPack {
     enabled: bool
 }
 
-#[derive(PrimitiveEnum_u8, PartialEq, Debug, Clone, Copy)]
+#[derive(PrimitiveEnum_u8, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum SelfTestMode {
     NormalMode = 0,
     PositiveSignSelfTest = 1,

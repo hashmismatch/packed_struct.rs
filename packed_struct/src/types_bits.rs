@@ -68,7 +68,7 @@ impl<const N: usize> ByteArray for [u8; N] {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Bytes<const N: usize>;
 
 impl<const N: usize> NumberOfBytes for Bytes<N> {
@@ -80,7 +80,7 @@ impl<const N: usize> NumberOfBytes for Bytes<N> {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Bits<const N: usize>;
 
 macro_rules! bits_type {
