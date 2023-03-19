@@ -2,7 +2,13 @@
 
 use crate::internal_prelude::v1::*;
 
-#[cfg(any(feature="alloc", feature="std"))]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+use alloc::fmt::Formatter;
+
+#[cfg(feature = "std")]
+use std::fmt::Formatter;
+
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub trait PackedStructDebug {
     fn fmt_fields(&self, fmt: &mut Formatter) -> Result<(), FmtError>;
     fn packed_struct_display_header() -> &'static str;
