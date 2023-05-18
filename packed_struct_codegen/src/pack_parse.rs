@@ -4,7 +4,6 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_parse_attributes::*;
 
-use syn::ExprLit;
 use syn::Meta;
 use syn::Token;
 use syn::punctuated::Punctuated;
@@ -40,8 +39,7 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
                                 r.push((key.to_string(), lit.value()));
                             }
                         }
-                    },
-                    _ => ()
+                    }
                 }
             }
         }
@@ -183,7 +181,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
     } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let PackFieldAttribute::ElementSizeBits(bits) = *a { Some(bits) } else { None }).next() {
         bits * array_size
     } else if let BitsPositionParsed::Range(a, b) = bits_position {
-        (b as isize - a as isize).unsigned_abs() as usize + 1
+        (b as isize - a as isize).unsigned_abs() + 1
     } else if let Some(bit_width_builtin) = bit_width_builtin {
         // todo: is it even possible to hit this branch?
         bit_width_builtin * array_size
@@ -213,13 +211,13 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
 
             let size = get_expr_int_val(&type_array.len)?;
 
-            let element_size_bits: usize = mp.bit_width as usize / size as usize;
+            let element_size_bits = mp.bit_width / size;
             if (mp.bit_width % element_size_bits) != 0 {
                 return Err(syn::Error::new(type_array.span(), "Element and array size mismatch!"));
             }
 
             let mut elements = vec![];
-            for i in 0..size as usize {
+            for i in 0..size {
                 let s = bit_range.start + (i * element_size_bits);
                 let element_bit_range = s..(s + element_size_bits - 1);
                 elements.push(parse_reg_field(field, &type_array.elem, &element_bit_range, default_endianness)?);
@@ -451,7 +449,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         for field in &fields_parsed {
             let mut find_overlaps = |name: String, range: &Range<usize>| {
                 for i in range.start .. (range.end+1) {
-                    if let Some(&Some(ref n)) = bits.get(i) {
+                    if let Some(Some(n)) = bits.get(i) {
                         return Err(syn::Error::new(name.span(), format!("Overlap in bits between fields {} and {}", n, name)));
                     }
 

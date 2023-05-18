@@ -614,7 +614,7 @@ impl<T, B, I> PackedStruct for MsbInteger<T, B, I>
 impl<T, B, I> PackedStructInfo for MsbInteger<T, B, I> where B: NumberOfBits {
     #[inline]
     fn packed_bits() -> usize {
-        B::number_of_bits() as usize
+        B::number_of_bits()
     }
 }
 
@@ -708,7 +708,7 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
 impl<T, B, I> PackedStructInfo for LsbInteger<T, B, I> where B: NumberOfBits {
     #[inline]
     fn packed_bits() -> usize {
-        B::number_of_bits() as usize
+        B::number_of_bits()
     }
 }
 
