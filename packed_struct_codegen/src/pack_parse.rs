@@ -4,6 +4,10 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_parse_attributes::*;
 
+use syn::ExprLit;
+use syn::Meta;
+use syn::Token;
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use crate::utils::*;
 
@@ -15,31 +19,29 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
     let mut r = vec![];
 
     for attr in attributes {
-        let meta = attr.parse_meta()?;
-        if let syn::Meta::List(ref metalist) = meta {
-            if let Some(path) = metalist.path.get_ident() {
-                if path == wrong_attribute {
-                    return Err(syn::Error::new(path.span(), format!("This attribute is not supported here, did you mean {:?}?", main_attribute)));
-                }
-                if path == main_attribute {
-                    for nv in &metalist.nested {
-                        match nv {
-                            syn::NestedMeta::Meta(m) => {
+        if attr.path().is_ident(wrong_attribute) {
+            return Err(syn::Error::new(attr.path().span(), format!("This attribute is not supported here, did you mean {:?}?", main_attribute)));
+        }
 
-                                match m {
-                                    syn::Meta::Path(_) => {}
-                                    syn::Meta::List(_) => {}
-                                    syn::Meta::NameValue(nv) => {
-                                        if let (Some(key), syn::Lit::Str(lit)) = (nv.path.get_ident(), &nv.lit) {
-                                            r.push((key.to_string(), lit.value()));
-                                        }
-                                    }
-                                }
-
+        if attr.path().is_ident(main_attribute) {
+            let nested = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+            let nested = if let Ok(nested) = nested {
+                nested
+            } else {
+                continue;
+            };
+            for meta in nested {
+                match meta {            
+                    syn::Meta::Path(_) => (),
+                    syn::Meta::List(_) => (),
+                    syn::Meta::NameValue(nv) => {
+                        if let (Some(key), syn::Expr::Lit(lit)) = (nv.path.get_ident(), &nv.value) {
+                            if let syn::Lit::Str(lit) = &lit.lit {
+                                r.push((key.to_string(), lit.value()));
                             }
-                            syn::NestedMeta::Lit(_) => {}
                         }
-                    }
+                    },
+                    _ => ()
                 }
             }
         }
