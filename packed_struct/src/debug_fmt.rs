@@ -70,7 +70,7 @@ pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[Deb
                         bits_start = field.bits.start,
                         bits_end = field.bits.end,
                         width_bits = field.bits.len(),
-                        spaces = (max_bit_width - field.bits.len()) as usize,
+                        spaces = max_bit_width - field.bits.len(),
                         name = field.name
                         )?;
         }

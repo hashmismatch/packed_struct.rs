@@ -4,6 +4,9 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_parse_attributes::*;
 
+use syn::Meta;
+use syn::Token;
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use crate::utils::*;
 
@@ -15,29 +18,26 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
     let mut r = vec![];
 
     for attr in attributes {
-        let meta = attr.parse_meta()?;
-        if let syn::Meta::List(ref metalist) = meta {
-            if let Some(path) = metalist.path.get_ident() {
-                if path == wrong_attribute {
-                    return Err(syn::Error::new(path.span(), format!("This attribute is not supported here, did you mean {:?}?", main_attribute)));
-                }
-                if path == main_attribute {
-                    for nv in &metalist.nested {
-                        match nv {
-                            syn::NestedMeta::Meta(m) => {
+        if attr.path().is_ident(wrong_attribute) {
+            return Err(syn::Error::new(attr.path().span(), format!("This attribute is not supported here, did you mean {:?}?", main_attribute)));
+        }
 
-                                match m {
-                                    syn::Meta::Path(_) => {}
-                                    syn::Meta::List(_) => {}
-                                    syn::Meta::NameValue(nv) => {
-                                        if let (Some(key), syn::Lit::Str(lit)) = (nv.path.get_ident(), &nv.lit) {
-                                            r.push((key.to_string(), lit.value()));
-                                        }
-                                    }
-                                }
-
+        if attr.path().is_ident(main_attribute) {
+            let nested = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+            let nested = if let Ok(nested) = nested {
+                nested
+            } else {
+                continue;
+            };
+            for meta in nested {
+                match meta {            
+                    syn::Meta::Path(_) => (),
+                    syn::Meta::List(_) => (),
+                    syn::Meta::NameValue(nv) => {
+                        if let (Some(key), syn::Expr::Lit(lit)) = (nv.path.get_ident(), &nv.value) {
+                            if let syn::Lit::Str(lit) = &lit.lit {
+                                r.push((key.to_string(), lit.value()));
                             }
-                            syn::NestedMeta::Lit(_) => {}
                         }
                     }
                 }
@@ -181,7 +181,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
     } else if let Some(bits) = field_attributes.iter().filter_map(|a| if let PackFieldAttribute::ElementSizeBits(bits) = *a { Some(bits) } else { None }).next() {
         bits * array_size
     } else if let BitsPositionParsed::Range(a, b) = bits_position {
-        (b as isize - a as isize).unsigned_abs() as usize + 1
+        (b as isize - a as isize).unsigned_abs() + 1
     } else if let Some(bit_width_builtin) = bit_width_builtin {
         // todo: is it even possible to hit this branch?
         bit_width_builtin * array_size
@@ -211,13 +211,13 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
 
             let size = get_expr_int_val(&type_array.len)?;
 
-            let element_size_bits: usize = mp.bit_width as usize / size as usize;
+            let element_size_bits = mp.bit_width / size;
             if (mp.bit_width % element_size_bits) != 0 {
                 return Err(syn::Error::new(type_array.span(), "Element and array size mismatch!"));
             }
 
             let mut elements = vec![];
-            for i in 0..size as usize {
+            for i in 0..size {
                 let s = bit_range.start + (i * element_size_bits);
                 let element_bit_range = s..(s + element_size_bits - 1);
                 elements.push(parse_reg_field(field, &type_array.elem, &element_bit_range, default_endianness)?);
@@ -449,7 +449,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         for field in &fields_parsed {
             let mut find_overlaps = |name: String, range: &Range<usize>| {
                 for i in range.start .. (range.end+1) {
-                    if let Some(&Some(ref n)) = bits.get(i) {
+                    if let Some(Some(n)) = bits.get(i) {
                         return Err(syn::Error::new(name.span(), format!("Overlap in bits between fields {} and {}", n, name)));
                     }
 

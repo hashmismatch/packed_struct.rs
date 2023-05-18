@@ -57,7 +57,7 @@ impl PackStructAttribute {
 
     pub fn parse_all(attributes: &[(String, String)]) -> Vec<Self> {
         let mut r = vec![];
-        for &(ref name, ref val) in attributes {
+        for (name, val) in attributes {
             if let Ok(attr) = Self::parse(name, val) {
                 r.push(attr)
             }
@@ -153,7 +153,7 @@ impl PackFieldAttribute {
 
     pub fn parse_all(attributes: &[(String, String)]) -> Vec<Self> {
         let mut r = vec![];
-        for &(ref name, ref val) in attributes {
+        for (name, val) in attributes {
             if let Ok(attr) = Self::parse(name, val) {
                 r.push(attr)
             }

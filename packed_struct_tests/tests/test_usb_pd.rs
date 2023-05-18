@@ -33,7 +33,7 @@ fn test_serialization_codegen() {
     };
         
     let packed = p.pack().unwrap();
-    assert_eq!([0b00000010, 0b0000_1011, 0b111111_10, 0b10101010], packed);
+    assert_eq!([0b00000010, 0b0000_1011, 0b1111_1110, 0b10101010], packed);
 
     let unpacked = PowerDataObjectFixed::unpack(&packed).unwrap();
     assert!(unpacked.dual_role_data);

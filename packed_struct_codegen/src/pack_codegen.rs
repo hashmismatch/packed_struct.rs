@@ -312,7 +312,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
     let mut i = 0;
     loop {
         match (wrappers.get(i), wrappers.get(i+1)) {
-            (Some(&SerializationWrapper::Endiannes { ref endian }), Some(&SerializationWrapper::Integer { ref integer })) => {
+            (Some(SerializationWrapper::Endiannes { ref endian }), Some(SerializationWrapper::Integer { ref integer })) => {
                 
                 unpack = quote! {
                     use ::packed_struct::types::*;
@@ -336,7 +336,7 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
                     r?
                 };
             },
-            (Some(&SerializationWrapper::Endiannes { ref endian }), _) => {
+            (Some(SerializationWrapper::Endiannes { endian }), _) => {
                 let integer_ty = &field.ty;
 
                 unpack = quote! {

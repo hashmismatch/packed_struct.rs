@@ -83,6 +83,6 @@ impl<V, B> PackedStruct for ReservedBits<V, B> where Self: Default, V: ReservedB
 impl<V, B> PackedStructInfo for ReservedBits<V, B> where B: NumberOfBits {
     #[inline]
     fn packed_bits() -> usize {
-        B::number_of_bits() as usize
+        B::number_of_bits()
     }
 }

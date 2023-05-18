@@ -614,7 +614,7 @@ impl<T, B, I> PackedStruct for MsbInteger<T, B, I>
 impl<T, B, I> PackedStructInfo for MsbInteger<T, B, I> where B: NumberOfBits {
     #[inline]
     fn packed_bits() -> usize {
-        B::number_of_bits() as usize
+        B::number_of_bits()
     }
 }
 
@@ -708,7 +708,7 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
 impl<T, B, I> PackedStructInfo for LsbInteger<T, B, I> where B: NumberOfBits {
     #[inline]
     fn packed_bits() -> usize {
-        B::number_of_bits() as usize
+        B::number_of_bits()
     }
 }
 
@@ -817,12 +817,12 @@ fn test_sign_extension() {
 #[test]
 fn test_sign_extension_limits() {
     for i in -8..=7 {
-        let val: Integer<i8, Bits::<4>> = (i as i8).into();
+        let val: Integer<i8, Bits::<4>> = i.into();
         assert_eq!(i, *val);
     }
 
     for i in -64..=63 {
-        let val: Integer<i8, Bits::<7>> = (i as i8).into();
+        let val: Integer<i8, Bits::<7>> = i.into();
         assert_eq!(i, *val);
     }
 

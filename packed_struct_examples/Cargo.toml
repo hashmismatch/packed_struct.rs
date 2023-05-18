@@ -6,4 +6,4 @@ publish = false
 edition = "2018"
 
 [dependencies]
-packed_struct = { path = "../packed_struct/", version = "0.10", features = ["byte_types_64"] }
+packed_struct = { path = "../packed_struct/", features = ["byte_types_64"] }

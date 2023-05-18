@@ -68,7 +68,7 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
                     }
                 }
             } else {
-                let n = d.discriminant as u64;
+                let n = d.discriminant;
                 if n > <u32>::max_value() as u64 {
                     "u64".into()
                 } else if n > <u16>::max_value() as u64 {

@@ -64,7 +64,7 @@ fn test_roundtrip_1() {
             f9: rnd.rnd_num(u32::max_value() as u64) as u32,
             f10: rnd.rnd_num(i32::max_value() as u64) as i32,
 
-            u64_1: rnd.rnd_num(u64::max_value() as u64) as u64,
+            u64_1: rnd.rnd_num(u64::max_value()),
 
             f11: [rnd.rnd_num(u8::max_value() as u64) as u8],
             f12: [rnd.rnd_num(u8::max_value() as u64) as u8, rnd.rnd_num(u8::max_value() as u64) as u8],
