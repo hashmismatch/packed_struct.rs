@@ -822,7 +822,7 @@ fn test_sign_extension_limits() {
     }
 
     for i in -64..=63 {
-        let val: Integer<i8, Bits::<7>> = (i as i8).into();
+        let val: Integer<i8, Bits::<7>> = i.into();
         assert_eq!(i, *val);
     }
 
