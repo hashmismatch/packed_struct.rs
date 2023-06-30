@@ -1,4 +1,5 @@
 #![recursion_limit = "192"]
+#![allow(clippy::redundant_clone)]
 
 extern crate proc_macro;
 extern crate proc_macro2;
