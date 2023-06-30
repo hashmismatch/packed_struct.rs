@@ -82,7 +82,11 @@ impl StructLengthBuilder {
 
         let len_static: usize = lengths.iter().filter_map(|l| if let StructLength::Static(s) = l { Some(*s) } else { None }).sum();
         let len_dy = if dy == 1 {
-            total_length - len_static
+            let l = total_length as isize - len_static as isize;
+            if l < 0 {
+                return Err(PackingError::BufferSizeMismatch { expected: len_static, actual: total_length });
+            }
+            l as usize
         } else {
             0
         };
