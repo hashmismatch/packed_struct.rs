@@ -10,6 +10,7 @@ pub struct FieldMidPositioning {
     pub bits_position: BitsPositionParsed,
 }
 
+#[allow(clippy::large_enum_variant)]
 pub enum FieldKind {
     Regular {
         ident: syn::Ident,

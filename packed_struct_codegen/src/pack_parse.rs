@@ -1,3 +1,5 @@
+#![allow(clippy::to_string_in_format_args)]
+
 extern crate quote;
 extern crate syn;
 
