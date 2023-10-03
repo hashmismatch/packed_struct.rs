@@ -36,6 +36,12 @@ impl<T, B> Display for Integer<T, B> where T: Display {
     }
 }
 
+impl<T, B> fmt::Binary for Integer<T, B> where T: fmt::Binary {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.num.fmt(f)
+    }
+}
+
 #[cfg(feature = "use_serde")]
 mod serialize {
     use serde::ser::{Serialize, Serializer};
