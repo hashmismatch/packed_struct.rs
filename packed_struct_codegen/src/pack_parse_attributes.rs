@@ -5,7 +5,9 @@ pub enum PackStructAttributeKind {
     SizeBytes,
     //SizeBits,
     DefaultIntEndianness,
-    BitNumbering
+    BitNumbering,
+    Prepend,
+    Append,
 }
 
 impl PackStructAttributeKind {
@@ -16,7 +18,9 @@ impl PackStructAttributeKind {
             SizeBytes => "size_bytes",
             //SizeBits => "size_bits",
             DefaultIntEndianness => "endian",
-            BitNumbering => "bit_numbering"
+            BitNumbering => "bit_numbering",
+            Prepend => "prepend",
+            Append => "append"
         }
     }
 }
@@ -25,24 +29,32 @@ pub enum PackStructAttribute {
     SizeBytes(usize),
     //SizeBits(usize),
     DefaultIntEndianness(IntegerEndianness),
-    BitNumbering(BitNumbering)
+    BitNumbering(BitNumbering),
+    Prepend(Prepend),
+    // Append(F, usize),
 }
 
 impl PackStructAttribute {
-    pub fn parse(name: &str, val: &str) -> Result<Self, String> {
+    pub fn parse(name: &str, val: &syn::Expr) -> Result<Self, String> {
         if name == PackStructAttributeKind::DefaultIntEndianness.get_attr_name() {
+            let val = &get_string_from_expr(val).unwrap_or_default();
             let v = IntegerEndianness::from_str(val).ok_or_else(|| format!("Invalid default int endian value: {}", val))?;
             return Ok(PackStructAttribute::DefaultIntEndianness(v));
         }
 
         if name == PackStructAttributeKind::BitNumbering.get_attr_name() {
-            let b = BitNumbering::from_str(val).expect("Invalid bit numbering attribute value");
+            let b = BitNumbering::from_str(&get_string_from_expr(val).unwrap_or_default()).expect("Invalid bit numbering attribute value");
             return Ok(PackStructAttribute::BitNumbering(b));
         }
 
         if name == PackStructAttributeKind::SizeBytes.get_attr_name() {
-            let b = parse_num(val)?;
+            let b = parse_num(&get_string_from_expr(val).unwrap_or_default())?;
             return Ok(PackStructAttribute::SizeBytes(b));
+        }
+
+        if name == PackStructAttributeKind::Prepend.get_attr_name() {
+            let b = Prepend::from_expr(val).expect("Invalid prepend value");
+            return Ok(PackStructAttribute::Prepend(b));
         }
 
         /*
@@ -52,10 +64,11 @@ impl PackStructAttribute {
         }
         */
 
+        let val = &get_string_from_expr(val).unwrap_or_default();
         Err(format!("Unknown struct attribute: {}, value {}", name, val))
     }
 
-    pub fn parse_all(attributes: &[(String, String)]) -> Vec<Self> {
+    pub fn parse_all(attributes: &[(String, syn::Expr)]) -> Vec<Self> {
         let mut r = vec![];
         for (name, val) in attributes {
             if let Ok(attr) = Self::parse(name, val) {

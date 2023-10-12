@@ -4,6 +4,7 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_codegen_docs::*;
 use crate::common::*;
+use crate::pack_parse::Prepend;
 use syn::spanned::Spanned;
 use crate::utils::*;
 
@@ -17,6 +18,8 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
     let type_documentation = type_docs(parsed);
     let num_bytes = parsed.num_bytes;
     let num_bits = parsed.num_bits;
+
+    let prepend = &parsed.prepend;
     
 
     let mut pack_fields = vec![];
@@ -77,6 +80,31 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                     });
                 }
             }        
+        }
+
+        //TODO: Move prepend check to before the reg. Either make target be a slice into target after the header or pass an offset into pack_bits to make sure headers don't get overwritten
+        //      Call teh trait method if the enum is set to that. Add the trait. 
+        //      Do the same stuff for append
+        //      The trait should return a result, in case we want to verify that the header is correct before unpacking fore example. Or if we want to check the xor appended at the end  
+        //      In case we just have the bytes array, we do need to remove the header in unpack!
+
+        if let Some(pre) = prepend {
+            match pre {
+                Prepend::Trait => {
+                    // pack_fields.push(quote! {
+                    //     {
+                    //         let packed = { #pack };
+                    //         #pack_bits
+                    //     }
+                    // });
+                },
+                Prepend::Bytes(bytes) => {
+                    pack_fields.push(quote! {
+                        assert!(#num_bytes >= bytes.len(), "Packed bytes array is smaller than prepend array even though we added the prepend length!"); 
+                        std::ptr::copy_nonoverlapping(target, bytes, bytes.len());
+                    });
+                },
+            }
         }
 
     }

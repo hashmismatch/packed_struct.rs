@@ -4,6 +4,7 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_parse_attributes::*;
 
+use proc_macro2::Span;
 use syn::Meta;
 use syn::Token;
 use syn::punctuated::Punctuated;
@@ -14,8 +15,8 @@ use std::ops::Range;
 
 use crate::utils_syn::{get_expr_int_val, get_single_segment, tokens_to_string};
 
-pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
-    let mut r = vec![];
+pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, syn::Expr)>> {
+    let mut r: Vec<(String, syn::Expr)> = vec![];
 
     for attr in attributes {
         if attr.path().is_ident(wrong_attribute) {
@@ -31,13 +32,16 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
             };
             for meta in nested {
                 match meta {            
-                    syn::Meta::Path(_) => (),
+                    syn::Meta::Path(path) => {
+                        if let Some(key) = path.get_ident() {
+                            // Not the nicest of hacks, but I did not want to make the syn::Expr in the vec an option as well
+                            r.push((key.to_string(), syn::Expr::Lit(syn::ExprLit{ attrs: vec![],lit: syn::Lit::Bool(syn::LitBool { value: true, span: Span::call_site()})})));
+                        }
+                    },
                     syn::Meta::List(_) => (),
                     syn::Meta::NameValue(nv) => {
-                        if let (Some(key), syn::Expr::Lit(lit)) = (nv.path.get_ident(), &nv.value) {
-                            if let syn::Lit::Str(lit) = &lit.lit {
-                                r.push((key.to_string(), lit.value()));
-                            }
+                        if let (Some(key), lit) = (nv.path.get_ident(), &nv.value) {
+                            r.push((key.to_string(), lit.clone()));
                         }
                     }
                 }
@@ -46,6 +50,26 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
     }
 
     Ok(r)
+}
+
+pub fn parse_sub_attributes_as_string(attributes: &[syn::Attribute], main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
+    parse_sub_attributes(attributes, main_attribute, wrong_attribute).and_then(|vec| {
+        Ok(vec.into_iter().map(|(key, expr)| {
+            (key, get_string_from_expr(&expr).unwrap_or_default())
+        }).collect())
+    })
+}
+
+pub fn get_string_from_expr(expr: &syn::Expr) -> Option<String> {
+    if let syn::Expr::Lit(lit) = expr {
+        if let syn::Lit::Str(lit) = &lit.lit {
+            Some(lit.value())
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
 
@@ -82,6 +106,52 @@ impl IntegerEndianness {
             "lsb" | "le" => Some(IntegerEndianness::Lsb),
             "msb" | "be" => Some(IntegerEndianness::Msb),
             _ => None
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+/// https://en.wikipedia.org/wiki/Bit_numbering
+pub enum Prepend{
+    Bytes(Vec<u8>),
+    Trait,
+}
+
+fn get_bytes_from_expr_lit(bytes: &mut Vec<u8>, use_trait: &mut bool, expr_lit: &syn::ExprLit) {
+    match &expr_lit.lit {
+        syn::Lit::Byte( byte) => bytes.push(byte.value()),
+        syn::Lit::ByteStr(st) => bytes.append(&mut st.value()),
+        syn::Lit::Int(i) => {
+            if let Ok(val) = i.base10_parse::<u8>() {
+                bytes.push(val);
+            }
+        },
+        syn::Lit::Bool(bl) => *use_trait = bl.value(),
+        _ => ()
+    }
+}
+
+fn get_bytes_from_expr(bytes: &mut Vec<u8>, use_trait: &mut bool, expr: &syn::Expr) {
+    match expr {
+        syn::Expr::Lit(lit) => get_bytes_from_expr_lit(bytes, use_trait, lit),
+        syn::Expr::Array(arr) => {
+            arr.elems.iter().for_each(|expr| get_bytes_from_expr(bytes, use_trait, &expr) )
+        },
+        _ => (),
+    }
+}
+
+impl Prepend {
+    pub fn from_expr(expr: &syn::Expr) -> Option<Self> {
+        let mut bytes = vec![];
+        let mut use_trait = false;
+        get_bytes_from_expr(&mut bytes, &mut use_trait, expr);
+        if use_trait {
+            Some(Prepend::Trait)
+        } else if bytes.len() > 0 {
+            Some(Prepend::Bytes(bytes))
+        } else {
+            None
         }
     }
 }
@@ -166,7 +236,7 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
         _ => { return Err(syn::Error::new(field.ty.span(), "Unsupported type")); }
     };
 
-    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field", "packed_struct")?);
+    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes_as_string(&field.attrs, "packed_field", "packed_struct")?);
 
     let bits_position = field_attributes.iter().filter_map(|a| match a {
         &PackFieldAttribute::BitPosition(b) | &PackFieldAttribute::BytePosition(b) => Some(b),
@@ -242,7 +312,7 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
     let bit_width = (bit_range.end - bit_range.start) + 1;
     
     let ty_str = tokens_to_string(ty);
-    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes(&field.attrs, "packed_field", "packed_struct")?);
+    let field_attributes = PackFieldAttribute::parse_all(&parse_sub_attributes_as_string(&field.attrs, "packed_field", "packed_struct")?);
 
 
     let is_enum_ty = field_attributes.iter().filter_map(|a| match *a {
@@ -349,8 +419,6 @@ pub fn parse_num(s: &str) -> Result<usize, String> {
     }
 }
 
-
-
 pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     let attributes = PackStructAttribute::parse_all(&parse_sub_attributes(&ast.attrs, "packed_struct", "packed_field")?);
 
@@ -425,7 +493,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         }
     }
 
-    let num_bits: usize = {
+    let mut num_bits: usize = {
         if let Some(struct_size_bytes) = struct_size_bytes {
             struct_size_bytes * 8
         } else {
@@ -436,6 +504,17 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
             last_bit
         }
     };
+
+    let mut prepend: Option<Prepend> = None;
+
+    attributes.iter().for_each(|a| {
+        if let PackStructAttribute::Prepend(prep) = a {
+            if let Prepend::Bytes(bytes) = prep {
+                num_bits += bytes.len() * 8;
+            }
+            prepend = Some(prep.to_owned());
+        }
+    });
 
     let num_bytes = (num_bits as f32 / 8.0).ceil() as usize;
 
@@ -477,6 +556,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         data_struct,
         fields: fields_parsed,
         num_bytes,
-        num_bits
+        num_bits,
+        prepend,
     })
 }
