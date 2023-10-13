@@ -4,6 +4,7 @@ extern crate packed_struct;
 use packed_struct::prelude::*;
 
 pub mod example1;
+pub mod example2;
 
 
 /// MultiWii status structure

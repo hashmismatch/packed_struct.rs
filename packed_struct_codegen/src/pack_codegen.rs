@@ -36,7 +36,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                 header_offset = *size;
                 header_trait_token_get_data = quote! {
                     {
-                        let bytes = Self::get_data(&self, &target)?;
+                        let bytes = Self::get_header(&self, &target)?;
                         assert!(#num_bytes >= bytes.len(), "Packed bytes array is smaller than header array even though we added the header length!"); 
                         assert!(#size == bytes.len(), "Header size set with attribute is not equal to header array size returned by PackedStructHeader trait!"); 
                         target[0..bytes.len()].copy_from_slice(&bytes);
@@ -44,7 +44,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                 };
                 header_trait_token_validate = quote! {
                     {
-                        Self::validate_data(src)?;
+                        Self::validate_header(src)?;
                     }
                 };
             },
@@ -72,7 +72,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                 let footer_offset = num_bytes - *size;
                 footer_trait_token_get_data = quote! {
                     {
-                        let bytes = Self::get_data(&self, &target)?;
+                        let bytes = Self::get_footer(&self, &target)?;
                         assert!(#num_bytes >= bytes.len(), "Packed bytes array is smaller than footer array even though we added the footer length!"); 
                         assert!(#size == bytes.len(), "Footer size set with attribute is not equal to footer array size returned by PackedStructFooter trait!"); 
                         target[#footer_offset..].copy_from_slice(&bytes);
@@ -80,7 +80,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
                 };
                 footer_trait_token_validate = quote! {
                     {
-                        Self::validate_data(src)?;
+                        Self::validate_footer(src)?;
                     }
                 };
             },

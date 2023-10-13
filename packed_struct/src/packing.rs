@@ -24,9 +24,9 @@ pub trait PackedStructHeader where Self: PackedStruct + Sized {
     type HeaderByteArray : ByteArray;
     
     /// Returns the header data to attach it to the front of the packed data
-    fn get_data(&self, data: &[u8]) -> PackingResult<Self::HeaderByteArray>;
+    fn get_header(&self, data: &[u8]) -> PackingResult<Self::HeaderByteArray>;
     /// Validates the structure/footer from a byte array when unpacking.
-    fn validate_data(_src: &[u8]) -> PackingResult<()> {
+    fn validate_header(_src: &[u8]) -> PackingResult<()> {
         Ok(())
     }
 }
@@ -36,9 +36,9 @@ pub trait PackedStructFooter where Self: PackedStruct + Sized {
     type FooterByteArray : ByteArray;
     
     /// Returns the footer data to attach it to the end of the packed data
-    fn get_data(&self, data: &[u8]) -> PackingResult<Self::FooterByteArray>;
+    fn get_footer(&self, data: &[u8]) -> PackingResult<Self::FooterByteArray>;
     /// Validates the structure/footer from a byte array when unpacking.
-    fn validate_data(_src: &[u8]) -> PackingResult<()> {
+    fn validate_footer(_src: &[u8]) -> PackingResult<()> {
         Ok(())
     }
 }
