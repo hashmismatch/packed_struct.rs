@@ -104,7 +104,7 @@ impl ::std::error::Error for PackingError {
             PackingError::SliceIndexingError { .. } => "Failed to index into a slice",
             PackingError::MoreThanOneDynamicType => "Only one dynamically sized type is supported in the tuple",
             PackingError::InternalError => "Internal error",
-            PackingError::UserError(err) => &err
+            PackingError::UserError(err) => err
         }
     }
 }
