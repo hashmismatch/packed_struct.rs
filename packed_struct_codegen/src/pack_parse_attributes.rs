@@ -6,8 +6,10 @@ pub enum PackStructAttributeKind {
     //SizeBits,
     DefaultIntEndianness,
     BitNumbering,
-    Prepend,
-    Append,
+    Header,
+    HeaderWithTrait,
+    Footer,
+    FooterWithTrait,
 }
 
 impl PackStructAttributeKind {
@@ -19,8 +21,10 @@ impl PackStructAttributeKind {
             //SizeBits => "size_bits",
             DefaultIntEndianness => "endian",
             BitNumbering => "bit_numbering",
-            Prepend => "prepend",
-            Append => "append"
+            Header => "header",
+            HeaderWithTrait => "header_size",
+            Footer => "footer",
+            FooterWithTrait => "footer_size"
         }
     }
 }
@@ -30,8 +34,8 @@ pub enum PackStructAttribute {
     //SizeBits(usize),
     DefaultIntEndianness(IntegerEndianness),
     BitNumbering(BitNumbering),
-    Prepend(Prepend),
-    // Append(F, usize),
+    Header(Header),
+    Footer(Footer),
 }
 
 impl PackStructAttribute {
@@ -52,9 +56,24 @@ impl PackStructAttribute {
             return Ok(PackStructAttribute::SizeBytes(b));
         }
 
-        if name == PackStructAttributeKind::Prepend.get_attr_name() {
-            let b = Prepend::from_expr(val).expect("Invalid prepend value");
-            return Ok(PackStructAttribute::Prepend(b));
+        if name == PackStructAttributeKind::Header.get_attr_name() {
+            let b = Header::from_expr(val).expect("Invalid prepend value");
+            return Ok(PackStructAttribute::Header(b));
+        }
+
+        if name == PackStructAttributeKind::Footer.get_attr_name() {
+            let b = Footer::from_expr(val).expect("Invalid append value");
+            return Ok(PackStructAttribute::Footer(b));
+        }
+
+        if name == PackStructAttributeKind::HeaderWithTrait.get_attr_name() {
+            let b = Header::from_trait_expr(val).expect("Invalid prepend value");
+            return Ok(PackStructAttribute::Header(b));
+        }
+
+        if name == PackStructAttributeKind::FooterWithTrait.get_attr_name() {
+            let b = Footer::from_trait_expr(val).expect("Invalid append value");
+            return Ok(PackStructAttribute::Footer(b));
         }
 
         /*

@@ -4,7 +4,8 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_codegen_docs::*;
 use crate::common::*;
-use crate::pack_parse::Prepend;
+use crate::pack_parse::Footer;
+use crate::pack_parse::Header;
 use syn::spanned::Spanned;
 use crate::utils::*;
 
@@ -19,16 +20,91 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
     let num_bytes = parsed.num_bytes;
     let num_bits = parsed.num_bits;
 
-    let prepend = &parsed.prepend;
     
-
     let mut pack_fields = vec![];
     let mut unpack_fields = vec![];
     let mut unpack_struct_set = vec![];
+    
+    let header = &parsed.header;
+    let mut header_offset = 0;
+    let mut header_trait_token_get_data = quote!{};
+    let mut header_trait_token_validate = quote!{};
+
+    if let Some(pre) = header {
+        match pre {
+            Header::Trait(size) => {
+                header_offset = *size;
+                header_trait_token_get_data = quote! {
+                    {
+                        let bytes = Self::get_data(&self, &target)?;
+                        assert!(#num_bytes >= bytes.len(), "Packed bytes array is smaller than header array even though we added the header length!"); 
+                        assert!(#size == bytes.len(), "Header size set with attribute is not equal to header array size returned by PackedStructHeader trait!"); 
+                        target[0..bytes.len()].copy_from_slice(&bytes);
+                    }
+                };
+                header_trait_token_validate = quote! {
+                    {
+                        Self::validate_data(src)?;
+                    }
+                };
+            },
+            Header::Bytes(bytes) => {
+                header_offset = bytes.len();
+                pack_fields.push(quote! {
+                    {
+                        let byt = vec![#(#bytes),*];
+                        assert!(#num_bytes >= byt.len(), "Packed bytes array is smaller than header array even though we added the header length!"); 
+                        target[0..byt.len()].copy_from_slice(&byt);
+                    }
+                });
+                // We don't need to generate something for unpack here, since we pass an offset to pack_bits unpack ignores any header or footer data
+            },
+        }
+    }
+
+    let footer = &parsed.footer;
+    let mut footer_trait_token_get_data = quote!{};
+    let mut footer_trait_token_validate = quote!{};
+
+    if let Some(app) = footer {
+        match app {
+            Footer::Trait(size) => {
+                let footer_offset = num_bytes - *size;
+                footer_trait_token_get_data = quote! {
+                    {
+                        let bytes = Self::get_data(&self, &target)?;
+                        assert!(#num_bytes >= bytes.len(), "Packed bytes array is smaller than footer array even though we added the footer length!"); 
+                        assert!(#size == bytes.len(), "Footer size set with attribute is not equal to footer array size returned by PackedStructFooter trait!"); 
+                        target[#footer_offset..].copy_from_slice(&bytes);
+                    }
+                };
+                footer_trait_token_validate = quote! {
+                    {
+                        Self::validate_data(src)?;
+                    }
+                };
+            },
+            Footer::Bytes(bytes) => {
+                let footer_offset = num_bytes - bytes.len();
+                pack_fields.push(quote! {
+                    {
+                        let byt = vec![#(#bytes),*];
+                        assert!(#num_bytes >= byt.len(), "Packed bytes array is smaller than footer array even though we added the footer length!"); 
+                        target[#footer_offset..].copy_from_slice(&byt);
+                    }
+                });
+                // We don't need to generate something for unpack here, since we pass an offset to pack_bits unpack ignores any header or footer data
+            },
+        }
+    }
 
     {
+        // We want the validation for header and footer to happen before we unpack the rest of the fields, since there might be broken data if a validation fails
+        unpack_fields.push(header_trait_token_validate);
+        unpack_fields.push(footer_trait_token_validate);
+
         let mut reg  = |src: &dyn quote::ToTokens, target: &dyn quote::ToTokens, field: &FieldRegular| -> syn::Result<()> {
-            let bits = pack_bits(field);
+            let bits = pack_bits(field, header_offset);
 
             let pack = pack_field(src, field);
             let unpack = unpack_field(field)?;
@@ -82,30 +158,8 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
             }        
         }
 
-        //TODO: Move prepend check to before the reg. Either make target be a slice into target after the header or pass an offset into pack_bits to make sure headers don't get overwritten
-        //      Call teh trait method if the enum is set to that. Add the trait. 
-        //      Do the same stuff for append
-        //      The trait should return a result, in case we want to verify that the header is correct before unpacking fore example. Or if we want to check the xor appended at the end  
-        //      In case we just have the bytes array, we do need to remove the header in unpack!
-
-        if let Some(pre) = prepend {
-            match pre {
-                Prepend::Trait => {
-                    // pack_fields.push(quote! {
-                    //     {
-                    //         let packed = { #pack };
-                    //         #pack_bits
-                    //     }
-                    // });
-                },
-                Prepend::Bytes(bytes) => {
-                    pack_fields.push(quote! {
-                        assert!(#num_bytes >= bytes.len(), "Packed bytes array is smaller than prepend array even though we added the prepend length!"); 
-                        std::ptr::copy_nonoverlapping(target, bytes, bytes.len());
-                    });
-                },
-            }
-        }
+        pack_fields.push(header_trait_token_get_data);
+        pack_fields.push(footer_trait_token_get_data);
 
     }
 
@@ -139,7 +193,7 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
             #[allow(unused_imports, unused_parens)]
             fn pack(&self) -> ::packed_struct::PackingResult<Self::ByteArray> {
                 use ::packed_struct::*;
-
+                
                 let mut target = [0 as u8; #num_bytes];
 
                 #(#pack_fields)*
@@ -180,13 +234,13 @@ struct PackBitsCopy {
     unpack: proc_macro2::TokenStream
 }
 
-fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
+fn pack_bits(field: &FieldRegular, header_offset: usize) -> PackBitsCopy {
     // memcpy
     if (field.bit_range_rust.start % 8) == 0 && (field.bit_range_rust.end % 8) == 0 &&
        (field.bit_range_rust.len() % 8) == 0 && field.bit_range_rust.len() >= 8 
     {
-        let start = field.bit_range_rust.start / 8;
-        let end = field.bit_range_rust.end / 8;
+        let start = field.bit_range_rust.start / 8 + header_offset;
+        let end = field.bit_range_rust.end / 8 + header_offset;
         
         PackBitsCopy {
             pack: quote! {
@@ -200,8 +254,8 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
         }
     } else {
         let packed_field_len = (field.bit_width as f32 / 8.0).ceil() as usize; 
-        let start_byte = (field.bit_range_rust.start as f32 / 8.0).floor() as usize;
-        let shift = ((packed_field_len as isize*8) - (field.bit_width as isize)) - (field.bit_range_rust.start as isize - (start_byte as isize * 8));
+        let start_byte = (field.bit_range_rust.start as f32 / 8.0).floor() as usize + header_offset;
+        let shift = ((packed_field_len as isize*8) - (field.bit_width as isize)) - (field.bit_range_rust.start as isize - ((start_byte - header_offset) as isize * 8));
 
         let emit_shift = |s: isize| {
             match s {

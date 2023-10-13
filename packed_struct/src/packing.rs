@@ -19,6 +19,30 @@ pub trait PackedStruct where Self: Sized {
     fn unpack(src: &Self::ByteArray) -> PackingResult<Self>;
 }
 
+pub trait PackedStructHeader where Self: PackedStruct + Sized {
+    /// The appropriately sized byte array into which this structure will be packed, for example [u8; 2]. 
+    type HeaderByteArray : ByteArray;
+    
+    /// Returns the header data to attach it to the front of the packed data
+    fn get_data(&self, data: &[u8]) -> PackingResult<Self::HeaderByteArray>;
+    /// Validates the structure/footer from a byte array when unpacking.
+    fn validate_data(_src: &[u8]) -> PackingResult<()> {
+        Ok(())
+    }
+}
+
+pub trait PackedStructFooter where Self: PackedStruct + Sized {
+    /// The appropriately sized byte array into which this structure will be packed, for example [u8; 2]. 
+    type FooterByteArray : ByteArray;
+    
+    /// Returns the footer data to attach it to the end of the packed data
+    fn get_data(&self, data: &[u8]) -> PackingResult<Self::FooterByteArray>;
+    /// Validates the structure/footer from a byte array when unpacking.
+    fn validate_data(_src: &[u8]) -> PackingResult<()> {
+        Ok(())
+    }
+}
+
 /// Infos about a particular type that can be packaged.
 pub trait PackedStructInfo {
     /// Number of bits that this structure occupies when being packed.
@@ -44,7 +68,7 @@ pub trait PackedStructSlice where Self: Sized {
 }
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// Packing errors that might occur during packing or unpacking
 pub enum PackingError {
     InvalidValue,
@@ -56,7 +80,8 @@ pub enum PackingError {
     BufferSizeMismatch { expected: usize, actual: usize },
     BufferModMismatch { actual_size: usize, modulo_required: usize },
     SliceIndexingError { slice_len: usize },
-    InternalError
+    InternalError,
+    UserError(String)
 }
 
 impl crate::Display for PackingError {
@@ -68,7 +93,7 @@ impl crate::Display for PackingError {
 #[cfg(feature="std")]
 impl ::std::error::Error for PackingError {
     fn description(&self) -> &str {
-        match *self {
+        match self {
             PackingError::InvalidValue => "Invalid value",
             PackingError::BitsError => "Bits error",
             PackingError::BufferTooSmall => "Buffer too small",            
@@ -78,7 +103,8 @@ impl ::std::error::Error for PackingError {
             PackingError::BufferModMismatch { .. } => "The structure's size is not a multiple of the item's size",
             PackingError::SliceIndexingError { .. } => "Failed to index into a slice",
             PackingError::MoreThanOneDynamicType => "Only one dynamically sized type is supported in the tuple",
-            PackingError::InternalError => "Internal error"
+            PackingError::InternalError => "Internal error",
+            PackingError::UserError(err) => &err
         }
     }
 }

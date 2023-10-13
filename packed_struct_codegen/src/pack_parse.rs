@@ -4,7 +4,6 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_parse_attributes::*;
 
-use proc_macro2::Span;
 use syn::Meta;
 use syn::Token;
 use syn::punctuated::Punctuated;
@@ -32,12 +31,7 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
             };
             for meta in nested {
                 match meta {            
-                    syn::Meta::Path(path) => {
-                        if let Some(key) = path.get_ident() {
-                            // Not the nicest of hacks, but I did not want to make the syn::Expr in the vec an option as well
-                            r.push((key.to_string(), syn::Expr::Lit(syn::ExprLit{ attrs: vec![],lit: syn::Lit::Bool(syn::LitBool { value: true, span: Span::call_site()})})));
-                        }
-                    },
+                    syn::Meta::Path(_) => {},
                     syn::Meta::List(_) => (),
                     syn::Meta::NameValue(nv) => {
                         if let (Some(key), lit) = (nv.path.get_ident(), &nv.value) {
@@ -110,14 +104,8 @@ impl IntegerEndianness {
     }
 }
 
-#[derive(Clone, Debug)]
-/// https://en.wikipedia.org/wiki/Bit_numbering
-pub enum Prepend{
-    Bytes(Vec<u8>),
-    Trait,
-}
 
-fn get_bytes_from_expr_lit(bytes: &mut Vec<u8>, use_trait: &mut bool, expr_lit: &syn::ExprLit) {
+fn get_bytes_from_expr_lit(bytes: &mut Vec<u8>, expr_lit: &syn::ExprLit) {
     match &expr_lit.lit {
         syn::Lit::Byte( byte) => bytes.push(byte.value()),
         syn::Lit::ByteStr(st) => bytes.append(&mut st.value()),
@@ -126,36 +114,92 @@ fn get_bytes_from_expr_lit(bytes: &mut Vec<u8>, use_trait: &mut bool, expr_lit: 
                 bytes.push(val);
             }
         },
-        syn::Lit::Bool(bl) => *use_trait = bl.value(),
         _ => ()
     }
 }
 
-fn get_bytes_from_expr(bytes: &mut Vec<u8>, use_trait: &mut bool, expr: &syn::Expr) {
+fn get_bytes_from_expr(bytes: &mut Vec<u8>, expr: &syn::Expr) {
     match expr {
-        syn::Expr::Lit(lit) => get_bytes_from_expr_lit(bytes, use_trait, lit),
+        syn::Expr::Lit(lit) => get_bytes_from_expr_lit(bytes, lit),
         syn::Expr::Array(arr) => {
-            arr.elems.iter().for_each(|expr| get_bytes_from_expr(bytes, use_trait, &expr) )
+            arr.elems.iter().for_each(|expr| get_bytes_from_expr(bytes, &expr) )
         },
         _ => (),
     }
 }
 
-impl Prepend {
+#[derive(Clone, Debug)]
+pub enum Header{
+    Bytes(Vec<u8>),
+    Trait(usize),
+}
+
+impl Header {
     pub fn from_expr(expr: &syn::Expr) -> Option<Self> {
         let mut bytes = vec![];
-        let mut use_trait = false;
-        get_bytes_from_expr(&mut bytes, &mut use_trait, expr);
-        if use_trait {
-            Some(Prepend::Trait)
-        } else if bytes.len() > 0 {
-            Some(Prepend::Bytes(bytes))
+        get_bytes_from_expr(&mut bytes,  expr);if bytes.len() > 0 {
+            Some(Header::Bytes(bytes))
+        } else {
+            None
+        }
+    }
+
+    pub fn from_trait_expr(expr: &syn::Expr) -> Option<Self> {
+        let mut len: usize = 0;
+        match expr {
+            syn::Expr::Lit(lit) => {
+                if let syn::Lit::Int(int) = &lit.lit {
+                    if let Ok(val) = int.base10_parse::<usize>() {
+                        len = val;
+                    }
+                }
+            },
+            _ => ()
+        }
+        if len > 0 {
+            Some(Header::Trait(len))
         } else {
             None
         }
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum Footer{
+    Bytes(Vec<u8>),
+    Trait(usize),
+}
+
+impl Footer {
+    pub fn from_expr(expr: &syn::Expr) -> Option<Self> {
+        let mut bytes = vec![];
+        get_bytes_from_expr(&mut bytes,  expr);
+        if bytes.len() > 0 {
+            Some(Footer::Bytes(bytes))
+        } else {
+            None
+        }
+    }
+
+    pub fn from_trait_expr(expr: &syn::Expr) -> Option<Self> {
+        let mut len: usize = 0;
+        match expr {
+            syn::Expr::Lit(lit) => {
+                if let syn::Lit::Int(int) = &lit.lit {
+                    if let Ok(val) = int.base10_parse::<usize>() {
+                        len = val;
+                    }
+                }
+            },
+            _ => ()
+        }
+        if len > 0 {
+            Some(Footer::Trait(len))
+        } else {
+            None
+        }
+    }
+}
 
 fn get_builtin_type_bit_width(p: &syn::PathSegment) -> syn::Result<Option<usize>> {
     match p.ident.to_string().as_str() {
@@ -505,14 +549,27 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         }
     };
 
-    let mut prepend: Option<Prepend> = None;
+    let mut header: Option<Header> = None;
 
     attributes.iter().for_each(|a| {
-        if let PackStructAttribute::Prepend(prep) = a {
-            if let Prepend::Bytes(bytes) = prep {
-                num_bits += bytes.len() * 8;
-            }
-            prepend = Some(prep.to_owned());
+        if let PackStructAttribute::Header(prep) = a {
+            num_bits += 8 * match prep {
+                Header::Bytes(bytes) => bytes.len(),
+                Header::Trait(size) => *size,
+            };
+            header = Some(prep.to_owned());
+        }
+    });
+
+    let mut footer: Option<Footer> = None;
+
+    attributes.iter().for_each(|a| {
+        if let PackStructAttribute::Footer(app) = a {
+            num_bits += 8 * match app {
+                Footer::Bytes(bytes) => bytes.len(),
+                Footer::Trait(size) => *size,
+            };
+            footer = Some(app.to_owned());
         }
     });
 
@@ -557,6 +614,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         fields: fields_parsed,
         num_bytes,
         num_bits,
-        prepend,
+        header,
+        footer
     })
 }
