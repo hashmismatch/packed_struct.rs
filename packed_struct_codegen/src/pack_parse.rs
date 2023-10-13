@@ -47,10 +47,10 @@ pub fn parse_sub_attributes(attributes: &[syn::Attribute], main_attribute: &str,
 }
 
 pub fn parse_sub_attributes_as_string(attributes: &[syn::Attribute], main_attribute: &str, wrong_attribute: &str) -> syn::Result<Vec<(String, String)>> {
-    parse_sub_attributes(attributes, main_attribute, wrong_attribute).and_then(|vec| {
-        Ok(vec.into_iter().map(|(key, expr)| {
+    parse_sub_attributes(attributes, main_attribute, wrong_attribute).map(|vec| {
+        vec.into_iter().map(|(key, expr)| {
             (key, get_string_from_expr(&expr).unwrap_or_default())
-        }).collect())
+        }).collect()
     })
 }
 
@@ -122,7 +122,7 @@ fn get_bytes_from_expr(bytes: &mut Vec<u8>, expr: &syn::Expr) {
     match expr {
         syn::Expr::Lit(lit) => get_bytes_from_expr_lit(bytes, lit),
         syn::Expr::Array(arr) => {
-            arr.elems.iter().for_each(|expr| get_bytes_from_expr(bytes, &expr) )
+            arr.elems.iter().for_each(|expr| get_bytes_from_expr(bytes, expr) )
         },
         _ => (),
     }
@@ -137,7 +137,8 @@ pub enum Header{
 impl Header {
     pub fn from_expr(expr: &syn::Expr) -> Option<Self> {
         let mut bytes = vec![];
-        get_bytes_from_expr(&mut bytes,  expr);if bytes.len() > 0 {
+        get_bytes_from_expr(&mut bytes,  expr);
+        if !bytes.is_empty() {
             Some(Header::Bytes(bytes))
         } else {
             None
@@ -146,15 +147,12 @@ impl Header {
 
     pub fn from_trait_expr(expr: &syn::Expr) -> Option<Self> {
         let mut len: usize = 0;
-        match expr {
-            syn::Expr::Lit(lit) => {
-                if let syn::Lit::Int(int) = &lit.lit {
-                    if let Ok(val) = int.base10_parse::<usize>() {
-                        len = val;
-                    }
+        if let syn::Expr::Lit(lit) = expr {
+            if let syn::Lit::Int(int) = &lit.lit {
+                if let Ok(val) = int.base10_parse::<usize>() {
+                    len = val;
                 }
-            },
-            _ => ()
+            }
         }
         if len > 0 {
             Some(Header::Trait(len))
@@ -174,7 +172,7 @@ impl Footer {
     pub fn from_expr(expr: &syn::Expr) -> Option<Self> {
         let mut bytes = vec![];
         get_bytes_from_expr(&mut bytes,  expr);
-        if bytes.len() > 0 {
+        if !bytes.is_empty() {
             Some(Footer::Bytes(bytes))
         } else {
             None
@@ -183,15 +181,12 @@ impl Footer {
 
     pub fn from_trait_expr(expr: &syn::Expr) -> Option<Self> {
         let mut len: usize = 0;
-        match expr {
-            syn::Expr::Lit(lit) => {
-                if let syn::Lit::Int(int) = &lit.lit {
-                    if let Ok(val) = int.base10_parse::<usize>() {
-                        len = val;
-                    }
+        if let syn::Expr::Lit(lit) = expr {
+            if let syn::Lit::Int(int) = &lit.lit {
+                if let Ok(val) = int.base10_parse::<usize>() {
+                    len = val;
                 }
-            },
-            _ => ()
+            }
         }
         if len > 0 {
             Some(Footer::Trait(len))
