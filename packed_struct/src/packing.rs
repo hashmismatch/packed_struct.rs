@@ -81,6 +81,7 @@ pub enum PackingError {
     BufferModMismatch { actual_size: usize, modulo_required: usize },
     SliceIndexingError { slice_len: usize },
     InternalError,
+    #[cfg(feature = "std")]
     UserError(String)
 }
 
@@ -104,6 +105,7 @@ impl ::std::error::Error for PackingError {
             PackingError::SliceIndexingError { .. } => "Failed to index into a slice",
             PackingError::MoreThanOneDynamicType => "Only one dynamically sized type is supported in the tuple",
             PackingError::InternalError => "Internal error",
+            #[cfg(feature = "std")]
             PackingError::UserError(err) => err
         }
     }
