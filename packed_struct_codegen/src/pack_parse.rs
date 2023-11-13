@@ -539,7 +539,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
             let last_bit = fields_parsed.iter().map(|f| match f {
                 FieldKind::Regular { ref field, .. } => field.bit_range_rust.end,
                 FieldKind::Array { ref elements, .. } => elements.last().unwrap().bit_range_rust.end
-            }).max().unwrap();
+            }).max().unwrap_or(0);
             last_bit
         }
     };
@@ -569,6 +569,10 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     });
 
     let num_bytes = (num_bits as f32 / 8.0).ceil() as usize;
+
+    if num_bits == 0 {
+        return Err(syn::Error::new(ast.span(), "Empty Structures without header or footer are not supported"));
+    }
 
     if first_field_is_auto_positioned && (num_bits % 8) != 0 && struct_size_bytes.is_none() {
         return Err(syn::Error::new(fields[0].span(), "Please explicitly position the bits of the first field of this structure, as the alignment isn't obvious to the end user."));
