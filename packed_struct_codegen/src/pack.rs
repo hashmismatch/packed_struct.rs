@@ -49,7 +49,9 @@ pub struct PackStruct<'a> {
     pub num_bytes: usize,
     pub num_bits: usize,
     pub data_struct: &'a syn::DataStruct,
-    pub derive_input: &'a syn::DeriveInput
+    pub derive_input: &'a syn::DeriveInput,
+    pub header: Option<Header>,
+    pub footer: Option<Footer>,
 }
 
 
