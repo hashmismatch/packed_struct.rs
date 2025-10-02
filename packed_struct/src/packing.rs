@@ -65,8 +65,7 @@ impl crate::Display for PackingError {
     }    
 }
 
-#[cfg(feature="std")]
-impl ::std::error::Error for PackingError {
+impl ::core::error::Error for PackingError {
     fn description(&self) -> &str {
         match *self {
             PackingError::InvalidValue => "Invalid value",
