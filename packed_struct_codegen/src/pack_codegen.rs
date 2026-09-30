@@ -287,7 +287,8 @@ fn pack_bits(field: &FieldRegular, base: Option<&syn::Ident>) -> PackBitsCopy {
         for (i, dst_byte) in (start_byte..start_byte + packed_field_len).enumerate() {
             let dst_index = byte_index(base, dst_byte);
             let dst_next_index = byte_index(base, dst_byte + 1);
-            let src_mask = ones_u8(l as u8);                        
+            // `l` grows by 8 per byte, casting it to u8 would wrap for fields of 32+ bytes
+            let src_mask = if l >= 8 { 0xFF } else { ones_u8(l as u8) };
             let bit_shift = emit_shift(shift);
             pack.push(quote! {
                 let _a = #i;
