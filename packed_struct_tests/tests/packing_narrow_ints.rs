@@ -1,0 +1,267 @@
+//! Generated: integer widths stored in native types wider than needed (for example a `u32` in 12 bits),
+//! checked against a bit-by-bit reference implementation.
+
+use packed_struct::prelude::*;
+
+mod oracle;
+use oracle::*;
+
+macro_rules! oracle_int {
+    ($name:ident, $native:ident, $signed:expr, $endian:tt, $lsb:expr, $bits:tt, $size_bytes:tt, $size:expr, $off:expr, $w:expr) => {
+        #[test]
+        #[allow(clippy::unnecessary_cast)]
+        fn $name() {
+            #[derive(PackedStruct, Debug, Default, Copy, Clone, PartialEq, Eq)]
+            #[packed_struct(bit_numbering="msb0", size_bytes=$size_bytes, endian=$endian)]
+            struct T {
+                #[packed_field(bits=$bits)]
+                f: $native,
+            }
+
+            for raw in test_values($w) {
+                let f: $native = if $signed { sign_extend(raw, $w) as $native } else { raw as $native };
+                let t = T { f };
+
+                let mut expected = [0u8; $size];
+                set_integer(&mut expected, $off, $w, raw, $lsb);
+                let packed = t.pack().unwrap();
+                assert_eq!(packed, expected, "pack, raw={:#x}", raw);
+                assert_eq!(T::unpack(&packed).unwrap(), t, "unpack, raw={:#x}", raw);
+
+                // every bit outside of the field is set
+                let mut noisy = [0xFFu8; $size];
+                set_integer(&mut noisy, $off, $w, raw, $lsb);
+                assert_eq!(T::unpack(&noisy).unwrap(), t, "unpack with surrounding ones, raw={:#x}", raw);
+            }
+        }
+    };
+}
+
+oracle_int!(u16_b1_msb_o0, u16, false, "msb", false, "0:0", "2", 2, 0, 1);
+oracle_int!(u16_b1_msb_o3, u16, false, "msb", false, "3:3", "2", 2, 3, 1);
+oracle_int!(u16_b1_msb_o5, u16, false, "msb", false, "5:5", "2", 2, 5, 1);
+oracle_int!(i16_b1_msb_o0, i16, true, "msb", false, "0:0", "2", 2, 0, 1);
+oracle_int!(i16_b1_msb_o3, i16, true, "msb", false, "3:3", "2", 2, 3, 1);
+oracle_int!(i16_b1_msb_o5, i16, true, "msb", false, "5:5", "2", 2, 5, 1);
+oracle_int!(u32_b1_msb_o0, u32, false, "msb", false, "0:0", "2", 2, 0, 1);
+oracle_int!(u32_b1_msb_o3, u32, false, "msb", false, "3:3", "2", 2, 3, 1);
+oracle_int!(u32_b1_msb_o5, u32, false, "msb", false, "5:5", "2", 2, 5, 1);
+oracle_int!(i32_b1_msb_o0, i32, true, "msb", false, "0:0", "2", 2, 0, 1);
+oracle_int!(i32_b1_msb_o3, i32, true, "msb", false, "3:3", "2", 2, 3, 1);
+oracle_int!(i32_b1_msb_o5, i32, true, "msb", false, "5:5", "2", 2, 5, 1);
+oracle_int!(u64_b1_msb_o0, u64, false, "msb", false, "0:0", "2", 2, 0, 1);
+oracle_int!(u64_b1_msb_o3, u64, false, "msb", false, "3:3", "2", 2, 3, 1);
+oracle_int!(u64_b1_msb_o5, u64, false, "msb", false, "5:5", "2", 2, 5, 1);
+oracle_int!(i64_b1_msb_o0, i64, true, "msb", false, "0:0", "2", 2, 0, 1);
+oracle_int!(i64_b1_msb_o3, i64, true, "msb", false, "3:3", "2", 2, 3, 1);
+oracle_int!(i64_b1_msb_o5, i64, true, "msb", false, "5:5", "2", 2, 5, 1);
+oracle_int!(u16_b3_msb_o0, u16, false, "msb", false, "0:2", "2", 2, 0, 3);
+oracle_int!(u16_b3_msb_o3, u16, false, "msb", false, "3:5", "2", 2, 3, 3);
+oracle_int!(u16_b3_msb_o5, u16, false, "msb", false, "5:7", "2", 2, 5, 3);
+oracle_int!(i16_b3_msb_o0, i16, true, "msb", false, "0:2", "2", 2, 0, 3);
+oracle_int!(i16_b3_msb_o3, i16, true, "msb", false, "3:5", "2", 2, 3, 3);
+oracle_int!(i16_b3_msb_o5, i16, true, "msb", false, "5:7", "2", 2, 5, 3);
+oracle_int!(u32_b3_msb_o0, u32, false, "msb", false, "0:2", "2", 2, 0, 3);
+oracle_int!(u32_b3_msb_o3, u32, false, "msb", false, "3:5", "2", 2, 3, 3);
+oracle_int!(u32_b3_msb_o5, u32, false, "msb", false, "5:7", "2", 2, 5, 3);
+oracle_int!(i32_b3_msb_o0, i32, true, "msb", false, "0:2", "2", 2, 0, 3);
+oracle_int!(i32_b3_msb_o3, i32, true, "msb", false, "3:5", "2", 2, 3, 3);
+oracle_int!(i32_b3_msb_o5, i32, true, "msb", false, "5:7", "2", 2, 5, 3);
+oracle_int!(u64_b3_msb_o0, u64, false, "msb", false, "0:2", "2", 2, 0, 3);
+oracle_int!(u64_b3_msb_o3, u64, false, "msb", false, "3:5", "2", 2, 3, 3);
+oracle_int!(u64_b3_msb_o5, u64, false, "msb", false, "5:7", "2", 2, 5, 3);
+oracle_int!(i64_b3_msb_o0, i64, true, "msb", false, "0:2", "2", 2, 0, 3);
+oracle_int!(i64_b3_msb_o3, i64, true, "msb", false, "3:5", "2", 2, 3, 3);
+oracle_int!(i64_b3_msb_o5, i64, true, "msb", false, "5:7", "2", 2, 5, 3);
+oracle_int!(u16_b7_msb_o0, u16, false, "msb", false, "0:6", "2", 2, 0, 7);
+oracle_int!(u16_b7_msb_o3, u16, false, "msb", false, "3:9", "3", 3, 3, 7);
+oracle_int!(u16_b7_msb_o5, u16, false, "msb", false, "5:11", "3", 3, 5, 7);
+oracle_int!(i16_b7_msb_o0, i16, true, "msb", false, "0:6", "2", 2, 0, 7);
+oracle_int!(i16_b7_msb_o3, i16, true, "msb", false, "3:9", "3", 3, 3, 7);
+oracle_int!(i16_b7_msb_o5, i16, true, "msb", false, "5:11", "3", 3, 5, 7);
+oracle_int!(u32_b7_msb_o0, u32, false, "msb", false, "0:6", "2", 2, 0, 7);
+oracle_int!(u32_b7_msb_o3, u32, false, "msb", false, "3:9", "3", 3, 3, 7);
+oracle_int!(u32_b7_msb_o5, u32, false, "msb", false, "5:11", "3", 3, 5, 7);
+oracle_int!(i32_b7_msb_o0, i32, true, "msb", false, "0:6", "2", 2, 0, 7);
+oracle_int!(i32_b7_msb_o3, i32, true, "msb", false, "3:9", "3", 3, 3, 7);
+oracle_int!(i32_b7_msb_o5, i32, true, "msb", false, "5:11", "3", 3, 5, 7);
+oracle_int!(u64_b7_msb_o0, u64, false, "msb", false, "0:6", "2", 2, 0, 7);
+oracle_int!(u64_b7_msb_o3, u64, false, "msb", false, "3:9", "3", 3, 3, 7);
+oracle_int!(u64_b7_msb_o5, u64, false, "msb", false, "5:11", "3", 3, 5, 7);
+oracle_int!(i64_b7_msb_o0, i64, true, "msb", false, "0:6", "2", 2, 0, 7);
+oracle_int!(i64_b7_msb_o3, i64, true, "msb", false, "3:9", "3", 3, 3, 7);
+oracle_int!(i64_b7_msb_o5, i64, true, "msb", false, "5:11", "3", 3, 5, 7);
+oracle_int!(u16_b8_msb_o0, u16, false, "msb", false, "0:7", "2", 2, 0, 8);
+oracle_int!(u16_b8_msb_o3, u16, false, "msb", false, "3:10", "3", 3, 3, 8);
+oracle_int!(u16_b8_msb_o5, u16, false, "msb", false, "5:12", "3", 3, 5, 8);
+oracle_int!(i16_b8_msb_o0, i16, true, "msb", false, "0:7", "2", 2, 0, 8);
+oracle_int!(i16_b8_msb_o3, i16, true, "msb", false, "3:10", "3", 3, 3, 8);
+oracle_int!(i16_b8_msb_o5, i16, true, "msb", false, "5:12", "3", 3, 5, 8);
+oracle_int!(u32_b8_msb_o0, u32, false, "msb", false, "0:7", "2", 2, 0, 8);
+oracle_int!(u32_b8_msb_o3, u32, false, "msb", false, "3:10", "3", 3, 3, 8);
+oracle_int!(u32_b8_msb_o5, u32, false, "msb", false, "5:12", "3", 3, 5, 8);
+oracle_int!(i32_b8_msb_o0, i32, true, "msb", false, "0:7", "2", 2, 0, 8);
+oracle_int!(i32_b8_msb_o3, i32, true, "msb", false, "3:10", "3", 3, 3, 8);
+oracle_int!(i32_b8_msb_o5, i32, true, "msb", false, "5:12", "3", 3, 5, 8);
+oracle_int!(u64_b8_msb_o0, u64, false, "msb", false, "0:7", "2", 2, 0, 8);
+oracle_int!(u64_b8_msb_o3, u64, false, "msb", false, "3:10", "3", 3, 3, 8);
+oracle_int!(u64_b8_msb_o5, u64, false, "msb", false, "5:12", "3", 3, 5, 8);
+oracle_int!(i64_b8_msb_o0, i64, true, "msb", false, "0:7", "2", 2, 0, 8);
+oracle_int!(i64_b8_msb_o3, i64, true, "msb", false, "3:10", "3", 3, 3, 8);
+oracle_int!(i64_b8_msb_o5, i64, true, "msb", false, "5:12", "3", 3, 5, 8);
+oracle_int!(u32_b9_msb_o0, u32, false, "msb", false, "0:8", "3", 3, 0, 9);
+oracle_int!(u32_b9_msb_o3, u32, false, "msb", false, "3:11", "3", 3, 3, 9);
+oracle_int!(u32_b9_msb_o5, u32, false, "msb", false, "5:13", "3", 3, 5, 9);
+oracle_int!(u32_b9_lsb_o0, u32, false, "lsb", true, "0:8", "3", 3, 0, 9);
+oracle_int!(u32_b9_lsb_o3, u32, false, "lsb", true, "3:11", "3", 3, 3, 9);
+oracle_int!(u32_b9_lsb_o5, u32, false, "lsb", true, "5:13", "3", 3, 5, 9);
+oracle_int!(i32_b9_msb_o0, i32, true, "msb", false, "0:8", "3", 3, 0, 9);
+oracle_int!(i32_b9_msb_o3, i32, true, "msb", false, "3:11", "3", 3, 3, 9);
+oracle_int!(i32_b9_msb_o5, i32, true, "msb", false, "5:13", "3", 3, 5, 9);
+oracle_int!(i32_b9_lsb_o0, i32, true, "lsb", true, "0:8", "3", 3, 0, 9);
+oracle_int!(i32_b9_lsb_o3, i32, true, "lsb", true, "3:11", "3", 3, 3, 9);
+oracle_int!(i32_b9_lsb_o5, i32, true, "lsb", true, "5:13", "3", 3, 5, 9);
+oracle_int!(u64_b9_msb_o0, u64, false, "msb", false, "0:8", "3", 3, 0, 9);
+oracle_int!(u64_b9_msb_o3, u64, false, "msb", false, "3:11", "3", 3, 3, 9);
+oracle_int!(u64_b9_msb_o5, u64, false, "msb", false, "5:13", "3", 3, 5, 9);
+oracle_int!(u64_b9_lsb_o0, u64, false, "lsb", true, "0:8", "3", 3, 0, 9);
+oracle_int!(u64_b9_lsb_o3, u64, false, "lsb", true, "3:11", "3", 3, 3, 9);
+oracle_int!(u64_b9_lsb_o5, u64, false, "lsb", true, "5:13", "3", 3, 5, 9);
+oracle_int!(i64_b9_msb_o0, i64, true, "msb", false, "0:8", "3", 3, 0, 9);
+oracle_int!(i64_b9_msb_o3, i64, true, "msb", false, "3:11", "3", 3, 3, 9);
+oracle_int!(i64_b9_msb_o5, i64, true, "msb", false, "5:13", "3", 3, 5, 9);
+oracle_int!(i64_b9_lsb_o0, i64, true, "lsb", true, "0:8", "3", 3, 0, 9);
+oracle_int!(i64_b9_lsb_o3, i64, true, "lsb", true, "3:11", "3", 3, 3, 9);
+oracle_int!(i64_b9_lsb_o5, i64, true, "lsb", true, "5:13", "3", 3, 5, 9);
+oracle_int!(u32_b12_msb_o0, u32, false, "msb", false, "0:11", "3", 3, 0, 12);
+oracle_int!(u32_b12_msb_o3, u32, false, "msb", false, "3:14", "3", 3, 3, 12);
+oracle_int!(u32_b12_msb_o5, u32, false, "msb", false, "5:16", "4", 4, 5, 12);
+oracle_int!(u32_b12_lsb_o0, u32, false, "lsb", true, "0:11", "3", 3, 0, 12);
+oracle_int!(u32_b12_lsb_o3, u32, false, "lsb", true, "3:14", "3", 3, 3, 12);
+oracle_int!(u32_b12_lsb_o5, u32, false, "lsb", true, "5:16", "4", 4, 5, 12);
+oracle_int!(i32_b12_msb_o0, i32, true, "msb", false, "0:11", "3", 3, 0, 12);
+oracle_int!(i32_b12_msb_o3, i32, true, "msb", false, "3:14", "3", 3, 3, 12);
+oracle_int!(i32_b12_msb_o5, i32, true, "msb", false, "5:16", "4", 4, 5, 12);
+oracle_int!(i32_b12_lsb_o0, i32, true, "lsb", true, "0:11", "3", 3, 0, 12);
+oracle_int!(i32_b12_lsb_o3, i32, true, "lsb", true, "3:14", "3", 3, 3, 12);
+oracle_int!(i32_b12_lsb_o5, i32, true, "lsb", true, "5:16", "4", 4, 5, 12);
+oracle_int!(u64_b12_msb_o0, u64, false, "msb", false, "0:11", "3", 3, 0, 12);
+oracle_int!(u64_b12_msb_o3, u64, false, "msb", false, "3:14", "3", 3, 3, 12);
+oracle_int!(u64_b12_msb_o5, u64, false, "msb", false, "5:16", "4", 4, 5, 12);
+oracle_int!(u64_b12_lsb_o0, u64, false, "lsb", true, "0:11", "3", 3, 0, 12);
+oracle_int!(u64_b12_lsb_o3, u64, false, "lsb", true, "3:14", "3", 3, 3, 12);
+oracle_int!(u64_b12_lsb_o5, u64, false, "lsb", true, "5:16", "4", 4, 5, 12);
+oracle_int!(i64_b12_msb_o0, i64, true, "msb", false, "0:11", "3", 3, 0, 12);
+oracle_int!(i64_b12_msb_o3, i64, true, "msb", false, "3:14", "3", 3, 3, 12);
+oracle_int!(i64_b12_msb_o5, i64, true, "msb", false, "5:16", "4", 4, 5, 12);
+oracle_int!(i64_b12_lsb_o0, i64, true, "lsb", true, "0:11", "3", 3, 0, 12);
+oracle_int!(i64_b12_lsb_o3, i64, true, "lsb", true, "3:14", "3", 3, 3, 12);
+oracle_int!(i64_b12_lsb_o5, i64, true, "lsb", true, "5:16", "4", 4, 5, 12);
+oracle_int!(u32_b15_msb_o0, u32, false, "msb", false, "0:14", "3", 3, 0, 15);
+oracle_int!(u32_b15_msb_o3, u32, false, "msb", false, "3:17", "4", 4, 3, 15);
+oracle_int!(u32_b15_msb_o5, u32, false, "msb", false, "5:19", "4", 4, 5, 15);
+oracle_int!(u32_b15_lsb_o0, u32, false, "lsb", true, "0:14", "3", 3, 0, 15);
+oracle_int!(u32_b15_lsb_o3, u32, false, "lsb", true, "3:17", "4", 4, 3, 15);
+oracle_int!(u32_b15_lsb_o5, u32, false, "lsb", true, "5:19", "4", 4, 5, 15);
+oracle_int!(i32_b15_msb_o0, i32, true, "msb", false, "0:14", "3", 3, 0, 15);
+oracle_int!(i32_b15_msb_o3, i32, true, "msb", false, "3:17", "4", 4, 3, 15);
+oracle_int!(i32_b15_msb_o5, i32, true, "msb", false, "5:19", "4", 4, 5, 15);
+oracle_int!(i32_b15_lsb_o0, i32, true, "lsb", true, "0:14", "3", 3, 0, 15);
+oracle_int!(i32_b15_lsb_o3, i32, true, "lsb", true, "3:17", "4", 4, 3, 15);
+oracle_int!(i32_b15_lsb_o5, i32, true, "lsb", true, "5:19", "4", 4, 5, 15);
+oracle_int!(u64_b15_msb_o0, u64, false, "msb", false, "0:14", "3", 3, 0, 15);
+oracle_int!(u64_b15_msb_o3, u64, false, "msb", false, "3:17", "4", 4, 3, 15);
+oracle_int!(u64_b15_msb_o5, u64, false, "msb", false, "5:19", "4", 4, 5, 15);
+oracle_int!(u64_b15_lsb_o0, u64, false, "lsb", true, "0:14", "3", 3, 0, 15);
+oracle_int!(u64_b15_lsb_o3, u64, false, "lsb", true, "3:17", "4", 4, 3, 15);
+oracle_int!(u64_b15_lsb_o5, u64, false, "lsb", true, "5:19", "4", 4, 5, 15);
+oracle_int!(i64_b15_msb_o0, i64, true, "msb", false, "0:14", "3", 3, 0, 15);
+oracle_int!(i64_b15_msb_o3, i64, true, "msb", false, "3:17", "4", 4, 3, 15);
+oracle_int!(i64_b15_msb_o5, i64, true, "msb", false, "5:19", "4", 4, 5, 15);
+oracle_int!(i64_b15_lsb_o0, i64, true, "lsb", true, "0:14", "3", 3, 0, 15);
+oracle_int!(i64_b15_lsb_o3, i64, true, "lsb", true, "3:17", "4", 4, 3, 15);
+oracle_int!(i64_b15_lsb_o5, i64, true, "lsb", true, "5:19", "4", 4, 5, 15);
+oracle_int!(u32_b16_msb_o0, u32, false, "msb", false, "0:15", "3", 3, 0, 16);
+oracle_int!(u32_b16_msb_o3, u32, false, "msb", false, "3:18", "4", 4, 3, 16);
+oracle_int!(u32_b16_msb_o5, u32, false, "msb", false, "5:20", "4", 4, 5, 16);
+oracle_int!(u32_b16_lsb_o0, u32, false, "lsb", true, "0:15", "3", 3, 0, 16);
+oracle_int!(u32_b16_lsb_o3, u32, false, "lsb", true, "3:18", "4", 4, 3, 16);
+oracle_int!(u32_b16_lsb_o5, u32, false, "lsb", true, "5:20", "4", 4, 5, 16);
+oracle_int!(i32_b16_msb_o0, i32, true, "msb", false, "0:15", "3", 3, 0, 16);
+oracle_int!(i32_b16_msb_o3, i32, true, "msb", false, "3:18", "4", 4, 3, 16);
+oracle_int!(i32_b16_msb_o5, i32, true, "msb", false, "5:20", "4", 4, 5, 16);
+oracle_int!(i32_b16_lsb_o0, i32, true, "lsb", true, "0:15", "3", 3, 0, 16);
+oracle_int!(i32_b16_lsb_o3, i32, true, "lsb", true, "3:18", "4", 4, 3, 16);
+oracle_int!(i32_b16_lsb_o5, i32, true, "lsb", true, "5:20", "4", 4, 5, 16);
+oracle_int!(u64_b16_msb_o0, u64, false, "msb", false, "0:15", "3", 3, 0, 16);
+oracle_int!(u64_b16_msb_o3, u64, false, "msb", false, "3:18", "4", 4, 3, 16);
+oracle_int!(u64_b16_msb_o5, u64, false, "msb", false, "5:20", "4", 4, 5, 16);
+oracle_int!(u64_b16_lsb_o0, u64, false, "lsb", true, "0:15", "3", 3, 0, 16);
+oracle_int!(u64_b16_lsb_o3, u64, false, "lsb", true, "3:18", "4", 4, 3, 16);
+oracle_int!(u64_b16_lsb_o5, u64, false, "lsb", true, "5:20", "4", 4, 5, 16);
+oracle_int!(i64_b16_msb_o0, i64, true, "msb", false, "0:15", "3", 3, 0, 16);
+oracle_int!(i64_b16_msb_o3, i64, true, "msb", false, "3:18", "4", 4, 3, 16);
+oracle_int!(i64_b16_msb_o5, i64, true, "msb", false, "5:20", "4", 4, 5, 16);
+oracle_int!(i64_b16_lsb_o0, i64, true, "lsb", true, "0:15", "3", 3, 0, 16);
+oracle_int!(i64_b16_lsb_o3, i64, true, "lsb", true, "3:18", "4", 4, 3, 16);
+oracle_int!(i64_b16_lsb_o5, i64, true, "lsb", true, "5:20", "4", 4, 5, 16);
+oracle_int!(u64_b17_msb_o0, u64, false, "msb", false, "0:16", "4", 4, 0, 17);
+oracle_int!(u64_b17_msb_o3, u64, false, "msb", false, "3:19", "4", 4, 3, 17);
+oracle_int!(u64_b17_msb_o5, u64, false, "msb", false, "5:21", "4", 4, 5, 17);
+oracle_int!(u64_b17_lsb_o0, u64, false, "lsb", true, "0:16", "4", 4, 0, 17);
+oracle_int!(u64_b17_lsb_o3, u64, false, "lsb", true, "3:19", "4", 4, 3, 17);
+oracle_int!(u64_b17_lsb_o5, u64, false, "lsb", true, "5:21", "4", 4, 5, 17);
+oracle_int!(i64_b17_msb_o0, i64, true, "msb", false, "0:16", "4", 4, 0, 17);
+oracle_int!(i64_b17_msb_o3, i64, true, "msb", false, "3:19", "4", 4, 3, 17);
+oracle_int!(i64_b17_msb_o5, i64, true, "msb", false, "5:21", "4", 4, 5, 17);
+oracle_int!(i64_b17_lsb_o0, i64, true, "lsb", true, "0:16", "4", 4, 0, 17);
+oracle_int!(i64_b17_lsb_o3, i64, true, "lsb", true, "3:19", "4", 4, 3, 17);
+oracle_int!(i64_b17_lsb_o5, i64, true, "lsb", true, "5:21", "4", 4, 5, 17);
+oracle_int!(u64_b20_msb_o0, u64, false, "msb", false, "0:19", "4", 4, 0, 20);
+oracle_int!(u64_b20_msb_o3, u64, false, "msb", false, "3:22", "4", 4, 3, 20);
+oracle_int!(u64_b20_msb_o5, u64, false, "msb", false, "5:24", "5", 5, 5, 20);
+oracle_int!(u64_b20_lsb_o0, u64, false, "lsb", true, "0:19", "4", 4, 0, 20);
+oracle_int!(u64_b20_lsb_o3, u64, false, "lsb", true, "3:22", "4", 4, 3, 20);
+oracle_int!(u64_b20_lsb_o5, u64, false, "lsb", true, "5:24", "5", 5, 5, 20);
+oracle_int!(i64_b20_msb_o0, i64, true, "msb", false, "0:19", "4", 4, 0, 20);
+oracle_int!(i64_b20_msb_o3, i64, true, "msb", false, "3:22", "4", 4, 3, 20);
+oracle_int!(i64_b20_msb_o5, i64, true, "msb", false, "5:24", "5", 5, 5, 20);
+oracle_int!(i64_b20_lsb_o0, i64, true, "lsb", true, "0:19", "4", 4, 0, 20);
+oracle_int!(i64_b20_lsb_o3, i64, true, "lsb", true, "3:22", "4", 4, 3, 20);
+oracle_int!(i64_b20_lsb_o5, i64, true, "lsb", true, "5:24", "5", 5, 5, 20);
+oracle_int!(u64_b24_msb_o0, u64, false, "msb", false, "0:23", "4", 4, 0, 24);
+oracle_int!(u64_b24_msb_o3, u64, false, "msb", false, "3:26", "5", 5, 3, 24);
+oracle_int!(u64_b24_msb_o5, u64, false, "msb", false, "5:28", "5", 5, 5, 24);
+oracle_int!(u64_b24_lsb_o0, u64, false, "lsb", true, "0:23", "4", 4, 0, 24);
+oracle_int!(u64_b24_lsb_o3, u64, false, "lsb", true, "3:26", "5", 5, 3, 24);
+oracle_int!(u64_b24_lsb_o5, u64, false, "lsb", true, "5:28", "5", 5, 5, 24);
+oracle_int!(i64_b24_msb_o0, i64, true, "msb", false, "0:23", "4", 4, 0, 24);
+oracle_int!(i64_b24_msb_o3, i64, true, "msb", false, "3:26", "5", 5, 3, 24);
+oracle_int!(i64_b24_msb_o5, i64, true, "msb", false, "5:28", "5", 5, 5, 24);
+oracle_int!(i64_b24_lsb_o0, i64, true, "lsb", true, "0:23", "4", 4, 0, 24);
+oracle_int!(i64_b24_lsb_o3, i64, true, "lsb", true, "3:26", "5", 5, 3, 24);
+oracle_int!(i64_b24_lsb_o5, i64, true, "lsb", true, "5:28", "5", 5, 5, 24);
+oracle_int!(u64_b31_msb_o0, u64, false, "msb", false, "0:30", "5", 5, 0, 31);
+oracle_int!(u64_b31_msb_o3, u64, false, "msb", false, "3:33", "6", 6, 3, 31);
+oracle_int!(u64_b31_msb_o5, u64, false, "msb", false, "5:35", "6", 6, 5, 31);
+oracle_int!(u64_b31_lsb_o0, u64, false, "lsb", true, "0:30", "5", 5, 0, 31);
+oracle_int!(u64_b31_lsb_o3, u64, false, "lsb", true, "3:33", "6", 6, 3, 31);
+oracle_int!(u64_b31_lsb_o5, u64, false, "lsb", true, "5:35", "6", 6, 5, 31);
+oracle_int!(i64_b31_msb_o0, i64, true, "msb", false, "0:30", "5", 5, 0, 31);
+oracle_int!(i64_b31_msb_o3, i64, true, "msb", false, "3:33", "6", 6, 3, 31);
+oracle_int!(i64_b31_msb_o5, i64, true, "msb", false, "5:35", "6", 6, 5, 31);
+oracle_int!(i64_b31_lsb_o0, i64, true, "lsb", true, "0:30", "5", 5, 0, 31);
+oracle_int!(i64_b31_lsb_o3, i64, true, "lsb", true, "3:33", "6", 6, 3, 31);
+oracle_int!(i64_b31_lsb_o5, i64, true, "lsb", true, "5:35", "6", 6, 5, 31);
+oracle_int!(u64_b32_msb_o0, u64, false, "msb", false, "0:31", "5", 5, 0, 32);
+oracle_int!(u64_b32_msb_o3, u64, false, "msb", false, "3:34", "6", 6, 3, 32);
+oracle_int!(u64_b32_msb_o5, u64, false, "msb", false, "5:36", "6", 6, 5, 32);
+oracle_int!(u64_b32_lsb_o0, u64, false, "lsb", true, "0:31", "5", 5, 0, 32);
+oracle_int!(u64_b32_lsb_o3, u64, false, "lsb", true, "3:34", "6", 6, 3, 32);
+oracle_int!(u64_b32_lsb_o5, u64, false, "lsb", true, "5:36", "6", 6, 5, 32);
+oracle_int!(i64_b32_msb_o0, i64, true, "msb", false, "0:31", "5", 5, 0, 32);
+oracle_int!(i64_b32_msb_o3, i64, true, "msb", false, "3:34", "6", 6, 3, 32);
+oracle_int!(i64_b32_msb_o5, i64, true, "msb", false, "5:36", "6", 6, 5, 32);
+oracle_int!(i64_b32_lsb_o0, i64, true, "lsb", true, "0:31", "5", 5, 0, 32);
+oracle_int!(i64_b32_lsb_o3, i64, true, "lsb", true, "3:34", "6", 6, 3, 32);
+oracle_int!(i64_b32_lsb_o5, i64, true, "lsb", true, "5:36", "6", 6, 5, 32);

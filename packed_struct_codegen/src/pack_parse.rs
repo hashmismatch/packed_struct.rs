@@ -186,6 +186,13 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
         return Err(syn::Error::new(field.span(), "Couldn't determine the bit/byte width for this field."));
     };
 
+    if let BitsPositionParsed::Range(a, b) = bits_position {
+        let range_width = (b as isize - a as isize).unsigned_abs() + 1;
+        if range_width != bit_width {
+            return Err(syn::Error::new(field.span(), format!("The field's position covers {} bits, but its size is {} bits.", range_width, bit_width)));
+        }
+    }
+
     Ok(FieldMidPositioning {
         bit_width,
         bits_position
@@ -208,10 +215,10 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
 
             let size = get_expr_int_val(&type_array.len)?;
 
-            let element_size_bits = mp.bit_width / size;
-            if (mp.bit_width % element_size_bits) != 0 {
-                return Err(syn::Error::new(type_array.span(), "Element and array size mismatch!"));
+            if mp.bit_width < size || (mp.bit_width % size) != 0 {
+                return Err(syn::Error::new(type_array.span(), format!("The array's {} bits can't be evenly split into {} elements.", mp.bit_width, size)));
             }
+            let element_size_bits = mp.bit_width / size;
 
             // all the elements share the type and width, so only the first one is parsed
             let first_element_bit_range = bit_range.start..(bit_range.start + element_size_bits - 1);
