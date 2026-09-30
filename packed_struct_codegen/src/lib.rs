@@ -46,9 +46,10 @@ pub fn derive_packable_bytes(tokens: TokenStream) -> TokenStream {
 /// traits.
 ///
 /// Implements `PrimitiveEnum` and `PrimitiveEnumStaticStr`, plus `PrimitiveEnumDynamicStr`
-/// with the `std` or `alloc` features. The primitive type is inferred from the discriminants'
-/// values and literal suffixes. Use one of the `PrimitiveEnum_*` macros to choose it explicitly,
-/// which is recommended for enums with negative discriminants.
+/// with the `std` or `alloc` features. The primitive type is the smallest integer that holds
+/// all the discriminants, unsigned unless any of them is negative. A suffixed discriminant
+/// literal, like `5u16`, sets the type instead. Use one of the `PrimitiveEnum_*` macros to
+/// choose it explicitly.
 #[proc_macro_derive(PrimitiveEnum)]
 pub fn derive_primitive_detect(input: TokenStream) -> TokenStream {
     derive_primitive(input, None)

@@ -130,6 +130,11 @@ restore.
   very long to compile, and a `[u16; 20000]` field overflowed rustc's stack. The derive now emits one
   code template per distinct bit alignment and loops over the elements, so the generated code no
   longer grows with the array length. The rustdoc table shows one row per array field.
+- **`#[derive(PrimitiveEnum)]` infers a type that holds every discriminant.** Enums with large
+  negative discriminants (`-3000000000` was inferred as `i32`) or with mixed signs (`-1` and `200`
+  as `i8`) failed to compile. The type is now the smallest integer that holds both the smallest and
+  the largest discriminant, and an enum that no integer type can hold is reported as a compile
+  error. Enums that compiled before keep their type.
 - **Unpacking a dynamically sized tuple from a too short slice** returns
   `PackingError::BufferSizeMismatch` instead of underflowing the length calculation (a panic in debug
   builds).
