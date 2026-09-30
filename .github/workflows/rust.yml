@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [aarch64-unknown-linux-gnu, arm-unknown-linux-gnueabihf, mips64-unknown-linux-gnuabi64, riscv64gc-unknown-linux-gnu ]
+        target: [aarch64-unknown-linux-gnu, arm-unknown-linux-gnueabihf, s390x-unknown-linux-gnu, riscv64gc-unknown-linux-gnu ]
 
     steps:
     - uses: actions/checkout@v5
