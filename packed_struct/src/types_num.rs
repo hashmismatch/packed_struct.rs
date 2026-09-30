@@ -670,15 +670,8 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
         let l = B::byte_array_len() * 8;
         let shift_by_bits = l - B::number_of_bits();
         if shift_by_bits > 0 && (shift_by_bits % 8) != 0 {
-            use bitvec::prelude::*;
-
-            let leftover_bits = B::number_of_bits() % 8;            
-            
-            let bytes_slice = bytes.as_mut_bytes_slice();
-            let bits = BitSlice::<_, Msb0>::try_from_slice_mut(bytes_slice).map_err(|_| PackingError::BitsError)?;
-            let s = l - B::number_of_bits();
-            let (left, _) = bits.split_at_mut(l - leftover_bits);
-            left.shift_end(s);
+            let leftover_bits = B::number_of_bits() % 8;
+            msb0_shift_right(bytes.as_mut_bytes_slice(), l - leftover_bits, shift_by_bits);
         }
         
         Ok(bytes)
@@ -690,16 +683,10 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
         let shift_by_bits = l - B::number_of_bits();
 
         let n = if shift_by_bits > 0 && (shift_by_bits % 8) != 0 {
-            use bitvec::prelude::*;
-
             let leftover_bits = B::number_of_bits() % 8;
 
             let mut src_bytes = (*src).clone();
-            let bytes_slice = src_bytes.as_mut_bytes_slice();
-            let bits = BitSlice::<_, Msb0>::try_from_slice_mut(bytes_slice).map_err(|_| PackingError::BitsError)?;
-            let s = l - B::number_of_bits();
-            let (left, _) = bits.split_at_mut(l - leftover_bits);
-            left.shift_start(s);
+            msb0_shift_left(src_bytes.as_mut_bytes_slice(), l - leftover_bits, shift_by_bits);
 
             I::from_lsb_bytes(&src_bytes)?
         } else {
@@ -715,6 +702,84 @@ impl<T, B, I> PackedStructInfo for LsbInteger<T, B, I> where B: NumberOfBits {
     #[inline]
     fn packed_bits() -> usize {
         B::number_of_bits()
+    }
+}
+
+#[inline]
+fn msb0_get_bit(bytes: &[u8], i: usize) -> bool {
+    bytes[i / 8] & (0x80 >> (i % 8)) != 0
+}
+
+#[inline]
+fn msb0_set_bit(bytes: &mut [u8], i: usize, value: bool) {
+    let mask = 0x80 >> (i % 8);
+    if value {
+        bytes[i / 8] |= mask;
+    } else {
+        bytes[i / 8] &= !mask;
+    }
+}
+
+/// Shifts the bits in the range `[0, len)` of an MSB0 ordered byte slice
+/// towards higher bit indices by `by` bits. The vacated low bits are zeroed,
+/// bits shifted past `len` are discarded and bits at `len` and above are untouched.
+fn msb0_shift_right(bytes: &mut [u8], len: usize, by: usize) {
+    for i in (0..len).rev() {
+        let value = i >= by && msb0_get_bit(bytes, i - by);
+        msb0_set_bit(bytes, i, value);
+    }
+}
+
+/// Shifts the bits in the range `[0, len)` of an MSB0 ordered byte slice
+/// towards bit index 0 by `by` bits. The vacated bits at the end of the range
+/// are zeroed and bits at `len` and above are untouched.
+fn msb0_shift_left(bytes: &mut [u8], len: usize, by: usize) {
+    for i in 0..len {
+        let value = i + by < len && msb0_get_bit(bytes, i + by);
+        msb0_set_bit(bytes, i, value);
+    }
+}
+
+#[test]
+fn test_msb0_shift_against_bitvec() {
+    use bitvec::prelude::*;
+
+    let mut seed: u32 = 0xDEAD_BEEF;
+    for n_bytes in 1..=8 {
+        let mut random = [0u8; 8];
+        for b in random.iter_mut() {
+            seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12345);
+            *b = (seed >> 16) as u8;
+        }
+        let patterns: [[u8; 8]; 4] = [
+            [0xFF; 8],
+            [0xA5; 8],
+            [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF],
+            random
+        ];
+
+        for pattern in patterns.iter() {
+            let src = &pattern[..n_bytes];
+            for len in 0..=(n_bytes * 8) {
+                for by in 0..=len {
+                    let mut expected = [0u8; 8];
+                    expected[..n_bytes].copy_from_slice(src);
+                    expected[..n_bytes].view_bits_mut::<Msb0>()[..len].shift_end(by);
+                    let mut actual = [0u8; 8];
+                    actual[..n_bytes].copy_from_slice(src);
+                    msb0_shift_right(&mut actual[..n_bytes], len, by);
+                    assert_eq!(expected, actual, "shift right, src={:?}, len={}, by={}", src, len, by);
+
+                    let mut expected = [0u8; 8];
+                    expected[..n_bytes].copy_from_slice(src);
+                    expected[..n_bytes].view_bits_mut::<Msb0>()[..len].shift_start(by);
+                    let mut actual = [0u8; 8];
+                    actual[..n_bytes].copy_from_slice(src);
+                    msb0_shift_left(&mut actual[..n_bytes], len, by);
+                    assert_eq!(expected, actual, "shift left, src={:?}, len={}, by={}", src, len, by);
+                }
+            }
+        }
     }
 }
 
