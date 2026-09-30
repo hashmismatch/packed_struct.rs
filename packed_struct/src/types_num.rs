@@ -10,6 +10,16 @@ use super::types_bits::*;
 
 /// A bit-limited integer, stored in a native type that is at least
 /// as many bits wide as the desired size.
+///
+/// Converting from the native type masks the value to the bit width, and
+/// sign-extends it for signed types. The value can be read with `*`.
+///
+/// ```rust
+/// use packed_struct::prelude::*;
+///
+/// let n: Integer<i16, packed_bits::Bits::<4>> = 0b1000.into();
+/// assert_eq!(-8, *n);
+/// ```
 #[derive(Default, Copy, Clone)]
 pub struct Integer<T, B> {
     num: T,
@@ -113,7 +123,7 @@ pub trait SizedInteger<T, B: NumberOfBits> where Self: Sized {
 pub trait SizedIntegerSigned<T, B> : SizedInteger<T, B>
     where B: NumberOfBits
 {
-    /// Sign-extends the packed value into a properly signed representation in one's complement.
+    /// Sign-extends the packed value into a properly signed representation in two's complement.
     fn from_unpacked_to_signed(val: T) -> T;
 }
 
@@ -647,10 +657,18 @@ impl<T, B, I> PackedStructInfo for MsbInteger<T, B, I> where B: NumberOfBits {
 /// invoked using code generation.
 ///
 /// LSB integers with non-full byte widths are packaged by shifting the full bytes
-/// into the empty bits of the non-full bytes.
+/// into the empty bits of the non-full bytes, so the trailing bits hold the
+/// least significant byte first, followed by the leftover high bits.
+///
 /// Example, u16 packaged as 10 bits:
-/// MSB: [0b0000_1111, 0b0011_0011]
-/// LSB: [0b0000_0011, 0b0011_1111]
+///
+/// ```rust
+/// use packed_struct::prelude::*;
+///
+/// let n: Integer<u16, packed_bits::Bits::<10>> = 0b10_1010_1011.into();
+/// assert_eq!([0b0000_0010, 0b1010_1011], n.as_packed_msb().pack().unwrap());
+/// assert_eq!([0b0000_0010, 0b1010_1110], n.as_packed_lsb().pack().unwrap());
+/// ```
 pub struct LsbInteger<T, B, I>(I, PhantomData<T>, PhantomData<B>);
 impl<T, B, I> Deref for LsbInteger<T, B, I> {
     type Target = I;

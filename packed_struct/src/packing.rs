@@ -3,11 +3,12 @@ use crate::internal_prelude::v1::*;
 use crate::types_bits::ByteArray;
 
 /// A structure that can be packed and unpacked from a byte array.
-/// 
+///
 /// In case the structure occupies less bits than there are in the byte array,
-/// the packed that should be aligned to the end of the array, with leading bits
-/// being ignored.
-/// 
+/// the packed data should be aligned to the end of the array, with the leading
+/// bits being ignored. This is how the derived code reads and writes nested
+/// fields that are narrower than their byte array.
+///
 /// 10 bits packs into: [0b00000011, 0b11111111]
 pub trait PackedStruct where Self: Sized {
     /// The appropriately sized byte array into which this structure will be packed, for example [u8; 2]. 
@@ -34,6 +35,7 @@ pub trait PackedStructSlice where Self: Sized {
     /// Number of bytes that the type or this particular instance of this structure demands for packing or unpacking.
     fn packed_bytes_size(opt_self: Option<&Self>) -> PackingResult<usize>;
 
+    /// Pack the structure into a newly allocated vector, sized by `packed_bytes_size`.
     #[cfg(any(feature="alloc", feature="std"))]
     fn pack_to_vec(&self) -> PackingResult<Vec<u8>> {
         let size = Self::packed_bytes_size(Some(self))?;
@@ -47,15 +49,40 @@ pub trait PackedStructSlice where Self: Sized {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Packing errors that might occur during packing or unpacking
 pub enum PackingError {
+    /// The packed bits don't map to a valid value, for example a `bool` that
+    /// isn't 0 or 1, or an undefined primitive enum discriminant.
     InvalidValue,
+    /// Not returned by this crate, available for custom implementations.
     BitsError,
+    /// Not returned by this crate, available for custom implementations.
     BufferTooSmall,
+    /// Not returned by this crate, available for custom implementations.
     NotImplemented,
+    /// The packed size of a dynamically sized type, like a `Vec`, can only
+    /// be determined from an instance.
     InstanceRequiredForSize,
+    /// A tuple contains more than one dynamically sized type.
     MoreThanOneDynamicType,
-    BufferSizeMismatch { expected: usize, actual: usize },
-    BufferModMismatch { actual_size: usize, modulo_required: usize },
-    SliceIndexingError { slice_len: usize },
+    /// The buffer's length doesn't match the packed size.
+    BufferSizeMismatch {
+        /// The required length in bytes.
+        expected: usize,
+        /// The length of the provided buffer.
+        actual: usize
+    },
+    /// The buffer's length isn't a multiple of the element size.
+    BufferModMismatch {
+        /// The length of the provided buffer.
+        actual_size: usize,
+        /// The size of a single element, in bytes.
+        modulo_required: usize
+    },
+    /// An index or range was out of the slice's bounds.
+    SliceIndexingError {
+        /// The length of the indexed slice.
+        slice_len: usize
+    },
+    /// An internal invariant was violated. Indicates a bug in this crate.
     InternalError
 }
 
@@ -88,4 +115,5 @@ impl From<PackingError> for crate::fmt::Error {
     }
 }
 
+/// The result of a packing or unpacking operation.
 pub type PackingResult<T> = Result<T, PackingError>;

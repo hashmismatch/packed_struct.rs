@@ -27,7 +27,7 @@
 //!  * `std`: use the Rust standard library. Default.
 //!  * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios.
 //!  * `use_serde`: add serialization support to the built-in helper types.
-//!  * `byte_types_64`, `byte_types_256`: enlarge the size of the generated array, byte and bit width types.
+//!  * `byte_types_64`, `byte_types_256`: raise the largest supported `Bits<N>` width from 255 to 511 or 2047 bits. Only needed for wide reserved fields.
 //!
 //! # Sample usage
 //!
@@ -37,7 +37,7 @@
 //! [dependencies]
 //! packed_struct = "0.12"
 //! ```
-//! ## Importing the library with the the most common traits and the derive macros
+//! ## Importing the library with the most common traits and the derive macros
 //!
 //! ```rust
 //! // Prelude import with the common imports
@@ -115,9 +115,9 @@
 //!
 //! Attribute | Values | Comment
 //! :--|:--|:--
-//! ```size_bytes``` | ```1``` ... n | Size of the packed byte stream
-//! ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if the bits attribute field is used.
-//! ```endian``` | ```msb``` or ```lsb``` | Default integer endianness
+//! ```size_bytes``` | ```1``` ... n | Size of the packed byte stream. Defaults to the end of the last field, rounded up to whole bytes.
+//! ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if any field uses the ```bits``` or ```bytes``` attribute. ```lsb0``` also requires ```size_bytes``` and a range position on every field.
+//! ```endian``` | ```msb``` or ```lsb``` | Default integer endianness for the fields wider than 8 bits.
 //!
 //! ## Per-field attributes
 //!
@@ -125,12 +125,12 @@
 //! :--|:--|:--
 //! ```bits``` | ```0```, ```0..1```, ... | Position of the field in the packed structure. Three modes are supported: a single bit, the starting bit, or a range of bits. See details below.
 //! ```bytes``` | ```0```, ```0..1```, ... | Same as above, multiplied by 8.
-//! ```size_bits``` | ```1```, ... | Specifies the size of the packed structure. Mandatory for certain types. Specifying a range of bits like ```bits="0..2"``` can substite the required usage of ```size_bits```.
+//! ```size_bits``` | ```1```, ... | Size of the field. Required for types whose width can't be inferred, like nested structures and enums. Specifying a range of bits like ```bits="0..2"``` can substitute the required usage of ```size_bits```.
 //! ```size_bytes``` | ```1```, ... | Same as above, multiplied by 8.
-//! ```element_size_bits``` | ```1```, ... | For packed arrays, specifies the size of a single element of the array. Explicitly stating the size of the entire array can substite the usage of this attribute.
+//! ```element_size_bits``` | ```1```, ... | For packed arrays, specifies the size of a single element of the array. Explicitly stating the size of the entire array can substitute the usage of this attribute.
 //! ```element_size_bytes``` | ```1```, ... | Same as above, multiplied by 8.
 //! ```ty``` | ```enum``` | Packing helper for primitive enums.
-//! ```endian``` | ```msb``` or ```lsb``` | Integer endianness. Applies to u16/i16 and larger types.
+//! ```endian``` | ```msb``` or ```lsb``` | Integer endianness. Applies to integer and enum fields wider than 8 bits, and is required for them unless the structure sets a default.
 //! 
 //! ## Bit and byte positioning
 //! 
@@ -204,7 +204,7 @@
 //! }
 //! #[derive(PackedStruct, Debug, PartialEq)]
 //! pub struct Record {
-//!     #[packed_field(element_size_bytes="2")]
+//!     #[packed_field(size_bytes="2")]
 //!     span: Duration,
 //!     events: u8,
 //! }
@@ -315,6 +315,7 @@
 //! [crates-url]: https://crates.io/crates/packed_struct
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![warn(missing_docs)]
 
 #[cfg(feature="alloc")]
 #[macro_use]

@@ -11,6 +11,7 @@ pub trait NumberOfBits: Copy + Clone + Debug + Default {
     /// The numerical number of bits.
     fn number_of_bits() -> usize;
 
+    /// Length of the byte array that holds these bits.
     fn byte_array_len() -> usize {
         <<Self::Bytes as NumberOfBytes>::AsBytes as ByteArray>::len()
     }
@@ -29,16 +30,22 @@ pub trait NumberOfBytes: Copy + Clone + Debug + Default {
     /// The byte array type that holds these bytes, for instance [u8; 2].
     type AsBytes: ByteArray;
 
-    /// The numberical number of bytes.
+    /// The numerical number of bytes.
     fn number_of_bytes() -> usize;
 }
 
 /// Helper that allows us to cast a fixed size array into a byte slice.
 pub trait ByteArray: Clone {
+    /// Number of bytes in the array.
     fn len() -> usize;
+    /// The array as a byte slice.
     fn as_bytes_slice(&self) -> &[u8];
+    /// The array as a mutable byte slice.
     fn as_mut_bytes_slice(&mut self) -> &mut [u8];
+    /// Shifts the bytes towards the end of the array. The last `bytes` bytes
+    /// are discarded and the first `bytes` bytes are zeroed.
     fn rotate_right(&mut self, bytes: usize);
+    /// An array with every byte set to `value`.
     fn new(value: u8) -> Self;
 }
 
@@ -68,6 +75,7 @@ impl<const N: usize> ByteArray for [u8; N] {
     }
 }
 
+/// A width of `N` bytes, packed into `[u8; N]`.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Bytes<const N: usize>;
 
@@ -80,6 +88,10 @@ impl<const N: usize> NumberOfBytes for Bytes<N> {
     }
 }
 
+/// A width of `N` bits, packed into the smallest byte array that fits them.
+///
+/// Implemented for widths of 1 to 255 bits. The `byte_types_64` and
+/// `byte_types_256` crate features raise the limit to 511 and 2047 bits.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Bits<const N: usize>;
 

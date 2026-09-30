@@ -1,6 +1,7 @@
 //! Tuples of types that can be packed together. Only byte-sized structures can be chained together.
 //!
 //! Supports having one dynamically sized packed structure type within the tuple.
+//! Implemented for tuples of up to 10 elements.
 //!
 //! # Example with ad-hoc chained structures
 //!
@@ -21,8 +22,6 @@
 //! # Example with a dynamically sized structure
 //!
 //! ```rust
-//! extern crate packed_struct;
-//!
 //! use packed_struct::prelude::*;
 //!
 //! type Message = (u8, Vec<u8>, u8);

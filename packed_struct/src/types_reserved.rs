@@ -4,16 +4,21 @@ use crate::internal_prelude::v1::*;
 
 /// Packs into a set of zeroes. Ignores the input when unpacking.
 pub type ReservedZero<B> = ReservedBits<BitZero, B>;
+/// Alias of [`ReservedZero`].
 pub type ReservedZeroes<B> = ReservedZero<B>;
 
 /// Packs into a set of ones. Ignores the input when unpacking.
 pub type ReservedOne<B> = ReservedBits<BitOne, B>;
+/// Alias of [`ReservedOne`].
 pub type ReservedOnes<B> = ReservedOne<B>;
 
+/// The value that the bits of a [`ReservedBits`] field are packed into.
 pub trait ReservedBitValue {
+    /// A byte with every bit set to the reserved value.
     fn get_reserved_bit_value_byte() -> u8;
 }
 
+/// Reserved bits that are always 1.
 #[cfg_attr(feature = "use_serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct BitOne;
@@ -23,6 +28,7 @@ impl ReservedBitValue for BitOne {
     }
 }
 
+/// Reserved bits that are always 0.
 #[cfg_attr(feature = "use_serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct BitZero;

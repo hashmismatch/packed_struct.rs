@@ -112,7 +112,7 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
         p.to_tokens(&mut doc);
     };
 
-    doc_html(&format!("Structure that can be packed an unpacked into {size_bytes} bytes.\r\n",
+    doc_html(&format!("Structure that can be packed and unpacked into {size_bytes} bytes.\r\n",
         size_bytes = parsed.num_bytes
     ));
 
