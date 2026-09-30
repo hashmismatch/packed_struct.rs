@@ -116,8 +116,8 @@
 //! Attribute | Values | Comment
 //! :--|:--|:--
 //! ```size_bytes``` | ```1``` ... n | Size of the packed byte stream. Defaults to the end of the last field, rounded up to whole bytes.
-//! ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if any field uses the ```bits``` or ```bytes``` attribute. ```lsb0``` also requires ```size_bytes``` and a range position on every field.
-//! ```endian``` | ```msb``` or ```lsb``` | Default integer endianness for the fields wider than 8 bits.
+//! ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if any field uses the ```bits``` or ```bytes``` attribute. ```lsb0``` also requires ```size_bytes``` and a range position on every field. See [MSB0 and LSB0 numbering](#msb0-and-lsb0-numbering).
+//! ```endian``` | ```msb``` or ```lsb``` | Default integer endianness for the fields wider than 8 bits. Doesn't change the byte order of the whole structure.
 //!
 //! ## Per-field attributes
 //!
@@ -142,6 +142,47 @@
 //! ```0..```, ```0:``` | The field starts at bit zero
 //! ```0..2``` | Exclusive range, bits zero and one
 //! ```0:1```, ```0..=1``` | Inclusive range, bits zero and one
+//!
+//! ## MSB0 and LSB0 numbering
+//!
+//! Bit numbering always counts across the whole packed byte array, from its first byte to its last.
+//! With ```msb0```, bit 0 is the most significant bit of the **first** byte. With ```lsb0```, bit 0 is
+//! the least significant bit of the **last** byte. In a structure of `N` bytes, ```lsb0``` bit `i` is
+//! the same bit as ```msb0``` bit `N*8-1-i`.
+//!
+//! In both modes, the packed array is read as one big-endian number. The ```endian``` attribute
+//! doesn't change that. It only sets the byte order inside each integer field that is wider than
+//! 8 bits.
+//!
+//! This matters for data sheets that describe a little-endian register with LSB0 bit numbers.
+//! ```bit_numbering="lsb0", endian="lsb"``` does **not** describe such a register. Instead, use
+//! ```endian="msb"``` and convert the register to big-endian bytes before unpacking:
+//!
+//! ```rust
+//! use packed_struct::prelude::*;
+//!
+//! #[derive(PackedStruct, Debug, PartialEq)]
+//! #[packed_struct(size_bytes="4", bit_numbering="lsb0", endian="msb")]
+//! pub struct Register {
+//!     #[packed_field(bits="0..4")]
+//!     low: u8,
+//!     #[packed_field(bits="16..32")]
+//!     high: u16,
+//! }
+//!
+//! fn main() -> Result<(), PackingError> {
+//!     // Four bytes as they arrive from a little-endian device.
+//!     let wire = 0x1234_5678u32.to_le_bytes();
+//!
+//!     let reg = Register::unpack(&u32::from_le_bytes(wire).to_be_bytes())?;
+//!     assert_eq!(reg, Register { low: 0x8, high: 0x1234 });
+//!
+//!     // And back, to little-endian bytes.
+//!     let packed = u32::from_be_bytes(reg.pack()?).to_le_bytes();
+//!     assert_eq!(packed, 0x1234_0008u32.to_le_bytes());
+//!     Ok(())
+//! }
+//! ```
 //!
 //! # More examples
 //!

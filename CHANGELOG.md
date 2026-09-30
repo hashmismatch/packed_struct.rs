@@ -144,6 +144,13 @@ restore.
 - The `alloc` feature builds on stable Rust. It used the nightly-only `#![feature(alloc)]`, and the
   `no_std` prelude was missing an import.
 
+### Documentation
+
+- **How `lsb0` numbers bits** ([#92]). `lsb0` bit 0 is the least significant bit of the *last*
+  byte, and `endian` only orders the bytes inside each field, so `bit_numbering="lsb0",
+  endian="lsb"` does not describe a little-endian register. The docs now include an example for
+  little-endian registers.
+
 ### Internal
 
 - `packed_struct::__private` is a new hidden module with support code for the derive
@@ -275,6 +282,7 @@ restore.
 [#76]: https://github.com/hashmismatch/packed_struct.rs/pull/76
 [#79]: https://github.com/hashmismatch/packed_struct.rs/pull/79
 [#84]: https://github.com/hashmismatch/packed_struct.rs/pull/84
+[#92]: https://github.com/hashmismatch/packed_struct.rs/issues/92
 [#95]: https://github.com/hashmismatch/packed_struct.rs/pull/95
 [#101]: https://github.com/hashmismatch/packed_struct.rs/pull/101
 [#102]: https://github.com/hashmismatch/packed_struct.rs/issues/102
