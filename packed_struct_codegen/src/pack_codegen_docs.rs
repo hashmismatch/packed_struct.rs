@@ -19,6 +19,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
     );
     
     let mut debug_fields = vec![];
+    let mut num_fields = 0;
     for field in &parsed.fields {
         match field {
             FieldKind::Regular { ident, field } => {
@@ -26,39 +27,45 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
                 let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
                 
                 debug_fields.push(quote! {
-                    ::packed_struct::debug_fmt::DebugBitField {
+                    fields.push(::packed_struct::debug_fmt::DebugBitField {
                         name: #name_str.into(),
                         bits: #bits,
                         display_value: format!("{:?}", src.#ident).into()
+                    });
+                });
+                num_fields += 1;
+            },
+            FieldKind::Array(array) => {
+                let ident = &array.ident;
+                let name_str = ident.to_string();
+                let start_bit = array.element.bit_range.start;
+                let element_bits = array.element_bits();
+                let last_bit = element_bits - 1;
+                
+                debug_fields.push(quote! {
+                    for (i, element) in src.#ident.iter().enumerate() {
+                        let start = #start_bit + (i * #element_bits);
+                        fields.push(::packed_struct::debug_fmt::DebugBitField {
+                            name: format!("{}[{}]", #name_str, i).into(),
+                            bits: start..(start + #last_bit),
+                            display_value: format!("{:?}", element).into()
+                        });
                     }
                 });
-            },
-            FieldKind::Array { ident, elements, .. } => {
-                for (i, field) in elements.iter().enumerate() {
-                    let name_str = format!("{}[{}]", ident, i);
-                    let bits: syn::ExprRange = syn::parse_str(&format!("{}..{}", field.bit_range.start, field.bit_range.end))?;
-                    
-                    debug_fields.push(quote! {
-                        ::packed_struct::debug_fmt::DebugBitField {
-                            name: #name_str.into(),
-                            bits: #bits,
-                            display_value: format!("{:?}", src.#ident[#i]).into()
-                        }
-                    });
-                }
-                
+                num_fields += array.size;
             }
         }
     }
 
-    let num_fields = debug_fields.len();
     let num_bytes = parsed.num_bytes;
     let result_ty = result_type();
 
     let q = quote! {
         #[doc(hidden)]
-        pub fn #debug_fields_fn(src: &#name) -> [::packed_struct::debug_fmt::DebugBitField<'static>; #num_fields] {
-            [#(#debug_fields),*]
+        pub fn #debug_fields_fn(src: &#name) -> #stdlib_prefix::vec::Vec<::packed_struct::debug_fmt::DebugBitField<'static>> {
+            let mut fields = #stdlib_prefix::vec::Vec::with_capacity(#num_fields);
+            #(#debug_fields)*
+            fields
         }
 
         #[allow(unused_imports)]
@@ -114,7 +121,7 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
     doc_html("<tbody>\r\n");
 
     {
-        let mut emit_field_docs = |bits: &Range<usize>, field_ident, ty| {
+        let mut emit_field_docs = |bits: &Range<usize>, field_ident: String, ty: String| {
 
             let bits_str = {
                 if bits.start == bits.end {
@@ -126,18 +133,18 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
 
             // todo: friendly integer, reserved types. add LSB/MSB integer info.
 
-            doc_html(&format!("<tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits_str, field_ident, tokens_to_string(ty)));
+            doc_html(&format!("<tr><td>{}</td><td>{}</td><td>{}</td></tr>\r\n", bits_str, field_ident, ty));
         };
 
         for field in &parsed.fields {
             match field {
                 FieldKind::Regular { ident, field } => {
-                    emit_field_docs(&field.bit_range, ident.to_string(), &field.ty);
+                    emit_field_docs(&field.bit_range, ident.to_string(), tokens_to_string(&field.ty));
                 },
-                FieldKind::Array { ident, elements, .. } => {
-                    for (i, field) in elements.iter().enumerate() {
-                        emit_field_docs(&field.bit_range, format!("{}[{}]", ident, i), &field.ty);
-                    }
+                FieldKind::Array(array) => {
+                    // a single row for the whole array, the elements are laid out back to back
+                    let ty = format!("[{}; {}], {} bits per element", tokens_to_string(&array.element.ty), array.size, array.element_bits());
+                    emit_field_docs(&array.bit_range(), array.ident.to_string(), ty);
                 }
             }            
         }

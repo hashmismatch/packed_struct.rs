@@ -357,6 +357,12 @@ pub mod types {
 
 pub use self::packing::*;
 
+/// Support code for the derive macros. Not a public API, can change without notice.
+#[doc(hidden)]
+pub mod __private {
+    pub use crate::types_array::try_array_from_fn;
+}
+
 /// The derivation macros for packing and enums.
 pub mod derive {
     pub use packed_struct_codegen::PackedStruct;
