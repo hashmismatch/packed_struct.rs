@@ -27,7 +27,7 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
  * `std`: use the Rust standard library. Default.
  * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios.
  * `use_serde`: add serialization support to the built-in helper types.
- * `byte_types_64`, `byte_types_256`: raise the largest supported `Bits<N>` width from 255 to 511 or 2047 bits. Only needed for wide reserved fields.
+ * `byte_types_64`, `byte_types_256`: raise the largest supported `Bits<N>` width from 256 bits (32 bytes) to 512 or 2048 bits (64 or 256 bytes). Only needed for wide reserved fields.
 
 # Sample usage
 

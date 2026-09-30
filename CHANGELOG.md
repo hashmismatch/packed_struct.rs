@@ -135,6 +135,9 @@ restore.
   as `i8`) failed to compile. The type is now the smallest integer that holds both the smallest and
   the largest discriminant, and an enum that no integer type can hold is reported as a compile
   error. Enums that compiled before keep their type.
+- **`Bits<N>` is generated up to the full byte width.** The widest type was one bit short: 255 bits
+  by default, and 511 or 2047 with `byte_types_64` or `byte_types_256`, so a reserved field of
+  exactly 32, 64 or 256 bytes, like `ReservedZero<Bits<256>>`, failed to compile.
 - **Unpacking a dynamically sized tuple from a too short slice** returns
   `PackingError::BufferSizeMismatch` instead of underflowing the length calculation (a panic in debug
   builds).

@@ -90,8 +90,8 @@ impl<const N: usize> NumberOfBytes for Bytes<N> {
 
 /// A width of `N` bits, packed into the smallest byte array that fits them.
 ///
-/// Implemented for widths of 1 to 255 bits. The `byte_types_64` and
-/// `byte_types_256` crate features raise the limit to 511 and 2047 bits.
+/// Implemented for widths of 1 to 256 bits (32 bytes). The `byte_types_64` and
+/// `byte_types_256` crate features raise the limit to 512 and 2048 bits.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Bits<const N: usize>;
 
@@ -124,6 +124,30 @@ fn bytes_rotate_right(s: &mut [u8], bytes: usize) {
     }
     for v in s.iter_mut().take(bytes) {
         *v = 0;
+    }
+}
+
+#[cfg(test)]
+mod largest_width {
+    use super::*;
+
+    // the widest `Bits` that the build script generates for the enabled features
+    #[cfg(feature = "byte_types_256")]
+    pub type LargestBits = Bits<2048>;
+    #[cfg(all(feature = "byte_types_64", not(feature = "byte_types_256")))]
+    pub type LargestBits = Bits<512>;
+    #[cfg(not(any(feature = "byte_types_64", feature = "byte_types_256")))]
+    pub type LargestBits = Bits<256>;
+
+    fn full_bytes<B: NumberOfBits + BitsFullBytes>() -> usize {
+        B::byte_array_len()
+    }
+
+    #[test]
+    fn test_largest_bits_fill_whole_bytes() {
+        let bits = LargestBits::number_of_bits();
+        assert!(bits == 256 || bits == 512 || bits == 2048);
+        assert_eq!(bits / 8, full_bytes::<LargestBits>());
     }
 }
 
