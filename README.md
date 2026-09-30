@@ -25,7 +25,7 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
 
 # Crate-level feature flags
  * `std`: use the Rust standard library. Default.
- * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios. Requires nightly Rust.
+ * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios.
  * `use_serde`: add serialization support to the built-in helper types.
  * `byte_types_64`, `byte_types_256`: enlarge the size of the generated array, byte and bit width types.
 
@@ -35,13 +35,11 @@ provide safe packing, unpacking and runtime debugging formatters with per-field 
 
 ```toml
 [dependencies]
-packed_struct = "0.10"
+packed_struct = "0.12"
 ```
 ## Importing the library with the the most common traits and the derive macros
 
 ```rust
-// This is only needed for pre Rust 2018
-#[macro_use] extern crate packed_struct;
 // Prelude import with the common imports
 use packed_struct::prelude::*;
 ```

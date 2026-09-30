@@ -25,7 +25,7 @@
 //!
 //! # Crate-level feature flags
 //!  * `std`: use the Rust standard library. Default.
-//!  * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios. Requires nightly Rust.
+//!  * `alloc`: use the `alloc` crate for `no_std` + `alloc` scenarios.
 //!  * `use_serde`: add serialization support to the built-in helper types.
 //!  * `byte_types_64`, `byte_types_256`: enlarge the size of the generated array, byte and bit width types.
 //!
@@ -35,13 +35,11 @@
 //!
 //! ```toml
 //! [dependencies]
-//! packed_struct = "0.10"
+//! packed_struct = "0.12"
 //! ```
 //! ## Importing the library with the the most common traits and the derive macros
 //!
 //! ```rust
-//! // This is only needed for pre Rust 2018
-//! #[macro_use] extern crate packed_struct;
 //! // Prelude import with the common imports
 //! use packed_struct::prelude::*;
 //! # fn main() {
@@ -318,18 +316,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#![cfg_attr(feature="alloc", feature(alloc))]
-
-extern crate packed_struct_codegen;
-
 #[cfg(feature="alloc")]
 #[macro_use]
 extern crate alloc;
-
-#[cfg(feature = "use_serde")]
-extern crate serde;
-#[cfg(feature = "use_serde")]
-#[macro_use] extern crate serde_derive;
 
 mod internal_prelude;
 
@@ -357,19 +346,13 @@ mod types_vec;
 
 /// Implementations and wrappers for various packing types.
 pub mod types {
-    pub use super::types_basic::*;
-
     /// Types that specify the exact number of bits a packed integer should occupy.
     pub mod bits {
         pub use super::super::types_bits::*;
     }
 
     pub use super::types_num::*;
-    pub use super::types_array::*;
     pub use super::types_reserved::*;
-    pub use super::types_generic::*;
-    #[cfg(any(feature="alloc", feature="std"))]
-    pub use super::types_vec::*;
 }
 
 pub use self::packing::*;

@@ -1,5 +1,3 @@
-extern crate syn;
-
 #[cfg(feature="std")]
 pub fn collections_prefix() -> syn::Type {
     syn::parse_str("::std").unwrap()

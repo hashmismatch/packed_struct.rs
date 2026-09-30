@@ -1,6 +1,3 @@
-extern crate quote;
-extern crate syn;
-
 use crate::pack::*;
 use crate::pack_parse_attributes::*;
 
@@ -225,7 +222,6 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
             
             return Ok(FieldKind::Array {
                 ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?,
-                size,
                 elements
             });
         },
@@ -351,7 +347,7 @@ pub fn parse_num(s: &str) -> Result<usize, String> {
 
 
 
-pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
+pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct<'_>> {
     let attributes = PackStructAttribute::parse_all(&parse_sub_attributes(&ast.attrs, "packed_struct", "packed_field")?);
 
     let data_struct = match &ast.data {
@@ -429,11 +425,10 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         if let Some(struct_size_bytes) = struct_size_bytes {
             struct_size_bytes * 8
         } else {
-            let last_bit = fields_parsed.iter().map(|f| match f {
-                FieldKind::Regular { ref field, .. } => field.bit_range_rust.end,
-                FieldKind::Array { ref elements, .. } => elements.last().unwrap().bit_range_rust.end
-            }).max().unwrap();
-            last_bit
+            fields_parsed.iter().map(|f| match f {
+                FieldKind::Regular { field, .. } => field.bit_range_rust.end,
+                FieldKind::Array { elements, .. } => elements.last().unwrap().bit_range_rust.end
+            }).max().unwrap()
         }
     };
 
@@ -460,10 +455,10 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
             };
 
             match field {
-                FieldKind::Regular { ref field, ref ident } => {
+                FieldKind::Regular { field, ident } => {
                     find_overlaps(ident.to_string(), &field.bit_range)?;
                 },
-                FieldKind::Array { ref ident, ref elements, .. } => {
+                FieldKind::Array { ident, elements, .. } => {
                     for (i, field) in elements.iter().enumerate() {
                         find_overlaps(format!("{}[{}]", ident, i), &field.bit_range)?;
                     }
@@ -474,7 +469,6 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
     
     Ok(PackStruct {
         derive_input: ast,
-        data_struct,
         fields: fields_parsed,
         num_bytes,
         num_bits

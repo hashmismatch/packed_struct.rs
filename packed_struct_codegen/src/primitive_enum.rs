@@ -1,6 +1,4 @@
-extern crate quote;
-extern crate syn;
-
+use quote::quote;
 use proc_macro2::Span;
 use quote::TokenStreamExt;
 use syn::spanned::Spanned;
@@ -55,13 +53,13 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
                 d.suffix.clone()
             } else if d.negative {
                 let n = d.discriminant as i64;
-                if n < <i32>::min_value() as i64 {
+                if n < i32::MIN as i64 {
                     "i64".into()
                 } else {
                     let n = -n;
-                    if n < <i16>::min_value() as i64 {
+                    if n < i16::MIN as i64 {
                         "i32".into()
-                    } else if n < <i8>::min_value() as i64 {
+                    } else if n < i8::MIN as i64 {
                         "i16".into()
                     } else {
                         "i8".into()
@@ -69,11 +67,11 @@ pub fn derive(ast: &syn::DeriveInput, mut prim_type: Option<syn::Type>) -> syn::
                 }
             } else {
                 let n = d.discriminant;
-                if n > <u32>::max_value() as u64 {
+                if n > u32::MAX as u64 {
                     "u64".into()
-                } else if n > <u16>::max_value() as u64 {
+                } else if n > u16::MAX as u64 {
                     "u32".into()
-                } else if n > <u8>::max_value() as u64 {
+                } else if n > u8::MAX as u64 {
                     "u16".into()
                 } else {
                     "u8".into()
@@ -239,7 +237,7 @@ fn get_unitary_enum(input: &syn::DeriveInput) -> syn::Result<Vec<Variant>> {
         }
 
         let (discriminant, negative, suffix) = match &variant.discriminant {
-            Some((_, syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref lit_int), .. }))) => {
+            Some((_, syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(lit_int), .. }))) => {
                 (lit_int.base10_parse()?, false, lit_int.suffix().into())
             },
             Some((_,

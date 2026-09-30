@@ -1,9 +1,10 @@
 [package]
 name = "packed_struct_examples"
 version = "0.1.0"
-authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 publish = false
-edition = "2018"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
-packed_struct = { path = "../packed_struct/", features = ["byte_types_64"] }
+packed_struct = { workspace = true, features = ["std", "byte_types_64"] }

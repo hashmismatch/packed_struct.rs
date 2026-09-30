@@ -1,6 +1,3 @@
-extern crate quote;
-extern crate syn;
-
 use std::ops::*;
 use crate::pack_parse::*;
 
@@ -17,7 +14,6 @@ pub enum FieldKind {
     },
     Array {
         ident: syn::Ident,
-        size: usize,
         elements: Vec<FieldRegular>
     }
 }
@@ -48,7 +44,6 @@ pub struct PackStruct<'a> {
     pub fields: Vec<FieldKind>,
     pub num_bytes: usize,
     pub num_bits: usize,
-    pub data_struct: &'a syn::DataStruct,
     pub derive_input: &'a syn::DeriveInput
 }
 

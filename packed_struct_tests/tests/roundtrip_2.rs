@@ -46,25 +46,25 @@ fn test_roundtrip_2() {
 
     for _ in 0..100 {
         let s = RoundtripUnaligned {
-            f1: rnd.rnd_num(u8::max_value() as u64) as u8,
-            f2: rnd.rnd_num(i8::max_value() as u64) as i8,
+            f1: rnd.rnd_num(u8::MAX as u64) as u8,
+            f2: rnd.rnd_num(i8::MAX as u64) as i8,
 
-            f3: rnd.rnd_num(u16::max_value() as u64) as u16,
-            f4: rnd.rnd_num(u16::max_value() as u64) as i16,
+            f3: rnd.rnd_num(u16::MAX as u64) as u16,
+            f4: rnd.rnd_num(u16::MAX as u64) as i16,
 
-            f5: rnd.rnd_num(u16::max_value() as u64) as u16,
-            f6: rnd.rnd_num(u16::max_value() as u64) as i16,
+            f5: rnd.rnd_num(u16::MAX as u64) as u16,
+            f6: rnd.rnd_num(u16::MAX as u64) as i16,
 
-            f7: rnd.rnd_num(u32::max_value() as u64) as u32,
-            f8: rnd.rnd_num(i32::max_value() as u64) as i32,
+            f7: rnd.rnd_num(u32::MAX as u64) as u32,
+            f8: rnd.rnd_num(i32::MAX as u64) as i32,
 
-            f9: rnd.rnd_num(u32::max_value() as u64) as u32,
-            f10: rnd.rnd_num(i32::max_value() as u64) as i32,
+            f9: rnd.rnd_num(u32::MAX as u64) as u32,
+            f10: rnd.rnd_num(i32::MAX as u64) as i32,
 
-            f11: [rnd.rnd_num(u8::max_value() as u64) as u8],
-            f12: [rnd.rnd_num(u8::max_value() as u64) as u8, rnd.rnd_num(u8::max_value() as u64) as u8],
-            f13: [rnd.rnd_num(u8::max_value() as u64) as u8, rnd.rnd_num(u8::max_value() as u64) as u8, rnd.rnd_num(u8::max_value() as u64) as u8],
-            f14: [rnd.rnd_num(u8::max_value() as u64) as u8, rnd.rnd_num(u8::max_value() as u64) as u8, rnd.rnd_num(u8::max_value() as u64) as u8, rnd.rnd_num(u8::max_value() as u64) as u8],
+            f11: [rnd.rnd_num(u8::MAX as u64) as u8],
+            f12: [rnd.rnd_num(u8::MAX as u64) as u8, rnd.rnd_num(u8::MAX as u64) as u8],
+            f13: [rnd.rnd_num(u8::MAX as u64) as u8, rnd.rnd_num(u8::MAX as u64) as u8, rnd.rnd_num(u8::MAX as u64) as u8],
+            f14: [rnd.rnd_num(u8::MAX as u64) as u8, rnd.rnd_num(u8::MAX as u64) as u8, rnd.rnd_num(u8::MAX as u64) as u8, rnd.rnd_num(u8::MAX as u64) as u8],
 
             f15: (rnd.rnd() % 2) == 0
         };

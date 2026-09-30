@@ -14,7 +14,7 @@ pub trait ReservedBitValue {
     fn get_reserved_bit_value_byte() -> u8;
 }
 
-#[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "use_serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct BitOne;
 impl ReservedBitValue for BitOne {
@@ -23,7 +23,7 @@ impl ReservedBitValue for BitOne {
     }
 }
 
-#[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "use_serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct BitZero;
 impl ReservedBitValue for BitZero {
@@ -33,7 +33,7 @@ impl ReservedBitValue for BitZero {
 }
 
 /// Always packs into the associated bit value. Ignores the input when unpacking.
-#[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "use_serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct ReservedBits<V, B> {
     value: V,

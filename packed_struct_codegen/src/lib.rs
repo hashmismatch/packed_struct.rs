@@ -1,13 +1,6 @@
 #![recursion_limit = "192"]
 #![allow(clippy::redundant_clone)]
 
-extern crate proc_macro;
-extern crate proc_macro2;
-
-extern crate syn;
-#[macro_use]
-extern crate quote;
-
 use proc_macro::TokenStream;
 use syn::{DeriveInput, parse_macro_input};
 

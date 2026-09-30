@@ -43,7 +43,7 @@ pub trait PackedStructSlice where Self: Sized {
     }
 }
 
-#[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "use_serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Packing errors that might occur during packing or unpacking
 pub enum PackingError {
