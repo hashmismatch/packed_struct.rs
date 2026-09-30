@@ -223,7 +223,7 @@ pub fn parse_position_val(v: &str, multiplier: usize) -> Result<BitsPositionPars
             }
             
             if multiplier > 1 {
-                return Ok(BitsPositionParsed::range_in_order(start * multiplier, ((end-1) * multiplier)-1));
+                return Ok(BitsPositionParsed::range_in_order(start * multiplier, (end * multiplier)-1));
             } else {
                 return Ok(BitsPositionParsed::range_in_order(start, end - 1));
             }
@@ -265,7 +265,7 @@ fn test_parse_position_val() {
 
     {
         assert_eq!(BitsPositionParsed::Range(1, 2), parse_position_val("1..3", 1).unwrap());
-        assert_eq!(BitsPositionParsed::Range(8, 15), parse_position_val("1..3", 8).unwrap());
+        assert_eq!(BitsPositionParsed::Range(8, 23), parse_position_val("1..3", 8).unwrap());
     }
 
     {
