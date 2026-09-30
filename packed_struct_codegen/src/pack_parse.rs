@@ -213,17 +213,15 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
                 return Err(syn::Error::new(type_array.span(), "Element and array size mismatch!"));
             }
 
-            let mut elements = vec![];
-            for i in 0..size {
-                let s = bit_range.start + (i * element_size_bits);
-                let element_bit_range = s..(s + element_size_bits - 1);
-                elements.push(parse_reg_field(field, &type_array.elem, &element_bit_range, default_endianness)?);
-            }
-            
-            return Ok(FieldKind::Array {
+            // all the elements share the type and width, so only the first one is parsed
+            let first_element_bit_range = bit_range.start..(bit_range.start + element_size_bits - 1);
+            let element = parse_reg_field(field, &type_array.elem, &first_element_bit_range, default_endianness)?;
+
+            return Ok(FieldKind::Array(Box::new(FieldArray {
                 ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?,
-                elements
-            });
+                size,
+                element
+            })));
         },
         _ => ()
     };
@@ -427,7 +425,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct<'_>> {
         } else {
             fields_parsed.iter().map(|f| match f {
                 FieldKind::Regular { field, .. } => field.bit_range_rust.end,
-                FieldKind::Array { elements, .. } => elements.last().unwrap().bit_range_rust.end
+                FieldKind::Array(array) => array.bit_range().end + 1
             }).max().unwrap()
         }
     };
@@ -440,29 +438,29 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct<'_>> {
 
     // check for overlaps
     {
-        let mut bits = vec![None; num_bytes * 8];
+        // the name of the field (or array element) that occupies the given bit
+        let field_name_at = |field: &FieldKind, bit: usize| match field {
+            FieldKind::Regular { ident, .. } => ident.to_string(),
+            FieldKind::Array(array) => {
+                let i = (bit - array.element.bit_range.start) / array.element_bits();
+                format!("{}[{}]", array.ident, i)
+            }
+        };
+
+        let mut bits: Vec<Option<&FieldKind>> = vec![None; num_bytes * 8];
         for field in &fields_parsed {
-            let mut find_overlaps = |name: String, range: &Range<usize>| {
-                for i in range.start .. (range.end+1) {
-                    if let Some(Some(n)) = bits.get(i) {
-                        return Err(syn::Error::new(name.span(), format!("Overlap in bits between fields {} and {}", n, name)));
-                    }
-
-                    bits[i] = Some(name.clone());
-                }
-
-                Ok(())
+            let range = match field {
+                FieldKind::Regular { field, .. } => field.bit_range.clone(),
+                FieldKind::Array(array) => array.bit_range()
             };
 
-            match field {
-                FieldKind::Regular { field, ident } => {
-                    find_overlaps(ident.to_string(), &field.bit_range)?;
-                },
-                FieldKind::Array { ident, elements, .. } => {
-                    for (i, field) in elements.iter().enumerate() {
-                        find_overlaps(format!("{}[{}]", ident, i), &field.bit_range)?;
-                    }
+            for i in range.start .. (range.end+1) {
+                if let Some(Some(other)) = bits.get(i) {
+                    let name = field_name_at(field, i);
+                    return Err(syn::Error::new(name.span(), format!("Overlap in bits between fields {} and {}", field_name_at(other, i), name)));
                 }
+
+                bits[i] = Some(field);
             }
         }
     }

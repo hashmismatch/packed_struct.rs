@@ -5,7 +5,6 @@ use crate::common::*;
 use syn::spanned::Spanned;
 use crate::utils::*;
 
-use crate::utils_syn::tokens_to_string;
 
 pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream> {
 
@@ -21,62 +20,46 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
     let mut unpack_fields = vec![];
     let mut unpack_struct_set = vec![];
 
-    {
-        let mut reg  = |src: &dyn quote::ToTokens, target: &dyn quote::ToTokens, field: &FieldRegular| -> syn::Result<()> {
-            let bits = pack_bits(field);
+    for field in &parsed.fields {
+        match field {
+            FieldKind::Regular { ident, field } => {
+                let bits = pack_bits(field, None);
 
-            let pack = pack_field(src, field);
-            let unpack = unpack_field(field)?;
+                let pack = pack_field(ident, field);
+                let unpack = unpack_field(field)?;
 
-            let pack_bits = bits.pack;
-            let unpack_bits = bits.unpack;
+                let pack_bits = bits.pack;
+                let unpack_bits = bits.unpack;
 
-            pack_fields.push(quote! {
-                {
-                    let packed = { #pack };
-                    #pack_bits
-                }
-            });
-
-            unpack_fields.push(quote! {
-                let #target = {
-                    let bytes = { #unpack_bits };
-                    #unpack
-                };
-            });
-
-            Ok(())
-        };
-
-
-        for field in &parsed.fields {
-            match field {
-                FieldKind::Regular { ident, field } => {
-                    reg(ident, ident, field)?;
-
-                    unpack_struct_set.push(quote! {
-                        #ident
-                    });
-                },
-                FieldKind::Array { ident, elements, .. } => {
-                    let mut array_unpacked_elements = vec![];
-                    for (i, field) in elements.iter().enumerate() {
-                        let src: syn::ExprIndex = syn::parse_str(&format!("{}[{}]", tokens_to_string(ident), i))?;
-                        let target: syn::Ident = syn::parse_str(&format!("{}_{}", tokens_to_string(ident), i))?;
-
-                        reg(&src, &target, field)?;
-                        array_unpacked_elements.push(target);
+                pack_fields.push(quote! {
+                    {
+                        let packed = { #pack };
+                        #pack_bits
                     }
+                });
 
-                    unpack_struct_set.push(quote! {
-                        #ident: [
-                            #(#array_unpacked_elements),*
-                        ]
-                    });
-                }
-            }        
+                unpack_fields.push(quote! {
+                    let #ident = {
+                        let bytes = { #unpack_bits };
+                        #unpack
+                    };
+                });
+            },
+            FieldKind::Array(array) => {
+                let codegen = array_codegen(array)?;
+
+                pack_fields.push(codegen.pack);
+                unpack_fields.push(codegen.unpack);
+            }
         }
 
+        let ident = match field {
+            FieldKind::Regular { ident, .. } => ident,
+            FieldKind::Array(array) => &array.ident
+        };
+        unpack_struct_set.push(quote! {
+            #ident
+        });
     }
 
     let result_ty = result_type();
@@ -145,26 +128,138 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
 
 
 
+struct ArrayCodegen {
+    pack: proc_macro2::TokenStream,
+    unpack: proc_macro2::TokenStream
+}
+
+/// Packs and unpacks the array with a loop over its elements, so that the amount of
+/// generated code doesn't depend on the size of the array.
+///
+/// The elements only differ in their bit offset. The offset within a byte repeats every
+/// `period` elements, so the code is generated once for each of those alignments and
+/// selected at runtime, together with the element's starting byte.
+fn array_codegen(array: &FieldArray) -> syn::Result<ArrayCodegen> {
+    fn gcd(a: usize, b: usize) -> usize {
+        if b == 0 { a } else { gcd(b, a % b) }
+    }
+
+    let ident = &array.ident;
+    let size = array.size;
+    let element_ty = &array.element.ty;
+    let element_bits = array.element_bits();
+    let start_bit = array.element.bit_range.start;
+
+    let period = 8 / gcd(element_bits, 8);
+    // bytes taken by `period` elements
+    let stride = period * element_bits / 8;
+
+    let base = syn::Ident::new("base", proc_macro2::Span::call_site());
+    let chunk = if period == 1 { quote! { i } } else { quote! { (i / #period) } };
+    let chunk_offset = if stride == 1 { chunk } else { quote! { #chunk * #stride } };
+
+    let mut pack_arms = vec![];
+    let mut unpack_arms = vec![];
+
+    for j in 0..period.min(size) {
+        let element_start_bit = start_bit + (j * element_bits);
+        let start_byte = element_start_bit / 8;
+        let element = array.element.with_start_bit(element_start_bit % 8);
+
+        let base_value = if start_byte == 0 { chunk_offset.clone() } else { quote! { #start_byte + #chunk_offset } };
+        let bits = pack_bits(&element, Some(&base));
+        let pack = pack_field(&quote! { #ident[i] }, &element);
+        let unpack = unpack_field(&element)?;
+
+        let pack_bits = bits.pack;
+        let unpack_bits = bits.unpack;
+
+        pack_arms.push(quote! {
+            let #base = #base_value;
+            let packed = { #pack };
+            #pack_bits
+        });
+
+        unpack_arms.push(quote! {
+            let #base = #base_value;
+            let bytes = { #unpack_bits };
+            Ok({ #unpack })
+        });
+    }
+
+    let select_arm = |arms: Vec<proc_macro2::TokenStream>| {
+        if arms.len() == 1 {
+            return arms.into_iter().next().unwrap();
+        }
+
+        let last = arms.len() - 1;
+        let arms = arms.iter().enumerate().map(|(j, arm)| {
+            if j == last {
+                quote! { _ => { #arm } }
+            } else {
+                quote! { #j => { #arm } }
+            }
+        });
+
+        quote! {
+            match i % #period {
+                #(#arms)*
+            }
+        }
+    };
+
+    let pack = select_arm(pack_arms);
+    let unpack = select_arm(unpack_arms);
+    let result_ty = result_type();
+
+    Ok(ArrayCodegen {
+        pack: quote! {
+            for i in 0..#size {
+                #pack
+            }
+        },
+        unpack: quote! {
+            let #ident: [#element_ty; #size] = ::packed_struct::__private::try_array_from_fn(|i| -> #result_ty <#element_ty, ::packed_struct::PackingError> {
+                #unpack
+            })?;
+        }
+    })
+}
+
 struct PackBitsCopy {
     pack: proc_macro2::TokenStream,
     unpack: proc_macro2::TokenStream
 }
 
-fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
+/// Emits the index of a byte in the packed buffer, relative to the runtime byte `base`, if any.
+fn byte_index(base: Option<&syn::Ident>, offset: usize) -> proc_macro2::TokenStream {
+    match (base, offset) {
+        (None, offset) => quote! { #offset },
+        (Some(base), 0) => quote! { #base },
+        (Some(base), offset) => quote! { #base + #offset }
+    }
+}
+
+/// Copies the bits between the packed field and the buffer. When `base` is set, the field's
+/// byte positions are emitted relative to it, so that the same code can be reused at
+/// different offsets (array elements).
+fn pack_bits(field: &FieldRegular, base: Option<&syn::Ident>) -> PackBitsCopy {
     // memcpy
     if (field.bit_range_rust.start % 8) == 0 && (field.bit_range_rust.end % 8) == 0 &&
        (field.bit_range_rust.len() % 8) == 0 && field.bit_range_rust.len() >= 8 
     {
         let start = field.bit_range_rust.start / 8;
         let end = field.bit_range_rust.end / 8;
+        let start_index = byte_index(base, start);
+        let end_index = byte_index(base, end);
         
         PackBitsCopy {
             pack: quote! {
-                target[#start..#end].copy_from_slice(&packed);
+                target[#start_index..#end_index].copy_from_slice(&packed);
             },
             unpack: quote! {
                 let mut b = [0; (#end - #start)];
-                b[..].copy_from_slice(&src[#start..#end]);
+                b[..].copy_from_slice(&src[#start_index..#end_index]);
                 b
             }
         }
@@ -190,17 +285,19 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
         let mut unpack = vec![];
 
         for (i, dst_byte) in (start_byte..start_byte + packed_field_len).enumerate() {
+            let dst_index = byte_index(base, dst_byte);
+            let dst_next_index = byte_index(base, dst_byte + 1);
             let src_mask = ones_u8(l as u8);                        
             let bit_shift = emit_shift(shift);
             pack.push(quote! {
                 let _a = #i;
-                target[#dst_byte] |= (packed[#i] & #src_mask) #bit_shift;  
+                target[#dst_index] |= (packed[#i] & #src_mask) #bit_shift;  
             });
             
             let bit_shift = emit_shift(-shift);
             unpack.push(quote! {
                 let _a = #i;
-                b[#i] |= (src[#dst_byte] #bit_shift) & #src_mask;
+                b[#i] |= (src[#dst_index] #bit_shift) & #src_mask;
             });
 
             if shift < 0 && (dst_byte - start_byte) <= packed_field_len {
@@ -210,13 +307,13 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
                 let bit_shift = emit_shift(shift);                
                 pack.push(quote! {
                     let _b = #i;
-                    target[#dst_byte + 1] |= (((packed[#i] & #src_mask) as u16) #bit_shift) as u8;  
+                    target[#dst_next_index] |= (((packed[#i] & #src_mask) as u16) #bit_shift) as u8;  
                 });
 
                 let bit_shift = emit_shift(-shift);
                 unpack.push(quote! {
                     let _b = #i;
-                    b[#i] |= (((src[#dst_byte + 1] as u16) #bit_shift) & #src_mask as u16) as u8;
+                    b[#i] |= (((src[#dst_next_index] as u16) #bit_shift) & #src_mask as u16) as u8;
                 });
             } else if shift > 0 && (dst_byte - start_byte) <= packed_field_len && i < packed_field_len - 1 {
                 let shift = -(8-shift);
@@ -225,13 +322,13 @@ fn pack_bits(field: &FieldRegular) -> PackBitsCopy {
 
                 pack.push(quote! {
                     let _c = #i;
-                    target[#dst_byte] |= (((packed[#i + 1] & #src_mask) as u16) #bit_shift) as u8;  
+                    target[#dst_index] |= (((packed[#i + 1] & #src_mask) as u16) #bit_shift) as u8;  
                 });
 
                 let bit_shift = emit_shift(-shift);
                 unpack.push(quote! {
                     let _c = #i;
-                    b[#i + 1] |= (((src[#dst_byte] as u16) #bit_shift) & #src_mask as u16) as u8;
+                    b[#i + 1] |= (((src[#dst_index] as u16) #bit_shift) & #src_mask as u16) as u8;
                 });
             }
 
