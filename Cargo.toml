@@ -1,4 +1,5 @@
 [workspace]
+resolver = "3"
 members = [
     "packed_struct/",
     "packed_struct_codegen/",
@@ -6,6 +7,26 @@ members = [
     "packed_struct_examples/"
 ]
 
+# Built separately: a workspace-wide build would unify packed_struct_codegen's
+# `std` feature (enabled by packed_struct_tests) and emit std paths into this no_std crate.
 exclude = [
     "packed_struct_nostd_tests/"
 ]
+
+[workspace.package]
+version = "0.12.0"
+authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/hashmismatch/packed_struct.rs"
+
+[workspace.dependencies]
+packed_struct = { path = "packed_struct/", version = "0.12.0", default-features = false }
+packed_struct_codegen = { path = "packed_struct_codegen/", version = "0.12.0" }
+syn = { version = "3.0.6", features = ["full"] }
+quote = "1.0.47"
+proc-macro2 = "1.0.107"
+serde = { version = "1.0.229", default-features = false }
+bitvec = { version = "1.1.1", default-features = false }
+error-chain = "0.12.4"

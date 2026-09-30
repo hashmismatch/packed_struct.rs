@@ -1,11 +1,16 @@
 [package]
 name = "packed_struct_tests"
 version = "0.1.0"
-authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 publish = false
-edition = "2018"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
-packed_struct = { path = "../packed_struct/", features = ["byte_types_64", "use_serde"] }
-error-chain = "0.12.0"
-serde = "1.0"
+packed_struct = { workspace = true, features = ["std", "byte_types_64", "use_serde"] }
+error-chain.workspace = true
+serde = { workspace = true, features = ["std"] }
+
+[lints.rust]
+# emitted by the error_chain! macro expansion in tests/packing_issue_10.rs
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(has_error_description_deprecated)"] }

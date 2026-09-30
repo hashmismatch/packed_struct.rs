@@ -1,8 +1,5 @@
 #![no_std]
 
-#[macro_use]
-extern crate packed_struct;
-
 use packed_struct::prelude::*;
 
 /// Control register, address 0xA0.
@@ -48,8 +45,8 @@ mod tests {
     fn nostd_usage() {
         use packed_struct::prelude::*;
 
-        use ControlRegister;
-        use PowerMode;
+        use crate::ControlRegister;
+        use crate::PowerMode;
 
         let reg = ControlRegister {
             power_mode: PowerMode::LowPower,

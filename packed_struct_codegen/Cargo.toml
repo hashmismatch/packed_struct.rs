@@ -1,16 +1,17 @@
 [package]
 name = "packed_struct_codegen"
 description = "This crate implements the code generation for the packed_struct library."
-repository = "https://github.com/hashmismatch/packed_struct.rs"
-version = "0.11.0"
-license = "MIT OR Apache-2.0"
-authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
-edition = "2018"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
-quote = "1.0"
-syn =  { version = "2.0", features = ["full"] }
-proc-macro2 = "1.0"
+quote.workspace = true
+syn.workspace = true
+proc-macro2.workspace = true
 
 [lib]
 proc-macro = true

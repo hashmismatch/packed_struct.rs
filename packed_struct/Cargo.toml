@@ -1,27 +1,26 @@
 [package]
 name = "packed_struct"
 description = "Binary-level structure packing and unpacking generator"
-repository = "https://github.com/hashmismatch/packed_struct.rs"
 homepage = "http://www.hashmismatch.net/libraries/packed-struct/"
-version = "0.11.0"
-rust-version = "1.51"
-authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
-license = "MIT OR Apache-2.0"
 keywords = ["enum", "packing", "serialization"]
 categories = ["encoding"]
 readme = "../README.md"
-edition = "2018"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
-packed_struct_codegen = { path = "../packed_struct_codegen/", version = "0.11.0" }
-serde = { version = "1.0", optional = true, default-features = false }
-serde_derive = { version = "1.0", optional = true }
-bitvec = { version = "1.0", default-features = false }
+packed_struct_codegen.workspace = true
+serde = { workspace = true, optional = true }
+bitvec.workspace = true
 
 [features]
 default = ["std"]
-std = ["serde/std", "packed_struct_codegen/std"]
+std = ["serde?/std", "packed_struct_codegen/std"]
 alloc = ["packed_struct_codegen/alloc"]
 byte_types_64 = []
 byte_types_256 = []
-use_serde = ["serde", "serde_derive"]
+use_serde = ["dep:serde", "serde/derive"]

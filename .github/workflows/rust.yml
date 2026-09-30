@@ -14,16 +14,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
     - name: Run Clippy on generated test code - fail on warnings
       run: cargo clippy -p packed_struct_tests --all-targets -- -D warnings
+    - name: Check feature combinations
+      run: |
+        cargo check -p packed_struct --no-default-features
+        cargo check -p packed_struct --no-default-features --features alloc
+        cargo check -p packed_struct --all-features
     - name: Rust no_std tests
       run: cd packed_struct_nostd_tests && cargo test --verbose
-  
+
+  msrv:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+    - uses: dtolnay/rust-toolchain@1.85
+    - name: Check on MSRV
+      run: cargo check --workspace --all-targets
+
   build-cross:
     runs-on: ubuntu-latest
     needs: [build]
@@ -34,7 +51,8 @@ jobs:
         target: [aarch64-unknown-linux-gnu, arm-unknown-linux-gnueabihf, mips64-unknown-linux-gnuabi64, riscv64gc-unknown-linux-gnu ]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
+    - uses: dtolnay/rust-toolchain@stable
     - name: Install rust-embedded/cross
       run: cargo install cross
     - name: Cross-build

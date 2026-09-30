@@ -1,7 +1,3 @@
-extern crate packed_struct;
-extern crate serde;
-
-
 use packed_struct::prelude::*;
 
 #[test]

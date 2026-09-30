@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 pub use std::prelude::v1::*;
 pub use std::cell::RefCell;
 pub use std::rc::Rc;

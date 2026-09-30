@@ -8,6 +8,7 @@ pub enum SelfTestMode {
     NotAllowed = 3,
 }
 
+#[allow(dead_code)]
 #[derive(PrimitiveEnum_u8, Copy, Clone)]
 enum AddressCommand {
     PageProgram = 0x02,
@@ -15,6 +16,7 @@ enum AddressCommand {
     Read = 0x03
 }
 
+#[allow(dead_code)]
 #[derive(PrimitiveEnum_u8, Copy, Clone)]
 enum TestSmall {
     PageProgram = 0,
