@@ -460,29 +460,25 @@ macro_rules! bytes8_impl {
     };
 }
 
-bytes1_impl!(u8, unsigned);
-bytes1_impl!(i8, signed);
+// Every native type supports all the bit widths that fit into it, so a
+// 12 bit field can be stored in a u16, u32 or u64.
+macro_rules! native_impl {
+    ($T: ident, $IS_SIGNED: tt; $($bytes_impl: ident),+) => {
+        $( $bytes_impl!($T, $IS_SIGNED); )+
+    };
+}
 
-bytes2_impl!(u16, unsigned);
-bytes2_impl!(i16, signed);
+native_impl!(u8, unsigned; bytes1_impl);
+native_impl!(i8, signed; bytes1_impl);
 
-bytes3_impl!(u32, unsigned);
-bytes3_impl!(i32, signed);
+native_impl!(u16, unsigned; bytes1_impl, bytes2_impl);
+native_impl!(i16, signed; bytes1_impl, bytes2_impl);
 
-bytes4_impl!(u32, unsigned);
-bytes4_impl!(i32, signed);
+native_impl!(u32, unsigned; bytes1_impl, bytes2_impl, bytes3_impl, bytes4_impl);
+native_impl!(i32, signed; bytes1_impl, bytes2_impl, bytes3_impl, bytes4_impl);
 
-bytes5_impl!(u64, unsigned);
-bytes5_impl!(i64, signed);
-
-bytes6_impl!(u64, unsigned);
-bytes6_impl!(i64, signed);
-
-bytes7_impl!(u64, unsigned);
-bytes7_impl!(i64, signed);
-
-bytes8_impl!(u64, unsigned);
-bytes8_impl!(i64, signed);
+native_impl!(u64, unsigned; bytes1_impl, bytes2_impl, bytes3_impl, bytes4_impl, bytes5_impl, bytes6_impl, bytes7_impl, bytes8_impl);
+native_impl!(i64, signed; bytes1_impl, bytes2_impl, bytes3_impl, bytes4_impl, bytes5_impl, bytes6_impl, bytes7_impl, bytes8_impl);
 
 /// A positive bit mask of the desired width.
 /// 
@@ -569,6 +565,28 @@ fn test_roundtrip_u20() {
     assert_eq!(val, *from_msb);    
 }
 
+
+#[test]
+fn test_narrow_int_in_wide_native() {
+    let num: Integer<u32, Bits::<12>> = 0xFABC.into();
+    assert_eq!(0xABC, *num);
+    assert_eq!([0x0A, 0xBC], num.to_msb_bytes().unwrap());
+    assert_eq!([0xBC, 0x0A], num.to_lsb_bytes().unwrap());
+    assert_eq!(0xABC, *<Integer<u32, Bits::<12>>>::from_msb_bytes(&[0x0A, 0xBC]).unwrap());
+    assert_eq!(0xABC, *<Integer<u32, Bits::<12>>>::from_lsb_bytes(&[0xBC, 0x0A]).unwrap());
+
+    let num: Integer<i64, Bits::<20>> = (-2).into();
+    assert_eq!(-2, *num);
+    assert_eq!([0xFF, 0xFF, 0xFE], num.to_msb_bytes().unwrap());
+    assert_eq!([0xFE, 0xFF, 0xFF], num.to_lsb_bytes().unwrap());
+    assert_eq!(-2, *<Integer<i64, Bits::<20>>>::from_msb_bytes(&[0x0F, 0xFF, 0xFE]).unwrap());
+    assert_eq!(-2, *<Integer<i64, Bits::<20>>>::from_lsb_bytes(&[0xFE, 0xFF, 0x0F]).unwrap());
+
+    let num: Integer<i16, Bits::<4>> = 0x7.into();
+    assert_eq!(7, *num);
+    let num: Integer<i16, Bits::<4>> = 0x8.into();
+    assert_eq!(-8, *num);
+}
 
 use super::packing::{PackingError, PackedStruct, PackedStructInfo};
 
