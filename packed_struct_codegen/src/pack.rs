@@ -21,7 +21,10 @@ pub struct FieldArray {
     pub ident: syn::Ident,
     pub size: usize,
     /// The first element of the array, with its absolute bit positions.
-    pub element: FieldRegular
+    pub element: FieldRegular,
+    /// The elements are stored in reverse order, the first element at the end of the range.
+    /// Used by little-endian structs, whose bytes are reversed after packing.
+    pub mirrored: bool
 }
 
 impl FieldArray {
@@ -45,6 +48,8 @@ pub struct FieldRegular {
     pub ty: syn::Type,
     pub serialization_wrappers: Vec<SerializationWrapper>,
     pub bit_width: usize,
+    /// Reverse the bytes of the packed field. Used for nested types in little-endian structs.
+    pub reverse_bytes: bool,
     /// The range as parsed by our parser. A single byte: 0..7
     pub bit_range: Range<usize>,
     /// The range that can be used by rust's slices. A single byte: 0..8
@@ -59,6 +64,7 @@ impl FieldRegular {
             ty: self.ty.clone(),
             serialization_wrappers: self.serialization_wrappers.clone(),
             bit_width: self.bit_width,
+            reverse_bytes: self.reverse_bytes,
             bit_range_rust: bit_range.start..(bit_range.end + 1),
             bit_range
         }
@@ -81,5 +87,7 @@ pub struct PackStruct<'a> {
     pub fields: Vec<FieldKind>,
     pub num_bytes: usize,
     pub num_bits: usize,
+    /// The struct is a single little-endian integer, see `byte_order`.
+    pub little_endian: bool,
     pub derive_input: &'a syn::DeriveInput
 }

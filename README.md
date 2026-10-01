@@ -222,7 +222,8 @@ Attribute | Values | Comment
 :--|:--|:--
 ```size_bytes``` | ```1``` ... n | Size of the packed byte stream. Defaults to the end of the last field, rounded up to whole bytes.
 ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if any field uses the ```bits``` or ```bytes``` attribute. ```lsb0``` also requires ```size_bytes``` and a range position on every field. See [MSB0 and LSB0 numbering](#msb0-and-lsb0-numbering).
-```endian``` | ```msb``` or ```lsb``` | Default integer endianness for the fields wider than 8 bits. Doesn't change the byte order of the whole structure.
+```endian``` | ```msb``` or ```lsb``` | Default integer endianness for the fields wider than 8 bits. Doesn't change the byte order of the whole structure, that is ```byte_order```. Defaults to ```lsb``` in structures with ```byte_order="lsb"```.
+```byte_order``` | ```msb``` or ```lsb``` | Byte order of the whole structure. ```lsb``` packs it as a single little-endian integer, see [Little-endian bitfields](#little-endian-bitfields). Requires ```bit_numbering="lsb0"```.
 
 ## Per-field attributes
 
@@ -259,35 +260,66 @@ In both modes, the packed array is read as one big-endian number. The ```endian`
 doesn't change that. It only sets the byte order inside each integer field that is wider than
 8 bits.
 
-This matters for data sheets that describe a little-endian register with LSB0 bit numbers.
-```bit_numbering="lsb0", endian="lsb"``` does **not** describe such a register. Instead, use
-```endian="msb"``` and convert the register to big-endian bytes before unpacking:
+This matters for formats that number the bits inside little-endian words: C structures with
+bitfields, the registers of most microcontrollers, USB Power Delivery and many network protocols.
+A field that crosses a byte boundary isn't contiguous in such a layout, so
+```bit_numbering="lsb0", endian="lsb"``` can't describe it. Use ```byte_order="lsb"``` instead.
+
+## Little-endian bitfields
+
+With ```byte_order="lsb"```, the whole structure is packed as a single little-endian integer:
+```lsb0``` bit `i` is bit `i % 8` of byte `i / 8`, so the field positions can be copied from the
+specification. Integer fields default to little-endian.
 
 ```rust
 use packed_struct::prelude::*;
 
+/// The frame header of the LIFX LAN protocol.
 #[derive(PackedStruct, Debug, PartialEq)]
-#[packed_struct(size_bytes="4", bit_numbering="lsb0", endian="msb")]
-pub struct Register {
-    #[packed_field(bits="0..4")]
-    low: u8,
-    #[packed_field(bits="16..32")]
-    high: u16,
+#[packed_struct(size_bytes="8", bit_numbering="lsb0", byte_order="lsb")]
+pub struct FrameHeader {
+    #[packed_field(bits="15:0")]
+    size: u16,
+    #[packed_field(bits="27:16")]
+    protocol: Integer<u16, packed_bits::Bits::<12>>,
+    #[packed_field(bits="28")]
+    addressable: bool,
+    #[packed_field(bits="29")]
+    tagged: bool,
+    #[packed_field(bits="31:30")]
+    origin: Integer<u8, packed_bits::Bits::<2>>,
+    #[packed_field(bits="63:32")]
+    source: u32,
 }
 
 fn main() -> Result<(), PackingError> {
-    // Four bytes as they arrive from a little-endian device.
-    let wire = 0x1234_5678u32.to_le_bytes();
+    let header = FrameHeader {
+        size: 49,
+        protocol: 1024.into(),
+        addressable: true,
+        tagged: false,
+        origin: 0.into(),
+        source: 2,
+    };
 
-    let reg = Register::unpack(&u32::from_le_bytes(wire).to_be_bytes())?;
-    assert_eq!(reg, Register { low: 0x8, high: 0x1234 });
-
-    // And back, to little-endian bytes.
-    let packed = u32::from_be_bytes(reg.pack()?).to_le_bytes();
-    assert_eq!(packed, 0x1234_0008u32.to_le_bytes());
+    // The 12-bit protocol is byte 2 and the low nibble of byte 3.
+    let packed = header.pack()?;
+    assert_eq!(packed, [0x31, 0x00, 0x00, 0x14, 0x02, 0x00, 0x00, 0x00]);
+    assert_eq!(FrameHeader::unpack(&packed)?, header);
     Ok(())
 }
 ```
+
+Inside such a structure:
+
+* ```endian="msb"``` marks a big-endian field. It has to start and end on a byte boundary.
+* The first element of an array is at the lowest bits, which is the lowest address. A ```[u8; 4]```
+  keeps its byte order.
+* Nested structures that start and end on byte boundaries keep their own layout. A nested
+  structure at any other position should use ```byte_order="lsb"``` too.
+
+The [LIFX example](https://github.com/hashmismatch/packed_struct.rs/blob/master/packed_struct_examples/src/lifx.rs)
+describes the complete message header.
 
 # More examples
 

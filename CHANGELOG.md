@@ -113,6 +113,39 @@ restore.
 
 ### Added
 
+- **Little-endian bitfields, `byte_order="lsb"`** ([#29], [#39], [#92], [#96]). Many formats number
+  their bits inside little-endian words: C structures with bitfields, microcontroller registers,
+  USB Power Delivery, and network protocols like LIFX. A field that crosses a byte boundary there,
+  such as a 12-bit field next to 4 bits of flags, isn't contiguous in packed_struct's big-endian
+  view of the bytes, so it couldn't be described at all. With
+  `#[packed_struct(bit_numbering="lsb0", size_bytes="N", byte_order="lsb")]`, the structure is
+  packed as a single little-endian integer and the bit positions are the ones from the
+  specification:
+
+  ```rust
+  #[derive(PackedStruct)]
+  #[packed_struct(bit_numbering="lsb0", size_bytes="8", byte_order="lsb")]
+  pub struct FrameHeader {
+      #[packed_field(bits="15:0")]
+      size: u16,
+      #[packed_field(bits="27:16")]  // byte 2 and the low nibble of byte 3
+      protocol: Integer<u16, packed_bits::Bits::<12>>,
+      #[packed_field(bits="28")]
+      addressable: bool,
+      #[packed_field(bits="29")]
+      tagged: bool,
+      #[packed_field(bits="31:30")]
+      origin: Integer<u8, packed_bits::Bits::<2>>,
+      #[packed_field(bits="63:32")]
+      source: u32,
+  }
+  ```
+
+  Integer fields default to little-endian. Array elements start at the lowest address. The rustdoc
+  table and the `Display` output show the LSB0 positions. The default, `byte_order="msb"`, generates
+  the same code as before.
+- **LIFX example.** `packed_struct_examples/src/lifx.rs` describes the LIFX LAN message header and
+  the `SetColor` message, and is tested against the example packet from the LIFX documentation.
 - **Integers narrower than their native type** in every native type that can hold them.
   `Integer<T, Bits<N>>` was only implemented when `N` needed exactly as many bytes as `T`, so a
   `u32` in 12 bits, a `u16` in 4 bits, or `[u32; 4]` with `element_size_bits="12"` didn't compile.
@@ -261,9 +294,11 @@ restore.
 [#23]: https://github.com/hashmismatch/packed_struct.rs/pull/23
 [#24]: https://github.com/hashmismatch/packed_struct.rs/pull/24
 [#26]: https://github.com/hashmismatch/packed_struct.rs/pull/26
+[#29]: https://github.com/hashmismatch/packed_struct.rs/issues/29
 [#31]: https://github.com/hashmismatch/packed_struct.rs/pull/31
 [#32]: https://github.com/hashmismatch/packed_struct.rs/pull/32
 [#37]: https://github.com/hashmismatch/packed_struct.rs/pull/37
+[#39]: https://github.com/hashmismatch/packed_struct.rs/issues/39
 [#44]: https://github.com/hashmismatch/packed_struct.rs/pull/44
 [#49]: https://github.com/hashmismatch/packed_struct.rs/pull/49
 [#50]: https://github.com/hashmismatch/packed_struct.rs/pull/50
@@ -284,6 +319,7 @@ restore.
 [#84]: https://github.com/hashmismatch/packed_struct.rs/pull/84
 [#92]: https://github.com/hashmismatch/packed_struct.rs/issues/92
 [#95]: https://github.com/hashmismatch/packed_struct.rs/pull/95
+[#96]: https://github.com/hashmismatch/packed_struct.rs/issues/96
 [#101]: https://github.com/hashmismatch/packed_struct.rs/pull/101
 [#102]: https://github.com/hashmismatch/packed_struct.rs/issues/102
 [#105]: https://github.com/hashmismatch/packed_struct.rs/pull/105

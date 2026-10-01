@@ -64,6 +64,16 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
 
     let result_ty = result_type();
 
+    // a little-endian struct is packed big-endian and then reversed as a whole
+    let (pack_reverse, unpack_reverse) = if parsed.little_endian {
+        (
+            quote! { target.reverse(); },
+            quote! { let src: &[u8; #num_bytes] = &{ let mut s = *src; s.reverse(); s }; }
+        )
+    } else {
+        (quote! {}, quote! {})
+    };
+
     let debug_fmt = if include_debug_codegen() {
         let q = struct_runtime_formatter(parsed)?;
 
@@ -97,6 +107,8 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
 
                 #(#pack_fields)*
 
+                #pack_reverse
+
                 Ok(target)
             }
 
@@ -104,6 +116,8 @@ pub fn derive_pack(parsed: &PackStruct) -> syn::Result<proc_macro2::TokenStream>
             #[allow(unused_imports, unused_parens)]
             fn unpack(src: &Self::ByteArray) -> #result_ty <#name, ::packed_struct::PackingError> {
                 use ::packed_struct::*;
+
+                #unpack_reverse
 
                 #(#unpack_fields)*
                 
@@ -168,7 +182,7 @@ fn array_codegen(array: &FieldArray) -> syn::Result<ArrayCodegen> {
 
         let base_value = if start_byte == 0 { chunk_offset.clone() } else { quote! { #start_byte + #chunk_offset } };
         let bits = pack_bits(&element, Some(&base));
-        let pack = pack_field(&quote! { #ident[i] }, &element);
+        let pack = pack_field(&quote! { #ident[e] }, &element);
         let unpack = unpack_field(&element)?;
 
         let pack_bits = bits.pack;
@@ -212,14 +226,24 @@ fn array_codegen(array: &FieldArray) -> syn::Result<ArrayCodegen> {
     let unpack = select_arm(unpack_arms);
     let result_ty = result_type();
 
+    // `i` is the element's slot in the packed bits. Mirrored arrays store the elements in
+    // reverse order, so that they end up in order once the struct's bytes are reversed.
+    let (element_index, slot_index) = if array.mirrored {
+        (quote! { #size - 1 - i }, quote! { let i = #size - 1 - e; })
+    } else {
+        (quote! { i }, quote! { let i = e; })
+    };
+
     Ok(ArrayCodegen {
         pack: quote! {
             for i in 0..#size {
+                let e = #element_index;
                 #pack
             }
         },
         unpack: quote! {
-            let #ident: [#element_ty; #size] = ::packed_struct::__private::try_array_from_fn(|i| -> #result_ty <#element_ty, ::packed_struct::PackingError> {
+            let #ident: [#element_ty; #size] = ::packed_struct::__private::try_array_from_fn(|e| -> #result_ty <#element_ty, ::packed_struct::PackingError> {
+                #slot_index
                 #unpack
             })?;
         }
@@ -390,9 +414,19 @@ fn pack_field(name: &dyn quote::ToTokens, field: &FieldRegular) -> proc_macro2::
         }
     }
 
-    quote! {
-        {
-            (& #output).pack()?
+    if field.reverse_bytes {
+        quote! {
+            {
+                let mut packed = (& #output).pack()?;
+                ::packed_struct::types::bits::ByteArray::as_mut_bytes_slice(&mut packed).reverse();
+                packed
+            }
+        }
+    } else {
+        quote! {
+            {
+                (& #output).pack()?
+            }
         }
     }
 }
@@ -444,8 +478,16 @@ fn unpack_field(field: &FieldRegular) -> syn::Result<proc_macro2::TokenStream> {
             },
             (None, None) => {
                 let ty = &field.ty;
-                unpack = quote! {
-                    <#ty>::unpack(& #unpack)?
+                unpack = if field.reverse_bytes {
+                    quote! {
+                        let mut reversed = #unpack;
+                        reversed.reverse();
+                        <#ty>::unpack(&reversed)?
+                    }
+                } else {
+                    quote! {
+                        <#ty>::unpack(& #unpack)?
+                    }
                 };
             },
             (_, _) => {

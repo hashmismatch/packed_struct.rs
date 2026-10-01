@@ -41,10 +41,12 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
                 let start_bit = array.element.bit_range.start;
                 let element_bits = array.element_bits();
                 let last_bit = element_bits - 1;
-                
+                let size = array.size;
+                let slot = if array.mirrored { quote! { (#size - 1 - i) } } else { quote! { i } };
+
                 debug_fields.push(quote! {
                     for (i, element) in src.#ident.iter().enumerate() {
-                        let start = #start_bit + (i * #element_bits);
+                        let start = #start_bit + (#slot * #element_bits);
                         fields.push(::packed_struct::debug_fmt::DebugBitField {
                             name: format!("{}[{}]", #name_str, i).into(),
                             bits: start..(start + #last_bit),
@@ -59,6 +61,19 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
 
     let num_bytes = parsed.num_bytes;
     let result_ty = result_type();
+
+    // the fields' bit positions point into the struct before its bytes were reversed
+    let fmt_fields = if parsed.little_endian {
+        quote! {
+            let mut packed = packed;
+            packed.reverse();
+            ::packed_struct::debug_fmt::packable_fmt_fields_lsb0(fmt, &packed, &fields)
+        }
+    } else {
+        quote! {
+            ::packed_struct::debug_fmt::packable_fmt_fields(fmt, &packed, &fields)
+        }
+    };
 
     let q = quote! {
         #[doc(hidden)]
@@ -75,7 +90,7 @@ pub fn struct_runtime_formatter(parsed: &PackStruct) -> syn::Result<proc_macro2:
                 
                 let fields = #debug_fields_fn(self);
                 let packed: [u8; #num_bytes] = self.pack()?;
-                ::packed_struct::debug_fmt::packable_fmt_fields(fmt, &packed, &fields)
+                #fmt_fields
             }
 
             fn packed_struct_display_header() -> &'static str {
@@ -117,11 +132,19 @@ pub fn type_docs(parsed: &PackStruct) -> proc_macro2::TokenStream {
     ));
 
     doc_html("<table>\r\n");
-    doc_html("<thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
+    if parsed.little_endian {
+        doc_html("<thead><tr><td>Bit, LSB0 (little-endian)</td><td>Name</td><td>Type</td></tr></thead>\r\n");
+    } else {
+        doc_html("<thead><tr><td>Bit, MSB0</td><td>Name</td><td>Type</td></tr></thead>\r\n");
+    }
     doc_html("<tbody>\r\n");
 
     {
+        let num_bits = parsed.num_bits;
+        let little_endian = parsed.little_endian;
         let mut emit_field_docs = |bits: &Range<usize>, field_ident: String, ty: String| {
+            // little-endian structs show the user's LSB0 positions, highest bit first
+            let bits = if little_endian { (num_bits - 1 - bits.start)..(num_bits - 1 - bits.end) } else { bits.clone() };
 
             let bits_str = {
                 if bits.start == bits.end {

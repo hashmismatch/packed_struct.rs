@@ -1,6 +1,7 @@
 use packed_struct::prelude::*;
 
 pub mod example1;
+pub mod lifx;
 
 
 /// MultiWii status structure

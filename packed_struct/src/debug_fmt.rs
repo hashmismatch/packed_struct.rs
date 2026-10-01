@@ -51,6 +51,18 @@ pub struct DebugBitField<'a> {
 /// Writes a table of the fields, with their bit positions, packed bits and values.
 /// The packed bits are omitted if any of the fields is wider than 32 bits.
 pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[DebugBitField]) -> fmt::Result {
+    fmt_fields(f, packed_bytes, fields, false)
+}
+
+/// Same as [`packable_fmt_fields`], for structures with `byte_order="lsb"`. `packed_bytes`
+/// are the packed bytes in reverse, so that the struct reads as a big-endian integer and the
+/// fields' MSB0 bit positions point into it. The positions are shown LSB0 numbered.
+#[doc(hidden)]
+pub fn packable_fmt_fields_lsb0(f: &mut Formatter, packed_bytes: &[u8], fields: &[DebugBitField]) -> fmt::Result {
+    fmt_fields(f, packed_bytes, fields, true)
+}
+
+fn fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[DebugBitField], lsb0: bool) -> fmt::Result {
     if fields.is_empty() {
 		return Ok(());
 	}
@@ -79,8 +91,8 @@ pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[Deb
                         base_value = field.display_value,
                         binary_value = debug_binary,
                         dummy = "",
-                        bits_start = field.bits.start,
-                        bits_end = field.bits.end,
+                        bits_start = if lsb0 { packed_bytes.len() * 8 - 1 - field.bits.start } else { field.bits.start },
+                        bits_end = if lsb0 { packed_bytes.len() * 8 - 1 - field.bits.end } else { field.bits.end },
                         width_bits = field.bits.len(),
                         spaces = max_bit_width - field.bits.len(),
                         name = field.name

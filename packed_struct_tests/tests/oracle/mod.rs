@@ -78,3 +78,17 @@ pub fn test_values(width: usize) -> Vec<u64> {
     v.dedup();
     v
 }
+
+/// Place a `width` wide integer at bit `start` of a little-endian integer, the layout of
+/// `byte_order="lsb"` structures: bit `i` is bit `i % 8` of byte `i / 8`, counted from the LSB.
+pub fn set_integer_le(buf: &mut [u8], start: usize, width: usize, raw: u64) {
+    for k in 0..width {
+        let pos = start + k;
+        let mask = 1u8 << (pos % 8);
+        if (raw >> k) & 1 == 1 {
+            buf[pos / 8] |= mask;
+        } else {
+            buf[pos / 8] &= !mask;
+        }
+    }
+}
