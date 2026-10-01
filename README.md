@@ -92,6 +92,115 @@ fn main() -> Result<(), PackingError> {
 }
 ```
 
+# Self-documenting structures
+
+The attributes that define the packing layout also document it. Every ```#[derive(PackedStruct)]```
+produces a packing table for rustdoc, and a ```Display``` implementation that shows the packed
+bytes and each field's bits at runtime. Both come from the same definition that drives packing,
+so they can't drift out of sync with the code.
+
+```rust
+use packed_struct::prelude::*;
+
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
+pub enum DataRate {
+    PowerDown = 0,
+    Rate10Hz = 1,
+    Rate50Hz = 2,
+    Rate100Hz = 3,
+}
+
+/// Control register of an imaginary sensor.
+#[derive(PackedStruct, Debug, PartialEq)]
+#[packed_struct(bit_numbering="msb0")]
+pub struct ControlRegister {
+    #[packed_field(bits="0..=1", ty="enum")]
+    data_rate: DataRate,
+    #[packed_field(bits="2..=4")]
+    _reserved: ReservedZero<packed_bits::Bits::<3>>,
+    #[packed_field(bits="5")]
+    x_enabled: bool,
+    #[packed_field(bits="6")]
+    y_enabled: bool,
+    #[packed_field(bits="7")]
+    z_enabled: bool,
+    #[packed_field(bits="8..=19", endian="msb")]
+    threshold: Integer<u16, packed_bits::Bits::<12>>,
+}
+
+fn main() {
+    let reg = ControlRegister {
+        data_rate: DataRate::Rate50Hz,
+        _reserved: Default::default(),
+        x_enabled: true,
+        y_enabled: false,
+        z_enabled: true,
+        threshold: 2047.into(),
+    };
+
+    // the full report: header, packed bytes in decimal, hex and binary, and the fields
+    println!("{}", reg);
+
+    // or choose the sections to show
+    let mut display = reg.packed_struct_display_formatter();
+    display.raw_decimal = false;
+    display.raw_binary = false;
+    println!("{}", display);
+}
+```
+
+## Packing table in the generated documentation
+
+The ```PackedStruct``` implementation of each structure is documented with its size and a table
+of its fields. In rustdoc, it shows up on the structure's page, under *Trait Implementations*:
+
+> **impl PackedStruct for ControlRegister**
+>
+> Structure that can be packed and unpacked into 3 bytes.
+>
+> Bit, MSB0 | Name | Type
+> :--|:--|:--
+> 0:1 | data_rate | `DataRate`
+> 2:4 | _reserved | `ReservedZero < packed_bits :: Bits :: < 3 > >`
+> 5 | x_enabled | `bool`
+> 6 | y_enabled | `bool`
+> 7 | z_enabled | `bool`
+> 8:19 | threshold | `Integer < u16, packed_bits :: Bits :: < 12 > >`
+
+Arrays of packed structures take a single row, with the element type, count and width.
+
+## Runtime packing visualization
+
+With the ```std``` or ```alloc``` feature enabled, the structure also implements ```Display```.
+It packs the structure and shows each field's bit range, its packed bits and its value, which
+makes it easy to compare against a data sheet or a captured byte stream. The first
+```println!``` above prints:
+
+```text
+ControlRegister (3 bytes)
+
+Decimal
+[133, 127, 240]
+
+Hex
+[0x85, 0x7F, 0xF0]
+
+Binary
+[0b10000101, 0b01111111, 0b11110000]
+
+ data_rate | bits   0:1   | 0b10           | "Rate50Hz"
+ _reserved | bits   2:4   | 0b000          | "Reserved - always 0"
+ x_enabled | bits   5:5   | 0b1            | "true"
+ y_enabled | bits   6:6   | 0b0            | "false"
+ z_enabled | bits   7:7   | 0b1            | "true"
+ threshold | bits   8:19  | 0b011111111111 | "2047"
+```
+
+```packed_struct_display_formatter()``` returns a ```PackedStructDisplay``` whose ```header```,
+```raw_decimal```, ```raw_hex```, ```raw_binary``` and ```fields``` flags turn each section on or
+off. If any field is wider than 32 bits, the field table leaves out the bit columns and shows
+just the names and values.
+
 # Packing attributes
 
 ## Syntax
@@ -113,7 +222,8 @@ Attribute | Values | Comment
 :--|:--|:--
 ```size_bytes``` | ```1``` ... n | Size of the packed byte stream. Defaults to the end of the last field, rounded up to whole bytes.
 ```bit_numbering``` | ```msb0``` or ```lsb0``` | Bit numbering for bit positioning of fields. Required if any field uses the ```bits``` or ```bytes``` attribute. ```lsb0``` also requires ```size_bytes``` and a range position on every field. See [MSB0 and LSB0 numbering](#msb0-and-lsb0-numbering).
-```endian``` | ```msb``` or ```lsb``` | Default integer endianness for the fields wider than 8 bits. Doesn't change the byte order of the whole structure.
+```endian``` | ```msb``` or ```lsb``` | Default integer endianness for the fields wider than 8 bits. Doesn't change the byte order of the whole structure, that is ```byte_order```. Defaults to ```lsb``` in structures with ```byte_order="lsb"```.
+```byte_order``` | ```msb``` or ```lsb``` | Byte order of the whole structure. ```lsb``` packs it as a single little-endian integer, see [Little-endian bitfields](#little-endian-bitfields). Requires ```bit_numbering="lsb0"```.
 
 ## Per-field attributes
 
@@ -150,35 +260,66 @@ In both modes, the packed array is read as one big-endian number. The ```endian`
 doesn't change that. It only sets the byte order inside each integer field that is wider than
 8 bits.
 
-This matters for data sheets that describe a little-endian register with LSB0 bit numbers.
-```bit_numbering="lsb0", endian="lsb"``` does **not** describe such a register. Instead, use
-```endian="msb"``` and convert the register to big-endian bytes before unpacking:
+This matters for formats that number the bits inside little-endian words: C structures with
+bitfields, the registers of most microcontrollers, USB Power Delivery and many network protocols.
+A field that crosses a byte boundary isn't contiguous in such a layout, so
+```bit_numbering="lsb0", endian="lsb"``` can't describe it. Use ```byte_order="lsb"``` instead.
+
+## Little-endian bitfields
+
+With ```byte_order="lsb"```, the whole structure is packed as a single little-endian integer:
+```lsb0``` bit `i` is bit `i % 8` of byte `i / 8`, so the field positions can be copied from the
+specification. Integer fields default to little-endian.
 
 ```rust
 use packed_struct::prelude::*;
 
+/// The frame header of the LIFX LAN protocol.
 #[derive(PackedStruct, Debug, PartialEq)]
-#[packed_struct(size_bytes="4", bit_numbering="lsb0", endian="msb")]
-pub struct Register {
-    #[packed_field(bits="0..4")]
-    low: u8,
-    #[packed_field(bits="16..32")]
-    high: u16,
+#[packed_struct(size_bytes="8", bit_numbering="lsb0", byte_order="lsb")]
+pub struct FrameHeader {
+    #[packed_field(bits="15:0")]
+    size: u16,
+    #[packed_field(bits="27:16")]
+    protocol: Integer<u16, packed_bits::Bits::<12>>,
+    #[packed_field(bits="28")]
+    addressable: bool,
+    #[packed_field(bits="29")]
+    tagged: bool,
+    #[packed_field(bits="31:30")]
+    origin: Integer<u8, packed_bits::Bits::<2>>,
+    #[packed_field(bits="63:32")]
+    source: u32,
 }
 
 fn main() -> Result<(), PackingError> {
-    // Four bytes as they arrive from a little-endian device.
-    let wire = 0x1234_5678u32.to_le_bytes();
+    let header = FrameHeader {
+        size: 49,
+        protocol: 1024.into(),
+        addressable: true,
+        tagged: false,
+        origin: 0.into(),
+        source: 2,
+    };
 
-    let reg = Register::unpack(&u32::from_le_bytes(wire).to_be_bytes())?;
-    assert_eq!(reg, Register { low: 0x8, high: 0x1234 });
-
-    // And back, to little-endian bytes.
-    let packed = u32::from_be_bytes(reg.pack()?).to_le_bytes();
-    assert_eq!(packed, 0x1234_0008u32.to_le_bytes());
+    // The 12-bit protocol is byte 2 and the low nibble of byte 3.
+    let packed = header.pack()?;
+    assert_eq!(packed, [0x31, 0x00, 0x00, 0x14, 0x02, 0x00, 0x00, 0x00]);
+    assert_eq!(FrameHeader::unpack(&packed)?, header);
     Ok(())
 }
 ```
+
+Inside such a structure:
+
+* ```endian="msb"``` marks a big-endian field. It has to start and end on a byte boundary.
+* The first element of an array is at the lowest bits, which is the lowest address. A ```[u8; 4]```
+  keeps its byte order.
+* Nested structures that start and end on byte boundaries keep their own layout. A nested
+  structure at any other position should use ```byte_order="lsb"``` too.
+
+The [LIFX example](https://github.com/hashmismatch/packed_struct.rs/blob/master/packed_struct_examples/src/lifx.rs)
+describes the complete message header.
 
 # More examples
 

@@ -200,13 +200,13 @@ fn get_field_mid_positioning(field: &syn::Field) -> syn::Result<FieldMidPosition
 }
 
 
-fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>) -> syn::Result<FieldKind> {
+fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>, little_endian: bool) -> syn::Result<FieldKind> {
 
     match &field.ty {
         syn::Type::Path(_) => {
             return Ok(
                 FieldKind::Regular {
-                    field: Box::new(parse_reg_field(field, &field.ty, bit_range, default_endianness)?),
+                    field: Box::new(parse_reg_field(field, &field.ty, bit_range, default_endianness, little_endian)?),
                     ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?
                 }
             );
@@ -222,12 +222,13 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
 
             // all the elements share the type and width, so only the first one is parsed
             let first_element_bit_range = bit_range.start..(bit_range.start + element_size_bits - 1);
-            let element = parse_reg_field(field, &type_array.elem, &first_element_bit_range, default_endianness)?;
+            let element = parse_reg_field(field, &type_array.elem, &first_element_bit_range, default_endianness, little_endian)?;
 
             return Ok(FieldKind::Array(Box::new(FieldArray {
                 ident: field.ident.clone().ok_or_else(|| syn::Error::new(field.span(), "Missing ident!"))?,
                 size,
-                element
+                element,
+                mirrored: little_endian
             })));
         },
         _ => ()
@@ -236,7 +237,10 @@ fn parse_field(field: &syn::Field, mp: &FieldMidPositioning, bit_range: &Range<u
     Err(syn::Error::new(field.span(), "Field not supported."))
 }
 
-fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>) -> syn::Result<FieldRegular> {
+/// With `little_endian`, the struct is a single little-endian integer. The derive packs it big-endian
+/// and reverses all of its bytes, so the integer fields use the opposite endianness internally and
+/// the bytes of the other fields are reversed.
+fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>, default_endianness: Option<IntegerEndianness>, little_endian: bool) -> syn::Result<FieldRegular> {
     
     let mut wrappers = vec![];
 
@@ -289,6 +293,19 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
             default_endianness
         };
 
+        if little_endian {
+            endiannes = match endiannes {
+                Some(IntegerEndianness::Lsb) => Some(IntegerEndianness::Msb),
+                Some(IntegerEndianness::Msb) if bit_width > 8 => {
+                    if (bit_range.start % 8) != 0 || (bit_width % 8) != 0 {
+                        return Err(syn::Error::new(field.span(), "Big-endian fields in a byte_order=\"lsb\" structure have to start and end on a byte boundary."));
+                    }
+                    Some(IntegerEndianness::Lsb)
+                },
+                e => e
+            };
+        }
+
         if bit_width <= 8 {
             endiannes = Some(IntegerEndianness::Msb);
         }
@@ -310,6 +327,7 @@ fn parse_reg_field(field: &syn::Field, ty: &syn::Type, bit_range: &Range<usize>,
         ty: ty.clone(),
         serialization_wrappers: wrappers,
         bit_width,
+        reverse_bytes: little_endian && !needs_endiannes_wrap,
         bit_range: bit_range.clone(),
         bit_range_rust: bit_range.start..(bit_range.end + 1)
     })
@@ -372,10 +390,29 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct<'_>> {
         }).next()
     };
 
+    let byte_order = attributes.iter().filter_map(|a| match *a {
+        PackStructAttribute::ByteOrder(b) => Some(b),
+        _ => None
+    }).next();
+
+    if byte_order.is_none() {
+        // parse_all() skips the values it can't parse, report them here
+        let raw = parse_sub_attributes(&ast.attrs, "packed_struct", "packed_field")?;
+        if let Some((_, val)) = raw.iter().find(|(name, _)| name == "byte_order") {
+            return Err(syn::Error::new(ast.ident.span(), format!("Invalid byte_order value: {}. Use \"msb\" or \"lsb\".", val)));
+        }
+    }
+
+    let little_endian = matches!(byte_order, Some(IntegerEndianness::Lsb));
+
+    if little_endian && bit_positioning != Some(BitNumbering::Lsb0) {
+        return Err(syn::Error::new(ast.ident.span(), "byte_order=\"lsb\" requires bit_numbering=\"lsb0\": the bits are numbered from the least significant bit of the little-endian integer."));
+    }
+
     let default_int_endianness = attributes.iter().filter_map(|a| match *a {
         PackStructAttribute::DefaultIntEndianness(i) => Some(i),
         _ => None
-    }).next();
+    }).next().or(if little_endian { Some(IntegerEndianness::Lsb) } else { None });
 
     let struct_size_bytes = attributes.iter().filter_map(|a| {
         if let PackStructAttribute::SizeBytes(size_bytes) = *a {
@@ -420,7 +457,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct<'_>> {
             };
             let bit_range = bits_position.to_bits_position().get_bits_range(mp.bit_width, &prev_bit_range);
 
-            fields_parsed.push(parse_field(field, &mp, &bit_range, default_int_endianness)?);
+            fields_parsed.push(parse_field(field, &mp, &bit_range, default_int_endianness, little_endian)?);
 
             prev_bit_range = Some(bit_range);
         }
@@ -476,6 +513,7 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct<'_>> {
         derive_input: ast,
         fields: fields_parsed,
         num_bytes,
-        num_bits
+        num_bits,
+        little_endian
     })
 }

@@ -5,7 +5,8 @@ pub enum PackStructAttributeKind {
     SizeBytes,
     //SizeBits,
     DefaultIntEndianness,
-    BitNumbering
+    BitNumbering,
+    ByteOrder
 }
 
 impl PackStructAttributeKind {
@@ -16,7 +17,8 @@ impl PackStructAttributeKind {
             SizeBytes => "size_bytes",
             //SizeBits => "size_bits",
             DefaultIntEndianness => "endian",
-            BitNumbering => "bit_numbering"
+            BitNumbering => "bit_numbering",
+            ByteOrder => "byte_order"
         }
     }
 }
@@ -25,7 +27,9 @@ pub enum PackStructAttribute {
     SizeBytes(usize),
     //SizeBits(usize),
     DefaultIntEndianness(IntegerEndianness),
-    BitNumbering(BitNumbering)
+    BitNumbering(BitNumbering),
+    /// The byte order of the whole structure. With `lsb`, the structure is a single little-endian integer.
+    ByteOrder(IntegerEndianness)
 }
 
 impl PackStructAttribute {
@@ -38,6 +42,11 @@ impl PackStructAttribute {
         if name == PackStructAttributeKind::BitNumbering.get_attr_name() {
             let b = BitNumbering::from_str(val).expect("Invalid bit numbering attribute value");
             return Ok(PackStructAttribute::BitNumbering(b));
+        }
+
+        if name == PackStructAttributeKind::ByteOrder.get_attr_name() {
+            let v = IntegerEndianness::from_str(val).ok_or_else(|| format!("Invalid byte order value: {}", val))?;
+            return Ok(PackStructAttribute::ByteOrder(v));
         }
 
         if name == PackStructAttributeKind::SizeBytes.get_attr_name() {
