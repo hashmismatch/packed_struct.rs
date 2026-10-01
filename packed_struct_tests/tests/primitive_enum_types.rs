@@ -84,3 +84,49 @@ fn prim_ty() {
         assert_eq!(9223372036854775807_i64, EnumI64::VariantMax.to_primitive());
     }
 }
+
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum EnumMixedI16 {
+    VariantMin = -1,
+    VariantMax = 200
+}
+
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum EnumMixedI32 {
+    VariantMin = -1,
+    VariantMax = 40000
+}
+
+#[repr(i64)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum EnumLargeNegativeI64 {
+    VariantMin = -3000000000,
+    VariantMax = 0
+}
+
+#[test]
+fn prim_ty_inferred_from_min_and_max() {
+    assert_eq!(-1_i16, EnumMixedI16::VariantMin.to_primitive());
+    assert_eq!(200_i16, EnumMixedI16::VariantMax.to_primitive());
+    assert_eq!(Some(EnumMixedI16::VariantMax), EnumMixedI16::from_primitive(200));
+
+    assert_eq!(-1_i32, EnumMixedI32::VariantMin.to_primitive());
+    assert_eq!(40000_i32, EnumMixedI32::VariantMax.to_primitive());
+    assert_eq!(Some(EnumMixedI32::VariantMax), EnumMixedI32::from_primitive(40000));
+
+    assert_eq!(-3000000000_i64, EnumLargeNegativeI64::VariantMin.to_primitive());
+    assert_eq!(Some(EnumLargeNegativeI64::VariantMin), EnumLargeNegativeI64::from_primitive(-3000000000));
+}
+
+#[repr(u16)]
+#[derive(PrimitiveEnum, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum EnumSuffixedU16 {
+    VariantMin = 0u16,
+    VariantMax = 1
+}
+
+#[test]
+fn prim_ty_from_literal_suffix() {
+    assert_eq!(0_u16, EnumSuffixedU16::VariantMin.to_primitive());
+    assert_eq!(1_u16, EnumSuffixedU16::VariantMax.to_primitive());
+}

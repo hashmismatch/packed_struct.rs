@@ -2,14 +2,20 @@
 
 use crate::internal_prelude::v1::*;
 
+/// Per-field formatting of a packed structure. Implemented by `#[derive(PackedStruct)]`.
 #[cfg(any(feature="alloc", feature="std"))]
 pub trait PackedStructDebug {
+    /// Writes a table of the fields, with their bit positions, packed bits and values.
     fn fmt_fields(&self, fmt: &mut Formatter) -> Result<(), FmtError>;
+    /// The name and packed size of the structure.
     fn packed_struct_display_header() -> &'static str;
 }
 
+/// Formats a range of bits of a byte slice with `{:b}`, MSB0 numbered.
 pub struct DebugBinaryByteSlice<'a> {
+    /// The bits to format. The `end` of the range is the last bit, inclusive.
     pub bits: &'a Range<usize>,
+    /// The packed bytes.
     pub slice: &'a [u8]
 }
 
@@ -31,13 +37,19 @@ impl<'a> fmt::Binary for DebugBinaryByteSlice<'a> {
     }
 }
 
+/// A field of a packed structure, as shown by [`packable_fmt_fields`].
 pub struct DebugBitField<'a> { 
+	/// The name of the field.
 	pub name: Cow<'a, str>,
+	/// The field's MSB0 bit position. The `end` of the range is the last bit, inclusive.
 	pub bits: Range<usize>,
+	/// The field's value, formatted for display.
 	pub display_value: Cow<'a, str>
 }
 
 
+/// Writes a table of the fields, with their bit positions, packed bits and values.
+/// The packed bits are omitted if any of the fields is wider than 32 bits.
 pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[DebugBitField]) -> fmt::Result {
     if fields.is_empty() {
 		return Ok(());
@@ -79,16 +91,25 @@ pub fn packable_fmt_fields(f: &mut Formatter, packed_bytes: &[u8], fields: &[Deb
     Ok(())
 }
 
+/// A `Display` formatter that packs the structure and shows its bytes and fields.
+/// Each section can be turned off.
 pub struct PackedStructDisplay<'a, P: 'a> {
+    /// The structure to display.
     pub packed_struct: &'a P,
+    /// Show the structure's name and size.
     pub header: bool,
+    /// Show the packed bytes in decimal.
     pub raw_decimal: bool,
+    /// Show the packed bytes in hexadecimal.
     pub raw_hex: bool,
+    /// Show the packed bytes in binary.
     pub raw_binary: bool,
+    /// Show the table of fields.
     pub fields: bool
 }
 
 impl<'a, P> PackedStructDisplay<'a, P> {
+    /// A formatter with all the sections enabled.
     pub fn new(packed_struct: &'a P) -> Self {
         PackedStructDisplay {
             packed_struct,            

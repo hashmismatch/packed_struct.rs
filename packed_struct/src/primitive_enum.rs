@@ -2,7 +2,7 @@ use crate::internal_prelude::v1::*;
 
 /// An enum type that can be packed or unpacked from a simple primitive integer.
 pub trait PrimitiveEnum where Self: Sized + Copy {
-    /// The primitve type into which we serialize and deserialize ourselves.
+    /// The primitive type into which we serialize and deserialize ourselves.
     type Primitive: PartialEq + Sized + Copy + Debug;
 
     /// Convert from a primitive, might fail.
@@ -11,15 +11,20 @@ pub trait PrimitiveEnum where Self: Sized + Copy {
     fn to_primitive(&self) -> Self::Primitive;
     /// Convert from a string value representing the variant. Case sensitive.
     fn from_str(s: &str) -> Option<Self>;
-    /// Convert from a string value representing the variant. Lowercase.
+    /// Convert from the lowercased name of the variant. The input isn't
+    /// lowercased, so `"variant"` matches `Variant`, but `"Variant"` doesn't.
     fn from_str_lower(s: &str) -> Option<Self>;
 }
 
 /// Static display formatters.
+///
+/// Always implemented by the derive macros. The prelude only exports it in
+/// builds without `alloc` or `std`, as its methods share their names with
+/// [`PrimitiveEnumDynamicStr`].
 pub trait PrimitiveEnumStaticStr where Self: Sized + Copy + PrimitiveEnum {
     /// Display value, same as the name of a particular variant.
     fn to_display_str(&self) -> &'static str;
-    /// A list all possible string variants.
+    /// A list of all the variants.
     fn all_variants() -> &'static [Self];
 }
 
@@ -28,7 +33,7 @@ pub trait PrimitiveEnumStaticStr where Self: Sized + Copy + PrimitiveEnum {
 pub trait PrimitiveEnumDynamicStr where Self: Sized + Copy + PrimitiveEnum {
     /// Display value, same as the name of a particular variant.
     fn to_display_str(&self) -> Cow<'static, str>;
-    /// A list all possible string variants.
+    /// A list of all the variants.
     fn all_variants() -> Cow<'static, [Self]>;
 }
 
@@ -43,6 +48,7 @@ pub enum EnumCatchAll<E> where E: PrimitiveEnum {
 }
 
 impl<E> EnumCatchAll<E> where E: PrimitiveEnum {
+    /// Wrap a defined variant of the enum.
     pub fn from_enum(v: E) -> Self {
         EnumCatchAll::Enum(v)
     }
