@@ -92,6 +92,115 @@ fn main() -> Result<(), PackingError> {
 }
 ```
 
+# Self-documenting structures
+
+The attributes that define the packing layout also document it. Every ```#[derive(PackedStruct)]```
+produces a packing table for rustdoc, and a ```Display``` implementation that shows the packed
+bytes and each field's bits at runtime. Both come from the same definition that drives packing,
+so they can't drift out of sync with the code.
+
+```rust
+use packed_struct::prelude::*;
+
+#[derive(PrimitiveEnum_u8, Clone, Copy, Debug, PartialEq)]
+pub enum DataRate {
+    PowerDown = 0,
+    Rate10Hz = 1,
+    Rate50Hz = 2,
+    Rate100Hz = 3,
+}
+
+/// Control register of an imaginary sensor.
+#[derive(PackedStruct, Debug, PartialEq)]
+#[packed_struct(bit_numbering="msb0")]
+pub struct ControlRegister {
+    #[packed_field(bits="0..=1", ty="enum")]
+    data_rate: DataRate,
+    #[packed_field(bits="2..=4")]
+    _reserved: ReservedZero<packed_bits::Bits::<3>>,
+    #[packed_field(bits="5")]
+    x_enabled: bool,
+    #[packed_field(bits="6")]
+    y_enabled: bool,
+    #[packed_field(bits="7")]
+    z_enabled: bool,
+    #[packed_field(bits="8..=19", endian="msb")]
+    threshold: Integer<u16, packed_bits::Bits::<12>>,
+}
+
+fn main() {
+    let reg = ControlRegister {
+        data_rate: DataRate::Rate50Hz,
+        _reserved: Default::default(),
+        x_enabled: true,
+        y_enabled: false,
+        z_enabled: true,
+        threshold: 2047.into(),
+    };
+
+    // the full report: header, packed bytes in decimal, hex and binary, and the fields
+    println!("{}", reg);
+
+    // or choose the sections to show
+    let mut display = reg.packed_struct_display_formatter();
+    display.raw_decimal = false;
+    display.raw_binary = false;
+    println!("{}", display);
+}
+```
+
+## Packing table in the generated documentation
+
+The ```PackedStruct``` implementation of each structure is documented with its size and a table
+of its fields. In rustdoc, it shows up on the structure's page, under *Trait Implementations*:
+
+> **impl PackedStruct for ControlRegister**
+>
+> Structure that can be packed and unpacked into 3 bytes.
+>
+> Bit, MSB0 | Name | Type
+> :--|:--|:--
+> 0:1 | data_rate | `DataRate`
+> 2:4 | _reserved | `ReservedZero < packed_bits :: Bits :: < 3 > >`
+> 5 | x_enabled | `bool`
+> 6 | y_enabled | `bool`
+> 7 | z_enabled | `bool`
+> 8:19 | threshold | `Integer < u16, packed_bits :: Bits :: < 12 > >`
+
+Arrays of packed structures take a single row, with the element type, count and width.
+
+## Runtime packing visualization
+
+With the ```std``` or ```alloc``` feature enabled, the structure also implements ```Display```.
+It packs the structure and shows each field's bit range, its packed bits and its value, which
+makes it easy to compare against a data sheet or a captured byte stream. The first
+```println!``` above prints:
+
+```text
+ControlRegister (3 bytes)
+
+Decimal
+[133, 127, 240]
+
+Hex
+[0x85, 0x7F, 0xF0]
+
+Binary
+[0b10000101, 0b01111111, 0b11110000]
+
+ data_rate | bits   0:1   | 0b10           | "Rate50Hz"
+ _reserved | bits   2:4   | 0b000          | "Reserved - always 0"
+ x_enabled | bits   5:5   | 0b1            | "true"
+ y_enabled | bits   6:6   | 0b0            | "false"
+ z_enabled | bits   7:7   | 0b1            | "true"
+ threshold | bits   8:19  | 0b011111111111 | "2047"
+```
+
+```packed_struct_display_formatter()``` returns a ```PackedStructDisplay``` whose ```header```,
+```raw_decimal```, ```raw_hex```, ```raw_binary``` and ```fields``` flags turn each section on or
+off. If any field is wider than 32 bits, the field table leaves out the bit columns and shows
+just the names and values.
+
 # Packing attributes
 
 ## Syntax
