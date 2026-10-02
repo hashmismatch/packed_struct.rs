@@ -5,7 +5,7 @@ All notable changes to `packed_struct` and `packed_struct_codegen` are documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The crate is
 pre-1.0, so a minor version bump can contain breaking changes.
 
-## [0.12.0] - Unreleased
+## [0.12.0] - 2026-10-01
 
 This is the first release since 0.10.1. The `0.11.0` version number was used on `master` in the
 meantime but never published to crates.io, so everything below is relative to **0.10.1**.
@@ -269,7 +269,7 @@ restore.
 
 - First release.
 
-[0.12.0]: https://github.com/hashmismatch/packed_struct.rs/compare/v0.10.1...HEAD
+[0.12.0]: https://github.com/hashmismatch/packed_struct.rs/compare/v0.10.1...v0.12.0
 [0.10.1]: https://github.com/hashmismatch/packed_struct.rs/compare/0.10.0...v0.10.1
 [0.10.0]: https://github.com/hashmismatch/packed_struct.rs/compare/v0.6.1...0.10.0
 [0.6.1]: https://github.com/hashmismatch/packed_struct.rs/compare/v0.6.0...v0.6.1
